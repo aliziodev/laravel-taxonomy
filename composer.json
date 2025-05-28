@@ -1,0 +1,61 @@
+{
+  "name": "aliziodev/laravel-taxonomy",
+  "description": "Laravel Taxonomy is a flexible and powerful package for managing taxonomies, categories, tags, and other hierarchical in Laravel applications.",
+  "version": "1.0.0",
+  "type": "library",
+  "keywords": [
+    "laravel",
+    "terms",
+    "taxonomy",
+    "categories",
+    "tags",
+    "hierarchical",
+    "laravel-terms"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Alizio",
+      "email": "aliziodev@gmail.com"
+    }
+  ],
+  "require-dev": {
+    "pestphp/pest": "v3.8.2",
+    "pestphp/pest-plugin-laravel": "v3.2.0",
+    "orchestra/testbench": "v10.3.0",
+    "phpstan/phpstan": "2.1.17"
+  },
+  "require": {
+    "php": "^8.1",
+    "illuminate/contracts": "^11.0|^12.0",
+    "illuminate/support": "^11.0|^12.0",
+    "illuminate/database": "^11.0|^12.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Aliziodev\\LaravelTaxonomy\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "vendor/bin/pest",
+    "format": "vendor/bin/pint",
+    "analyse": "vendor/bin/phpstan analyse",
+    "check": [
+      "@format",
+      "@analyse",
+      "@test"
+    ]
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "config": {
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  }
+}
