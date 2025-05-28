@@ -1,7 +1,6 @@
 {
   "name": "aliziodev/laravel-taxonomy",
   "description": "Laravel Taxonomy is a flexible and powerful package for managing taxonomies, categories, tags, and other hierarchical in Laravel applications.",
-  "version": "1.0.0",
   "type": "library",
   "keywords": [
     "laravel",
