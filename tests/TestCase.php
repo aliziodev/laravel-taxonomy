@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests;
+namespace Aliziodev\LaravelTaxonomy\Tests;
 
 use Aliziodev\LaravelTaxonomy\TaxonomyProvider;
 use Orchestra\Testbench\TestCase as BaseTestCase;
@@ -13,10 +13,25 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Run migrations
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         $this->artisan('migrate', ['--database' => 'testing'])->run();
+
+        // Create products table for testing
+        $this->createProductsTable();
+    }
+
+    /**
+     * Create products table for testing.
+     */
+    protected function createProductsTable(): void
+    {
+        $this->app['db']->connection()->getSchemaBuilder()->create('products', function ($table) {
+            $table->id();
+            $table->string('name');
+            $table->timestamps();
+        });
     }
 
     /**
@@ -47,13 +62,13 @@ abstract class TestCase extends BaseTestCase
             'database' => ':memory:',
             'prefix'   => '',
         ]);
-        
+
         // Use the default config
         $app['config']->set('taxonomy.table_names', [
             'taxonomies' => 'taxonomies',
             'taxonomables' => 'taxonomables',
         ]);
-        
+
         $app['config']->set('taxonomy.morph_type', 'uuid');
     }
 }

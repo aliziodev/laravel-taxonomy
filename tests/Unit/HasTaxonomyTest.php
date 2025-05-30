@@ -10,7 +10,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
-use Tests\TestCase;
+use Aliziodev\LaravelTaxonomy\Tests\TestCase;
 
 class HasTaxonomyTest extends TestCase
 {

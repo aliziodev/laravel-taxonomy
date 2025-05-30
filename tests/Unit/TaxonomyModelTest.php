@@ -6,9 +6,10 @@ use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Exceptions\DuplicateSlugException;
 use Aliziodev\LaravelTaxonomy\Exceptions\MissingSlugException;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
+use Aliziodev\LaravelTaxonomy\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
-use Tests\TestCase;
+
 
 class TaxonomyModelTest extends TestCase
 {

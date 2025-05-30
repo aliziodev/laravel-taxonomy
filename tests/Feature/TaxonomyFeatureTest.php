@@ -8,13 +8,11 @@ use Aliziodev\LaravelTaxonomy\Models\Taxonomy as TaxonomyModel;
 use Aliziodev\LaravelTaxonomy\Traits\HasTaxonomy;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
-use Tests\TestCase;
+use Aliziodev\LaravelTaxonomy\Tests\TestCase;
 
 class TaxonomyFeatureTest extends TestCase
 {
@@ -23,13 +21,6 @@ class TaxonomyFeatureTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        // Create a test model table
-        Schema::create('products', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->timestamps();
-        });
     }
 
     #[Test]
