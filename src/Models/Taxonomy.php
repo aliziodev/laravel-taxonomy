@@ -61,6 +61,9 @@ class Taxonomy extends Model
         'description',
         'parent_id',
         'sort_order',
+        'lft',
+        'rgt',
+        'depth',
         'meta',
     ];
 
@@ -72,6 +75,9 @@ class Taxonomy extends Model
     protected $casts = [
         'meta' => 'json',
         'sort_order' => 'integer',
+        'lft' => 'integer',
+        'rgt' => 'integer',
+        'depth' => 'integer',
     ];
 
 
@@ -97,6 +103,9 @@ class Taxonomy extends Model
             if (!empty($taxonomy->slug) && static::slugExists($taxonomy->slug, null)) {
                 throw new DuplicateSlugException($taxonomy->slug);
             }
+
+            // Set nested set values for new taxonomy
+            $taxonomy->setNestedSetValues();
         });
 
         static::updating(function (self $taxonomy) {
@@ -110,6 +119,25 @@ class Taxonomy extends Model
             // Regenerate slug on update if enabled in config
             if (config('taxonomy.slugs.regenerate_on_update', false) && $taxonomy->isDirty('name')) {
                 $taxonomy->slug = static::generateUniqueSlug($taxonomy->name, $taxonomy->type, $taxonomy->id);
+            }
+        });
+
+        static::updated(function (self $taxonomy) {
+            // Update nested set values if parent changed
+            if ($taxonomy->wasChanged('parent_id')) {
+                static::rebuildNestedSet($taxonomy->type);
+            }
+        });
+
+        static::deleting(function (self $taxonomy) {
+            // Move children to parent before deleting
+            if ($taxonomy->children()->count() > 0) {
+                $taxonomy->children()->update(['parent_id' => $taxonomy->parent_id]);
+                // Rebuild nested set for affected nodes
+                static::rebuildNestedSet($taxonomy->type);
+            } else {
+                // Remove gap in nested set
+                $taxonomy->removeFromNestedSet();
             }
         });
     }
@@ -362,5 +390,288 @@ class Taxonomy extends Model
         }
 
         return $slug;
+    }
+
+    // ========================================
+    // NESTED SET METHODS
+    // ========================================
+
+    /**
+     * Set nested set values for a new taxonomy.
+     */
+    protected function setNestedSetValues(): void
+    {
+        if ($this->parent_id) {
+            $parent = static::find($this->parent_id);
+            if ($parent) {
+                $this->depth = $parent->depth + 1;
+                
+                // Update all nodes with rgt >= parent->rgt first
+                static::where('rgt', '>=', $parent->rgt)
+                    ->where('type', $this->type)
+                    ->where('id', '!=', $this->id)
+                    ->increment('rgt', 2);
+                
+                // Update all nodes with lft > parent->rgt
+                static::where('lft', '>', $parent->rgt)
+                    ->where('type', $this->type)
+                    ->where('id', '!=', $this->id)
+                    ->increment('lft', 2);
+                
+                // Set this node's values
+                $this->lft = $parent->rgt;
+                $this->rgt = $parent->rgt + 1;
+            } else {
+                $this->makeRoot();
+            }
+        } else {
+            $this->makeRoot();
+        }
+    }
+
+    /**
+     * Make this taxonomy a root node.
+     */
+    protected function makeRoot(): void
+    {
+        $maxRgt = static::where('type', $this->type)->max('rgt') ?? 0;
+        $this->depth = 0;
+        $this->lft = $maxRgt + 1;
+        $this->rgt = $maxRgt + 2;
+    }
+
+    /**
+     * Move taxonomy to a new parent.
+     */
+    public function moveToParent(?int $parentId): void
+    {
+        if ($this->parent_id == $parentId) {
+            return;
+        }
+        
+        // Set new parent and save
+        $this->parent_id = $parentId;
+        $this->save();
+    }
+
+    /**
+     * Remove taxonomy from nested set structure.
+     */
+    protected function removeFromNestedSet(): void
+    {
+        if (!$this->lft || !$this->rgt) {
+            return;
+        }
+
+        $width = $this->rgt - $this->lft + 1;
+        
+        // Update all nodes with lft > this->rgt
+        static::where('lft', '>', $this->rgt)
+            ->where('type', $this->type)
+            ->decrement('lft', $width);
+        
+        // Update all nodes with rgt > this->rgt
+        static::where('rgt', '>', $this->rgt)
+            ->where('type', $this->type)
+            ->decrement('rgt', $width);
+    }
+
+    /**
+     * Rebuild nested set for a specific type.
+     */
+    public static function rebuildNestedSet(string $type): void
+    {
+        $taxonomies = static::where('type', $type)
+            ->whereNull('parent_id')
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        $counter = 1;
+        foreach ($taxonomies as $taxonomy) {
+            $counter = static::rebuildNode($taxonomy, $counter, 0);
+        }
+    }
+
+    /**
+     * Rebuild a single node and its children.
+     */
+    protected static function rebuildNode(self $node, int $counter, int $depth): int
+    {
+        $node->lft = $counter++;
+        $node->depth = $depth;
+        
+        $children = static::where('parent_id', $node->id)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+        
+        foreach ($children as $child) {
+            $counter = static::rebuildNode($child, $counter, $depth + 1);
+        }
+        
+        $node->rgt = $counter++;
+        $node->saveQuietly();
+        
+        return $counter;
+    }
+
+    /**
+     * Get all descendants using nested set.
+     */
+    public function getDescendants(): Collection
+    {
+        if (!$this->lft || !$this->rgt) {
+            return new Collection();
+        }
+
+        return static::where('type', $this->type)
+            ->where('lft', '>', $this->lft)
+            ->where('rgt', '<', $this->rgt)
+            ->orderBy('lft')
+            ->get();
+    }
+
+    /**
+     * Get all ancestors using nested set.
+     */
+    public function getAncestors(): Collection
+    {
+        if (!$this->lft || !$this->rgt) {
+            return new Collection();
+        }
+
+        return static::where('type', $this->type)
+            ->where('lft', '<', $this->lft)
+            ->where('rgt', '>', $this->rgt)
+            ->orderBy('lft')
+            ->get();
+    }
+
+    /**
+     * Get direct children using nested set.
+     */
+    public function getChildren(): Collection
+    {
+        return static::where('parent_id', $this->id)
+            ->orderBy('lft')
+            ->get();
+    }
+
+    /**
+     * Check if this taxonomy is an ancestor of another.
+     */
+    public function isAncestorOf(self $other): bool
+    {
+        if (!$this->lft || !$this->rgt || !$other->lft || !$other->rgt) {
+            return false;
+        }
+
+        return $this->type === $other->type
+            && $this->lft < $other->lft
+            && $this->rgt > $other->rgt;
+    }
+
+    /**
+     * Check if this taxonomy is a descendant of another.
+     */
+    public function isDescendantOf(self $other): bool
+    {
+        return $other->isAncestorOf($this);
+    }
+
+    /**
+     * Get the level/depth of this taxonomy.
+     */
+    public function getLevel(): int
+    {
+        return $this->depth ?? 0;
+    }
+
+    /**
+     * Scope to get only root taxonomies using nested set.
+     */
+    public function scopeRoots(Builder $query): Builder
+    {
+        return $query->where('depth', 0);
+    }
+
+    /**
+     * Scope to get taxonomies at a specific depth.
+     */
+    public function scopeAtDepth(Builder $query, int $depth): Builder
+    {
+        return $query->where('depth', $depth);
+    }
+
+    /**
+     * Scope to get taxonomies ordered by nested set.
+     */
+    public function scopeNestedSetOrder(Builder $query): Builder
+    {
+        return $query->orderBy('lft');
+    }
+
+    /**
+     * Get nested tree using nested set (more efficient than recursive queries).
+     */
+    public static function getNestedTree(string|TaxonomyType|null $type = null): Collection
+    {
+        if ($type !== null) {
+            $query = static::query()->type($type);
+            $taxonomies = $query->nestedSetOrder()->get();
+            return static::buildNestedTree($taxonomies);
+        }
+        
+        // When no type is specified, get all types and build separate trees
+        $allTypes = static::select('type')->distinct()->pluck('type');
+        $allTrees = new Collection();
+        
+        foreach ($allTypes as $typeValue) {
+            $query = static::query()->type($typeValue);
+            $taxonomies = $query->nestedSetOrder()->get();
+            $typeTree = static::buildNestedTree($taxonomies);
+            $allTrees = $allTrees->merge($typeTree);
+        }
+        
+        return $allTrees;
+    }
+
+    /**
+     * Build nested tree structure from flat collection.
+     */
+    protected static function buildNestedTree(Collection $taxonomies): Collection
+    {
+        $tree = new Collection();
+        $stack = [];
+        
+        foreach ($taxonomies as $taxonomy) {
+            // Remove items from stack that are not ancestors
+            while (!empty($stack) && end($stack)->rgt < $taxonomy->lft) {
+                array_pop($stack);
+            }
+            
+            // Set depth based on stack size
+            $taxonomy->tree_depth = count($stack);
+            
+            if (empty($stack)) {
+                // Root level
+                $tree->push($taxonomy);
+            } else {
+                // Child level - add to parent's children collection
+                $parent = end($stack);
+                if (!$parent->children_nested) {
+                    $parent->children_nested = new Collection();
+                }
+                $parent->children_nested->push($taxonomy);
+            }
+            
+            // Add to stack if it has children
+            if ($taxonomy->rgt > $taxonomy->lft + 1) {
+                $stack[] = $taxonomy;
+            }
+        }
+        
+        return $tree;
     }
 }
