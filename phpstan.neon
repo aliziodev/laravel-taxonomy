@@ -1,0 +1,33 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - src
+        - tests
+    
+    # Level of rule options - the higher the stricter
+    level: 8
+    
+    # Ignore errors
+    ignoreErrors:
+        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder.*#'
+        - '#Call to an undefined method Illuminate\\Database\\Query\\Builder.*#'
+    
+    # Exclude files
+    excludePaths:
+        - tests/bootstrap.php
+    
+    # Check missing typehints
+    checkMissingIterableValueType: false
+    checkGenericClassInNonGenericObjectType: false
+    
+    # Laravel specific
+    checkOctaneCompatibility: true
+    noUnnecessaryCollectionCall: true
+    noUnnecessaryCollectionCallOnly: []
+    noUnnecessaryCollectionCallExcept: []
+    
+    # Pest specific
+    stubFiles:
+        - vendor/pestphp/pest/stubs/Laravel.php
