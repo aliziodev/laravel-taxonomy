@@ -94,6 +94,108 @@ class TaxonomyManager
     }
 
     /**
+     * Get nested tree using nested set (more efficient).
+     */
+    public function getNestedTree(string|TaxonomyType|null $type = null): Collection
+    {
+        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $cacheKey = "taxonomy_nested_tree_{$typeValue}";
+
+        return Cache::remember($cacheKey, now()->addHours(24), function () use ($type) {
+            return Taxonomy::getNestedTree($type);
+        });
+    }
+
+    /**
+     * Rebuild nested set for a specific type.
+     */
+    public function rebuildNestedSet(string|TaxonomyType $type): void
+    {
+        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        Taxonomy::rebuildNestedSet($typeValue);
+        
+        // Clear related caches
+        $this->clearCacheForTypeInternal($typeValue);
+    }
+
+    /**
+     * Move taxonomy to a new parent.
+     */
+    public function moveToParent(int $taxonomyId, ?int $parentId): bool
+    {
+        $taxonomy = Taxonomy::find($taxonomyId);
+        if (!$taxonomy) {
+            return false;
+        }
+        
+        // Validate parent exists if parentId is provided
+        if ($parentId !== null && !Taxonomy::find($parentId)) {
+            return false;
+        }
+
+        $taxonomy->moveToParent($parentId);
+        
+        // Clear related caches
+        $this->clearCacheForTypeInternal($taxonomy->type);
+        
+        return true;
+    }
+
+    /**
+     * Get all descendants of a taxonomy.
+     */
+    public function getDescendants(int $taxonomyId): Collection
+    {
+        $taxonomy = Taxonomy::find($taxonomyId);
+        if (!$taxonomy) {
+            return new Collection();
+        }
+
+        return $taxonomy->getDescendants();
+    }
+
+    /**
+     * Get all ancestors of a taxonomy.
+     */
+    public function getAncestors(int $taxonomyId): Collection
+    {
+        $taxonomy = Taxonomy::find($taxonomyId);
+        if (!$taxonomy) {
+            return new Collection();
+        }
+
+        return $taxonomy->getAncestors();
+    }
+
+    /**
+     * Clear cache for a specific type (public method).
+     */
+    public function clearCacheForType(string|TaxonomyType $type): void
+    {
+        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $this->clearCacheForTypeInternal($typeValue);
+    }
+
+    /**
+     * Clear cache for a specific type (internal method).
+     */
+    protected function clearCacheForTypeInternal(string $type): void
+    {
+        $patterns = [
+            "taxonomy_tree_{$type}_*",
+            "taxonomy_flat_tree_{$type}_*",
+            "taxonomy_nested_tree_{$type}",
+        ];
+        
+        // For exact cache keys, use forget directly
+        Cache::forget("taxonomy_nested_tree_{$type}");
+
+        foreach ($patterns as $pattern) {
+            Cache::forget($pattern);
+        }
+    }
+
+    /**
      * Check if a taxonomy with the given slug exists.
      */
     public function exists(string $slug, string|TaxonomyType|null $type = null): bool
