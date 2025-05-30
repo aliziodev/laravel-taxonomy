@@ -1,6 +1,3 @@
-[![en](https://img.shields.io/badge/lang-en-red.svg)](README.md)
-[![id](https://img.shields.io/badge/lang-id-blue.svg)](README.id.md)
-
 # Laravel Taxonomy
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/aliziodev/laravel-taxonomy.svg?style=flat-square)](https://packagist.org/packages/aliziodev/laravel-taxonomy)
@@ -9,9 +6,36 @@
 [![PHP Version](https://img.shields.io/packagist/php-v/aliziodev/laravel-taxonomy.svg?style=flat-square)](https://packagist.org/packages/aliziodev/laravel-taxonomy)
 [![Laravel Version](https://img.shields.io/badge/Laravel-11.0%2B-orange.svg?style=flat-square)](https://laravel.com/)
 
-Laravel Taxonomy adalah paket yang kuat dan fleksibel untuk mengelola taksonomi, kategori, tag, dan istilah hierarkis dalam aplikasi Laravel. Paket ini menyediakan solusi yang kokoh untuk mengorganisir konten dengan fitur seperti dukungan metadata, kemampuan pengurutan, dan mekanisme caching yang efisien.
+Laravel Taxonomy adalah paket yang fleksibel dan powerful untuk mengelola taksonomi, kategori, tag, dan struktur hierarkis dalam aplikasi Laravel. Dilengkapi dengan dukungan nested-set untuk performa query optimal pada struktur data hierarkis.
 
-## Ikhtisar
+## 📖 Dokumentasi
+- [🇺🇸 English Documentation](README.md)
+- [🇮🇩 Dokumentasi Bahasa Indonesia](README.id.md)
+
+## 📋 Daftar Isi
+
+- [Gambaran Umum](#gambaran-umum)
+- [Fitur Utama](#fitur-utama)
+- [Persyaratan](#persyaratan)
+- [Instalasi](#instalasi)
+- [Konfigurasi](#️-konfigurasi)
+- [Memulai Cepat](#-memulai-cepat)
+- [Penggunaan Dasar](#-penggunaan-dasar)
+- [Data Hierarkis & Nested Sets](#-data-hierarkis--nested-sets)
+- [Dukungan Metadata](#-dukungan-metadata)
+- [Operasi Bulk](#-operasi-bulk)
+- [Caching & Performa](#-caching--performa)
+- [Tipe Taksonomi Kustom](#️-tipe-taksonomi-kustom)
+- [Skenario Penggunaan Dunia Nyata](#-skenario-penggunaan-dunia-nyata)
+- [Fitur Lanjutan](#-fitur-lanjutan)
+- [Best Practices](#-best-practices)
+- [Slug Kustom dan Error Handling](#slug-kustom-dan-error-handling)
+- [Troubleshooting](#troubleshooting)
+- [Keamanan](#keamanan)
+- [Testing](#testing)
+- [Lisensi](#lisensi)
+
+## Gambaran Umum
 
 Paket ini ideal untuk:
 
@@ -20,20 +44,38 @@ Paket ini ideal untuk:
 - Organisasi konten
 - Atribut produk
 - Navigasi dinamis
-- Struktur data hierarkis lainnya
+- Struktur data hierarkis apapun
 
 ## Fitur Utama
 
-- **Istilah Hierarkis**: Buat hubungan induk-anak antar istilah
-- **Dukungan Metadata**: Simpan data tambahan sebagai JSON dengan setiap taksonomi
-- **Pengurutan Istilah**: Kontrol urutan istilah dengan sort_order
-- **Sistem Caching**: Tingkatkan performa dengan caching bawaan
-- **Hubungan Polimorfik**: Kaitkan taksonomi dengan model apapun
-- **Beberapa Jenis Istilah**: Gunakan jenis yang telah ditentukan (Kategori, Tag, dll.) atau buat jenis kustom
-- **Operasi Massal**: Lampirkan, lepaskan, sinkronkan, atau toggle beberapa taksonomi sekaligus
-- **Kueri Lanjutan**: Filter model berdasarkan taksonomi dengan query scope
-- **Struktur Pohon**: Dapatkan representasi pohon hierarkis atau datar
-- **Dukungan Paginasi**: Paginasi hasil untuk performa yang lebih baik
+### Fungsionalitas Inti
+- **Term Hierarkis**: Membuat hubungan parent-child antar term
+- **Dukungan Metadata**: Menyimpan data tambahan sebagai JSON dengan setiap taksonomi
+- **Pengurutan Term**: Mengontrol urutan term dengan sort_order
+- **Relasi Polimorfik**: Mengasosiasikan taksonomi dengan model apapun
+- **Multiple Tipe Term**: Menggunakan tipe yang sudah didefinisikan (Category, Tag, dll.) atau membuat tipe kustom
+- **Operasi Bulk**: Attach, detach, sync, atau toggle multiple taksonomi sekaligus
+- **Query Lanjutan**: Filter model berdasarkan taksonomi dengan query scopes
+
+### Fitur Nested Set
+- **Navigasi Tree**: Query ancestor dan descendant yang efisien
+- **Manipulasi Tree**: Memindahkan, menyisipkan, dan mengatur ulang node tree
+- **Manajemen Depth**: Melacak dan query berdasarkan kedalaman hierarki
+- **Validasi Tree**: Mempertahankan integritas tree secara otomatis
+- **Query Efisien**: Query database yang dioptimalkan untuk data hierarkis
+
+### Performa & Skalabilitas
+- **Sistem Caching**: Meningkatkan performa dengan caching built-in
+- **Indexing Database**: Index yang dioptimalkan untuk query cepat
+- **Lazy Loading**: Loading relasi yang efisien
+- **Struktur Tree**: Mendapatkan representasi tree hierarkis atau flat
+- **Dukungan Pagination**: Pagination hasil untuk performa yang lebih baik
+
+### Developer Experience
+- **API Intuitif**: Sintaks yang bersih dan ekspresif
+- **Dokumentasi Komprehensif**: Panduan dan contoh yang detail
+- **Type Safety**: Dukungan penuh untuk sistem type Laravel
+- **Dukungan Testing**: Utilitas testing built-in
 
 ## Persyaratan
 
@@ -42,15 +84,15 @@ Paket ini ideal untuk:
 
 ## Instalasi
 
-### Melalui Composer
+### Via Composer
 
 ```bash
 composer require aliziodev/laravel-taxonomy
 ```
 
-### Publikasikan Konfigurasi dan Migrasi
+### Publish Konfigurasi dan Migrasi
 
-Anda dapat mempublikasikan konfigurasi dan migrasi menggunakan perintah install yang disediakan:
+Anda dapat mempublish konfigurasi dan migrasi menggunakan perintah install yang disediakan:
 
 ```bash
 php artisan taxonomy:install
@@ -69,91 +111,591 @@ php artisan vendor:publish --provider="Aliziodev\LaravelTaxonomy\TaxonomyProvide
 php artisan migrate
 ```
 
-## Konfigurasi
+## ⚙️ Konfigurasi
 
-Setelah mempublikasikan file konfigurasi, Anda dapat menyesuaikannya di `config/taxonomy.php`:
+Setelah mempublish file konfigurasi, Anda dapat menyesuaikannya di `config/taxonomy.php`. Berikut penjelasan detail dari setiap opsi:
 
 ```php
 return [
-    // Nama tabel untuk taksonomi dan taxonomables
+    // Nama tabel database
     'table_names' => [
-        'taxonomies' => 'taxonomies',
-        'taxonomables' => 'taxonomables',
+        'taxonomies' => 'taxonomies',      // Tabel taksonomi utama
+        'taxonomables' => 'taxonomables',  // Tabel pivot polimorfik
     ],
 
-    // Konfigurasi morph type (numeric, uuid, ulid)
+    // Tipe primary key untuk relasi polimorfik
+    // Opsi: 'numeric' (default), 'uuid', 'ulid'
     'morph_type' => 'uuid',
 
-    // Jenis taksonomi default
+    // Tipe taksonomi yang tersedia (dapat diperluas)
     'types' => collect(TaxonomyType::cases())->pluck('value')->toArray(),
 
-    // Binding model untuk model Taxonomy
+    // Binding model kustom (untuk memperluas model Taxonomy dasar)
     'model' => \Aliziodev\LaravelTaxonomy\Models\Taxonomy::class,
 
-    // Konfigurasi slug
+    // Pengaturan generasi slug
     'slugs' => [
-        'generate' => true,        // Jika false, slug harus disediakan secara manual
-        'regenerate_on_update' => false,  // Jika true, slug akan dibuat ulang ketika nama berubah
+        'generate' => true,                // Auto-generate slug dari nama
+        'regenerate_on_update' => false,  // Regenerate slug ketika nama berubah
+    ],
+
+    // Pengaturan cache
+    'cache' => [
+        'enabled' => true,                 // Enable/disable caching
+        'ttl' => 24 * 60,                 // Cache TTL dalam menit (24 jam)
+        'prefix' => 'taxonomy',           // Prefix key cache
     ],
 ];
 ```
 
-## Jenis Taksonomi Kustom
+### Penjelasan Opsi Konfigurasi
 
-Meskipun paket ini dilengkapi dengan jenis taksonomi yang telah ditentukan dalam enum `TaxonomyType` (Category, Tag, Color, Size, dll.), Anda dapat dengan mudah mendefinisikan dan menggunakan jenis kustom Anda sendiri.
+#### Nama Tabel
+Sesuaikan nama tabel database jika Anda perlu menghindari konflik atau mengikuti konvensi penamaan tertentu:
 
-### Mendefinisikan Jenis Kustom
+```php
+'table_names' => [
+    'taxonomies' => 'custom_taxonomies',
+    'taxonomables' => 'custom_taxonomables',
+],
+```
 
-Ada dua cara untuk menggunakan jenis taksonomi kustom:
+#### Tipe Morph
+Pilih tipe morph yang sesuai berdasarkan primary key model Anda:
 
-#### 1. Mengganti konfigurasi jenis
+```php
+// Untuk ID integer auto-incrementing
+'morph_type' => 'numeric',
 
-Anda dapat mengganti jenis default dengan memodifikasi array `types` di file `config/taxonomy.php` Anda:
+// Untuk primary key UUID
+'morph_type' => 'uuid',
+
+// Untuk primary key ULID
+'morph_type' => 'ulid',
+```
+
+#### Tipe Kustom
+Perluas atau ganti tipe taksonomi default:
 
 ```php
 'types' => [
     'category',
     'tag',
-    // Jenis default yang ingin Anda pertahankan
-
-    // Jenis kustom Anda
-    'genre',
-    'lokasi',
-    'musim',
-    'tingkat_kesulitan',
+    'brand',
+    'collection',
+    'custom_type',
 ],
 ```
 
-#### 2. Menggunakan jenis kustom secara langsung
+#### Konfigurasi Slug
+Kontrol perilaku generasi slug:
 
-Anda juga dapat menggunakan jenis kustom secara langsung dalam kode Anda tanpa memodifikasi konfigurasi:
+```php
+'slugs' => [
+    'generate' => false,               // Memerlukan input slug manual
+    'regenerate_on_update' => true,   // Auto-update slug ketika nama berubah
+],
+```
+
+
+## 🚀 Memulai Cepat
+
+Mulai dan jalankan Laravel Taxonomy dalam hitungan menit:
+
+### 1. Buat Taksonomi Pertama Anda
+
+```php
+use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
+use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
+
+// Buat kategori
+$electronics = Taxonomy::create([
+    'name' => 'Electronics',
+    'type' => TaxonomyType::Category->value,
+    'description' => 'Produk elektronik dan gadget',
+]);
+
+// Buat subkategori
+$smartphones = Taxonomy::create([
+    'name' => 'Smartphones',
+    'type' => TaxonomyType::Category->value,
+    'parent_id' => $electronics->id,
+]);
+
+// Buat tag
+$featured = Taxonomy::create([
+    'name' => 'Featured',
+    'type' => TaxonomyType::Tag->value,
+]);
+```
+
+### 2. Asosiasikan dengan Model
+
+```php
+// Asumsikan Anda memiliki model Product dengan trait HasTaxonomy
+$product = Product::create([
+    'name' => 'iPhone 15 Pro',
+    'price' => 999.99,
+]);
+
+// Attach taksonomi
+$product->attachTaxonomies([$electronics->id, $smartphones->id, $featured->id]);
+
+// Atau attach berdasarkan slug
+$product->attachTaxonomies(['electronics', 'smartphones', 'featured']);
+```
+
+### 3. Query dan Filter
+
+```php
+// Temukan produk dalam kategori electronics
+$products = Product::withTaxonomyType(TaxonomyType::Category)
+    ->withTaxonomySlug('electronics')
+    ->get();
+
+// Dapatkan semua taksonomi dari tipe tertentu
+$categories = Taxonomy::findByType(TaxonomyType::Category);
+
+// Dapatkan tree hierarkis
+$categoryTree = Taxonomy::tree(TaxonomyType::Category);
+```
+
+## 📖 Penggunaan Dasar
+
+### Bekerja dengan Facade Taxonomy
+
+Facade `Taxonomy` menyediakan API yang bersih dan ekspresif untuk semua operasi taksonomi:
+
+```php
+use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
+use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
+
+// Buat taksonomi
+$category = Taxonomy::create([
+    'name' => 'Books',
+    'type' => TaxonomyType::Category->value,
+    'description' => 'Semua jenis buku',
+    'metadata' => [
+        'icon' => 'book',
+        'color' => '#3498db',
+        'featured' => true,
+    ],
+]);
+
+// Temukan taksonomi
+$taxonomy = Taxonomy::findBySlug('books');
+$exists = Taxonomy::exists('books');
+$categories = Taxonomy::findByType(TaxonomyType::Category);
+
+// Cari taksonomi
+$results = Taxonomy::search('science', TaxonomyType::Category);
+
+// Dapatkan data hierarkis
+$tree = Taxonomy::tree(TaxonomyType::Category);
+$flatTree = Taxonomy::flatTree(TaxonomyType::Category);
+$nestedTree = Taxonomy::getNestedTree(TaxonomyType::Category);
+```
+
+### Bekerja dengan Relasi Model
+
+Setelah Anda menambahkan trait `HasTaxonomy` ke model Anda, Anda mendapatkan akses ke metode relasi yang powerful:
+
+```php
+// Operasi dasar
+$product->attachTaxonomies($taxonomyIds);
+$product->detachTaxonomies($taxonomyIds);
+$product->syncTaxonomies($taxonomyIds);
+$product->toggleTaxonomies($taxonomyIds);
+
+// Periksa relasi
+$hasCategory = $product->hasTaxonomies($categoryIds);
+$hasAllTags = $product->hasAllTaxonomies($tagIds);
+$hasType = $product->hasTaxonomyType(TaxonomyType::Category);
+
+// Dapatkan taksonomi terkait
+$allTaxonomies = $product->taxonomies;
+$categories = $product->taxonomiesOfType(TaxonomyType::Category);
+$hierarchical = $product->getHierarchicalTaxonomies(TaxonomyType::Category);
+```
+
+### Query Scopes untuk Filtering
+
+Filter model Anda menggunakan query scopes yang powerful:
+
+```php
+// Filter berdasarkan tipe taksonomi
+$products = Product::withTaxonomyType(TaxonomyType::Category)->get();
+
+// Filter berdasarkan taksonomi tertentu
+$products = Product::withAnyTaxonomies([$category1, $category2])->get();
+$products = Product::withAllTaxonomies([$tag1, $tag2])->get();
+
+// Filter berdasarkan slug taksonomi
+$products = Product::withTaxonomySlug('electronics')->get();
+
+// Filter berdasarkan hierarki (termasuk turunan)
+$products = Product::withTaxonomyHierarchy($parentCategoryId)->get();
+
+// Filter berdasarkan level kedalaman
+$products = Product::withTaxonomyAtDepth(2, TaxonomyType::Category)->get();
+```
+
+### Dukungan Pagination
+
+Package ini mendukung pagination untuk metode search dan find:
+
+```php
+// Paginate hasil pencarian (5 item per halaman, halaman 1)
+$results = Taxonomy::search('electronic', null, 5, 1);
+
+// Paginate taksonomi berdasarkan tipe
+$categories = Taxonomy::findByType(TaxonomyType::Category, 10, 1);
+
+// Paginate taksonomi berdasarkan parent
+$children = Taxonomy::findByParent($parent->id, 10, 1);
+```
+
+### Contoh Controller Lengkap
+
+Berikut adalah contoh komprehensif penggunaan Laravel Taxonomy dalam controller:
+
+```php
+namespace App\Http\Controllers;
+
+use App\Models\Product;
+use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
+use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
+use Illuminate\Http\Request;
+
+class ProductController extends Controller
+{
+    public function index(Request $request)
+    {
+        // Dapatkan produk yang difilter berdasarkan kategori
+        $categorySlug = $request->input('category');
+        $query = Product::query();
+
+        if ($categorySlug) {
+            $category = Taxonomy::findBySlug($categorySlug, TaxonomyType::Category);
+            if ($category) {
+                $query->withAnyTaxonomies($category);
+            }
+        }
+
+        $products = $query->paginate(12);
+        $categories = Taxonomy::findByType(TaxonomyType::Category);
+
+        return view('products.index', compact('products', 'categories'));
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'categories' => 'required|array',
+            'tags' => 'nullable|array',
+        ]);
+
+        $product = Product::create($validated);
+
+        // Lampirkan kategori dan tag
+        $product->attachTaxonomies($validated['categories']);
+        if (isset($validated['tags'])) {
+            $product->attachTaxonomies($validated['tags']);
+        }
+
+        return redirect()->route('products.show', $product)
+            ->with('success', 'Produk berhasil dibuat.');
+    }
+}
+```
+
+## 🌳 Data Hierarkis & Nested Sets
+
+Laravel Taxonomy menggunakan Nested Set Model untuk manajemen data hierarkis yang efisien:
+
+### Memahami Nested Sets
+
+Model nested set menyimpan data hierarkis menggunakan nilai `lft` (kiri) dan `rgt` (kanan), bersama dengan `depth` untuk setiap node. Ini memungkinkan query relasi hierarkis yang efisien.
+
+```php
+// Dapatkan semua turunan dari taksonomi (anak, cucu, dll.)
+$descendants = $taxonomy->getDescendants();
+
+// Dapatkan semua leluhur dari taksonomi (parent, grandparent, dll.)
+$ancestors = $taxonomy->getAncestors();
+
+// Periksa relasi hierarkis
+$isParent = $parent->isAncestorOf($child);
+$isChild = $child->isDescendantOf($parent);
+
+// Dapatkan level kedalaman
+$level = $taxonomy->getLevel();
+
+// Dapatkan hanya taksonomi root
+$roots = Taxonomy::roots()->get();
+
+// Dapatkan taksonomi pada kedalaman tertentu
+$level2 = Taxonomy::atDepth(2)->get();
+```
+
+### Operasi Tree
+
+```php
+// Pindahkan taksonomi ke parent baru
+Taxonomy::moveToParent($taxonomyId, $newParentId);
+
+// Rebuild nilai nested set (berguna setelah operasi bulk)
+Taxonomy::rebuildNestedSet(TaxonomyType::Category);
+
+// Dapatkan representasi tree yang berbeda
+$hierarchicalTree = Taxonomy::tree(TaxonomyType::Category);           // Relasi parent-child
+$flatTree = Taxonomy::flatTree(TaxonomyType::Category);               // List flat dengan info depth
+$nestedTree = Taxonomy::getNestedTree(TaxonomyType::Category);        // Urutan nested set
+```
+
+## 📊 Dukungan Metadata
+
+Simpan data tambahan dengan setiap taksonomi menggunakan metadata JSON:
+
+```php
+// Buat taksonomi dengan metadata
+$category = Taxonomy::create([
+    'name' => 'Premium Products',
+    'type' => TaxonomyType::Category->value,
+    'metadata' => [
+        'icon' => 'star',
+        'color' => '#gold',
+        'display_order' => 1,
+        'seo' => [
+            'title' => 'Premium Products - Best Quality',
+            'description' => 'Temukan koleksi produk premium kami',
+            'keywords' => ['premium', 'quality', 'luxury'],
+        ],
+        'settings' => [
+            'show_in_menu' => true,
+            'featured' => true,
+            'requires_auth' => false,
+        ],
+    ],
+]);
+
+// Akses metadata
+$icon = $category->metadata['icon'] ?? 'default';
+$seoTitle = $category->metadata['seo']['title'] ?? $category->name;
+
+// Update metadata
+$category->update([
+    'metadata' => array_merge($category->metadata ?? [], [
+        'updated_at' => now()->toISOString(),
+        'view_count' => ($category->metadata['view_count'] ?? 0) + 1,
+    ]),
+]);
+```
+
+## 🔄 Operasi Bulk
+
+Kelola relasi taksonomi multiple secara efisien:
+
+### Operasi Bulk Dasar
+
+```php
+// Lampirkan multiple taksonomi (tidak akan duplikasi yang sudah ada)
+$product->attachTaxonomies([1, 2, 3, 'electronics', 'featured']);
+
+// Lepaskan taksonomi tertentu
+$product->detachTaxonomies([1, 2]);
+
+// Lepaskan semua taksonomi
+$product->detachTaxonomies();
+
+// Sync taksonomi (hapus yang lama, tambah yang baru)
+$product->syncTaxonomies([1, 2, 3]);
+
+// Toggle taksonomi (lampirkan jika tidak ada, lepaskan jika ada)
+$product->toggleTaxonomies([1, 2, 3]);
+
+// Bekerja dengan nama relasi yang berbeda
+$product->attachTaxonomies($categoryIds, 'categories');
+$product->attachTaxonomies($tagIds, 'tags');
+```
+
+### Manajemen Bulk Lanjutan
+
+```php
+class BulkTaxonomyService
+{
+    public function bulkAttach(Collection $models, array $taxonomyIds): void
+    {
+        $data = [];
+        $timestamp = now();
+
+        foreach ($models as $model) {
+            foreach ($taxonomyIds as $taxonomyId) {
+                $data[] = [
+                    'taxonomy_id' => $taxonomyId,
+                    'taxonomable_id' => $model->id,
+                    'taxonomable_type' => get_class($model),
+                    'created_at' => $timestamp,
+                    'updated_at' => $timestamp,
+                ];
+            }
+        }
+
+        DB::table('taxonomables')->insert($data);
+    }
+
+    public function bulkDetach(Collection $models, array $taxonomyIds): void
+    {
+        $modelIds = $models->pluck('id');
+        $modelType = get_class($models->first());
+
+        DB::table('taxonomables')
+            ->whereIn('taxonomy_id', $taxonomyIds)
+            ->whereIn('taxonomable_id', $modelIds)
+            ->where('taxonomable_type', $modelType)
+            ->delete();
+    }
+
+    public function bulkSync(Collection $models, array $taxonomyIds): void
+    {
+        $modelIds = $models->pluck('id');
+        $modelType = get_class($models->first());
+
+        // Hapus asosiasi yang ada
+        DB::table('taxonomables')
+            ->whereIn('taxonomable_id', $modelIds)
+            ->where('taxonomable_type', $modelType)
+            ->delete();
+
+        // Tambah asosiasi baru
+        $this->bulkAttach($models, $taxonomyIds);
+    }
+
+    public function migrateType(string $oldType, string $newType): int
+    {
+        return Taxonomy::where('type', $oldType)
+            ->update(['type' => $newType]);
+    }
+
+    public function mergeTaxonomies(Taxonomy $source, Taxonomy $target): void
+    {
+        DB::transaction(function () use ($source, $target) {
+            // Pindahkan semua asosiasi ke target
+            DB::table('taxonomables')
+                ->where('taxonomy_id', $source->id)
+                ->update(['taxonomy_id' => $target->id]);
+
+            // Pindahkan children ke target
+            Taxonomy::where('parent_id', $source->id)
+                ->update(['parent_id' => $target->id]);
+
+            // Hapus taksonomi sumber
+            $source->delete();
+
+            // Rebuild nested set untuk tree target
+            $target->rebuildNestedSet();
+        });
+    }
+}
+```
+
+## ⚡ Caching & Performance
+
+Laravel Taxonomy menyertakan caching cerdas untuk performa optimal:
+
+### Automatic Caching
+
+```php
+// Operasi ini secara otomatis di-cache
+$tree = Taxonomy::tree(TaxonomyType::Category);           // Di-cache selama 24 jam
+$flatTree = Taxonomy::flatTree(TaxonomyType::Category);   // Di-cache selama 24 jam
+$nestedTree = Taxonomy::getNestedTree(TaxonomyType::Category); // Di-cache selama 24 jam
+```
+
+### Manajemen Cache Manual
+
+```php
+// Bersihkan cache untuk tipe tertentu
+Taxonomy::clearCacheForType(TaxonomyType::Category);
+
+// Cache otomatis dibersihkan ketika:
+// - Taksonomi dibuat, diupdate, atau dihapus
+// - Nested set di-rebuild
+// - Taksonomi dipindahkan dalam hierarki
+```
+
+### Tips Performance
+
+```php
+// Gunakan eager loading untuk menghindari N+1 queries
+$products = Product::with(['taxonomies' => function ($query) {
+    $query->where('type', TaxonomyType::Category->value);
+}])->get();
+
+// Gunakan pagination untuk dataset besar
+$taxonomies = Taxonomy::findByType(TaxonomyType::Category, 20); // 20 per halaman
+
+// Gunakan query spesifik daripada memuat semua relasi
+$categories = $product->taxonomiesOfType(TaxonomyType::Category);
+```
+
+## 🏷️ Tipe Taksonomi Kustom
+
+Meskipun package ini dilengkapi dengan tipe taksonomi yang telah didefinisikan dalam enum `TaxonomyType` (Category, Tag, Color, Size, dll.), Anda dapat dengan mudah mendefinisikan dan menggunakan tipe kustom Anda sendiri.
+
+### Mendefinisikan Tipe Kustom
+
+Ada dua cara untuk menggunakan tipe taksonomi kustom:
+
+#### 1. Override konfigurasi types
+
+Anda dapat override tipe default dengan memodifikasi array `types` dalam file `config/taxonomy.php` Anda:
+
+```php
+'types' => [
+    'category',
+    'tag',
+    // Tipe default yang ingin Anda pertahankan
+
+    // Tipe kustom Anda
+    'genre',
+    'location',
+    'season',
+    'difficulty',
+],
+```
+
+#### 2. Gunakan tipe kustom secara langsung
+
+Anda juga dapat menggunakan tipe kustom secara langsung dalam kode Anda tanpa memodifikasi konfigurasi:
 
 ```php
 use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
 
-// Membuat taksonomi dengan jenis kustom
+// Buat taksonomi dengan tipe kustom
 $genre = Taxonomy::create([
-    'name' => 'Fiksi Ilmiah',
-    'type' => 'genre', // Jenis kustom yang tidak didefinisikan dalam enum TaxonomyType
-    'description' => 'Genre fiksi ilmiah',
+    'name' => 'Science Fiction',
+    'type' => 'genre', // Tipe kustom tidak didefinisikan dalam enum TaxonomyType
+    'description' => 'Genre science fiction',
 ]);
 
-// Mencari taksonomi berdasarkan jenis kustom
+// Temukan taksonomi berdasarkan tipe kustom
 $genres = Taxonomy::findByType('genre');
 
-// Memeriksa apakah model memiliki taksonomi dari jenis kustom
+// Periksa apakah model memiliki taksonomi dari tipe kustom
 $product->hasTaxonomyType('genre');
 
-// Mendapatkan taksonomi dari jenis kustom
+// Dapatkan taksonomi dari tipe kustom
 $productGenres = $product->taxonomiesOfType('genre');
 
-// Memfilter model berdasarkan jenis taksonomi kustom
+// Filter model berdasarkan tipe taksonomi kustom
 $products = Product::withTaxonomyType('genre')->get();
 ```
 
-### Membuat Enum Jenis Kustom
+### Membuat Enum Tipe Kustom
 
-Untuk keamanan tipe yang lebih baik dan organisasi, Anda dapat membuat enum Anda sendiri untuk jenis kustom:
+Untuk type safety dan organisasi yang lebih baik, Anda dapat membuat enum sendiri untuk tipe kustom:
 
 ```php
 namespace App\Enums;
@@ -179,58 +721,559 @@ Kemudian gunakan dalam kode Anda:
 use App\Enums\GenreType;
 use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
 
-// Membuat taksonomi dengan jenis kustom dari enum
+// Buat taksonomi dengan tipe kustom dari enum
 $genre = Taxonomy::create([
-    'name' => 'Fiksi Ilmiah',
+    'name' => 'Science Fiction',
     'type' => GenreType::SciFi->value,
-    'description' => 'Genre fiksi ilmiah',
+    'description' => 'Genre science fiction',
 ]);
 
-// Mencari taksonomi berdasarkan jenis kustom dari enum
+// Temukan taksonomi berdasarkan tipe kustom dari enum
 $sciFiBooks = Taxonomy::findByType(GenreType::SciFi);
+```
+
+## 🎯 Skenario Penggunaan Real-World
+
+Untuk contoh komprehensif cara menggunakan Laravel Taxonomy dalam aplikasi real-world, silakan merujuk ke dokumentasi skenario detail kami:
+
+### Skenario yang Tersedia
+
+1. **[Katalog Produk E-commerce](docs/id/ecommerce-product-catalog.md)** - Membangun platform e-commerce komprehensif dengan kategori hierarkis, tag produk, navigasi dinamis, dan filtering lanjutan.
+
+2. **[Sistem Manajemen Konten](docs/id/content-management-system.md)** - Membuat CMS fleksibel dengan kategorisasi konten, tagging, filtering, dan optimasi SEO.
+
+3. **[Sistem Manajemen Pembelajaran](docs/id/learning-management-system.md)** - Mengembangkan platform edukasi dengan kursus, skill, level kesulitan, dan jalur pembelajaran personal.
+
+4. **[Aplikasi Bisnis Multi-tenant](docs/id/multi-tenant-business-application.md)** - Membangun platform SaaS dengan taksonomi spesifik tenant, manajemen proyek, dan workflow yang dapat dikustomisasi.
+
+5. **[Analytics dan Reporting](docs/id/analytics-and-reporting.md)** - Mengimplementasikan analytics komprehensif, dashboard reporting, dan insight otomatis menggunakan data taksonomi.
+
+Setiap skenario mencakup:
+- Contoh kode lengkap
+- Setup database dan migrasi
+- Implementasi controller
+- Pola service layer
+
+## 🚀 Fitur Lanjutan
+
+### 🔄 Nested Set Model
+
+Laravel Taxonomy menggunakan Nested Set Model untuk manajemen data hierarkis yang efisien:
+
+```php
+// Dapatkan semua turunan dari taksonomi
+$category = Taxonomy::find(1);
+$descendants = $category->getDescendants();
+
+// Dapatkan semua leluhur dari taksonomi
+$ancestors = $category->getAncestors();
+
+// Dapatkan siblings
+$siblings = $category->getSiblings();
+
+// Periksa apakah taksonomi adalah turunan dari yang lain
+$isDescendant = $category->isDescendantOf($parentCategory);
+```
+
+### Optimasi Performance
+
+**Strategi Caching**:
+
+```php
+// Cache taxonomy trees untuk performa yang lebih baik
+class CachedTaxonomyService
+{
+    public function getCachedTree(string $type, int $ttl = 3600): Collection
+    {
+        return Cache::remember("taxonomy_tree_{$type}", $ttl, function () use ($type) {
+            return Taxonomy::tree($type);
+        });
+    }
+
+    public function invalidateCache(string $type): void
+    {
+        Cache::forget("taxonomy_tree_{$type}");
+    }
+
+    public function warmCache(): void
+    {
+        $types = Taxonomy::distinct('type')->pluck('type');
+        
+        foreach ($types as $type) {
+            $this->getCachedTree($type);
+        }
+    }
+}
+
+// Gunakan dalam model Anda
+class Product extends Model
+{
+    use HasTaxonomy;
+
+    protected static function booted()
+    {
+        static::saved(function ($product) {
+            // Invalidate cache terkait ketika taksonomi produk berubah
+            $types = $product->taxonomies->pluck('type')->unique();
+            foreach ($types as $type) {
+                Cache::forget("taxonomy_tree_{$type}");
+            }
+        });
+    }
+}
+```
+
+**Eager Loading untuk Performance**:
+
+```php
+// Loading taksonomi dengan model secara efisien
+$products = Product::with([
+    'taxonomies' => function ($query) {
+        $query->select('id', 'name', 'slug', 'type', 'metadata')
+              ->orderBy('type')
+              ->orderBy('name');
+    }
+])->get();
+
+// Load hanya tipe taksonomi tertentu
+$products = Product::with([
+    'taxonomies' => function ($query) {
+        $query->whereIn('type', ['category', 'brand']);
+    }
+])->get();
+
+// Preload jumlah taksonomi
+$categories = Taxonomy::where('type', 'category')
+    ->withCount(['models as product_count' => function ($query) {
+        $query->where('taxonomable_type', Product::class);
+    }])
+    ->get();
+```
+
+### Query Lanjutan
+
+**Filter Taksonomi Kompleks**:
+
+```php
+class ProductFilterService
+{
+    public function filterByTaxonomies(array $filters): Builder
+    {
+        $query = Product::query();
+
+        // Filter berdasarkan multiple kategori (kondisi OR)
+        if (!empty($filters['categories'])) {
+            $query->withAnyTaxonomies($filters['categories']);
+        }
+
+        // Filter berdasarkan tag yang diperlukan (kondisi AND)
+        if (!empty($filters['required_tags'])) {
+            $query->withAllTaxonomies($filters['required_tags']);
+        }
+
+        // Filter berdasarkan brand (exact match)
+        if (!empty($filters['brand'])) {
+            $query->withTaxonomy($filters['brand']);
+        }
+
+        // Filter berdasarkan taksonomi rentang harga
+        if (!empty($filters['price_range'])) {
+            $priceRange = Taxonomy::findBySlug($filters['price_range'], 'price_range');
+            if ($priceRange) {
+                $min = $priceRange->metadata['min_price'] ?? 0;
+                $max = $priceRange->metadata['max_price'] ?? PHP_INT_MAX;
+                $query->whereBetween('price', [$min, $max]);
+            }
+        }
+
+        // Kecualikan taksonomi tertentu
+        if (!empty($filters['exclude'])) {
+            $query->withoutTaxonomies($filters['exclude']);
+        }
+
+        return $query;
+    }
+
+    public function getFilterOptions(array $currentFilters = []): array
+    {
+        $baseQuery = $this->filterByTaxonomies($currentFilters);
+        
+        return [
+            'categories' => $this->getAvailableOptions($baseQuery, 'category'),
+            'brands' => $this->getAvailableOptions($baseQuery, 'brand'),
+            'tags' => $this->getAvailableOptions($baseQuery, 'tag'),
+            'price_ranges' => $this->getAvailableOptions($baseQuery, 'price_range'),
+        ];
+    }
+
+    private function getAvailableOptions(Builder $query, string $type): Collection
+    {
+        return Taxonomy::where('type', $type)
+            ->whereHas('models', function ($q) use ($query) {
+                $q->whereIn('taxonomable_id', $query->pluck('id'));
+            })
+            ->withCount('models')
+            ->orderBy('models_count', 'desc')
+            ->get();
+    }
+}
+```
+
+
+
+### Import/Export Data
+
+**Fungsionalitas Import/Export**:
+
+```php
+class TaxonomyImportExportService
+{
+    public function exportToJson(string $type = null): string
+    {
+        $query = Taxonomy::with('children');
+        
+        if ($type) {
+            $query->where('type', $type);
+        }
+
+        $taxonomies = $query->whereNull('parent_id')
+            ->orderBy('lft')
+            ->get();
+
+        return json_encode($this->buildExportTree($taxonomies), JSON_PRETTY_PRINT);
+    }
+
+    public function importFromJson(string $json, bool $replaceExisting = false): array
+    {
+        $data = json_decode($json, true);
+        $imported = [];
+        $errors = [];
+
+        DB::transaction(function () use ($data, $replaceExisting, &$imported, &$errors) {
+            foreach ($data as $item) {
+                try {
+                    $taxonomy = $this->importTaxonomyItem($item, null, $replaceExisting);
+                    $imported[] = $taxonomy->id;
+                } catch (Exception $e) {
+                    $errors[] = [
+                        'item' => $item['name'] ?? 'Unknown',
+                        'error' => $e->getMessage(),
+                    ];
+                }
+            }
+        });
+
+        return [
+            'imported' => count($imported),
+            'errors' => $errors,
+            'taxonomy_ids' => $imported,
+        ];
+    }
+
+    private function buildExportTree(Collection $taxonomies): array
+    {
+        return $taxonomies->map(function ($taxonomy) {
+            $item = [
+                'name' => $taxonomy->name,
+                'slug' => $taxonomy->slug,
+                'type' => $taxonomy->type,
+                'description' => $taxonomy->description,
+                'metadata' => $taxonomy->metadata,
+                'sort_order' => $taxonomy->sort_order,
+            ];
+
+            if ($taxonomy->children->isNotEmpty()) {
+                $item['children'] = $this->buildExportTree($taxonomy->children);
+            }
+
+            return $item;
+        })->toArray();
+    }
+
+    private function importTaxonomyItem(array $item, ?int $parentId, bool $replaceExisting): Taxonomy
+    {
+        $existing = null;
+        
+        if ($replaceExisting) {
+            $existing = Taxonomy::where('slug', $item['slug'])
+                ->where('type', $item['type'])
+                ->first();
+        }
+
+        $taxonomy = $existing ?: new Taxonomy();
+        
+        $taxonomy->fill([
+            'name' => $item['name'],
+            'slug' => $item['slug'],
+            'type' => $item['type'],
+            'description' => $item['description'] ?? null,
+            'parent_id' => $parentId,
+            'metadata' => $item['metadata'] ?? [],
+            'sort_order' => $item['sort_order'] ?? 0,
+        ]);
+
+        $taxonomy->save();
+
+        // Import children
+        if (!empty($item['children'])) {
+            foreach ($item['children'] as $child) {
+                $this->importTaxonomyItem($child, $taxonomy->id, $replaceExisting);
+            }
+        }
+
+        return $taxonomy;
+    }
+
+    public function exportToCsv(string $type): string
+    {
+        $taxonomies = Taxonomy::where('type', $type)
+            ->with('parent')
+            ->orderBy('lft')
+            ->get();
+
+        $csv = "Name,Slug,Type,Parent,Description,Metadata\n";
+        
+        foreach ($taxonomies as $taxonomy) {
+            $csv .= sprintf(
+                "\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
+                $taxonomy->name,
+                $taxonomy->slug,
+                $taxonomy->type,
+                $taxonomy->parent?->name ?? '',
+                $taxonomy->description ?? '',
+                json_encode($taxonomy->metadata)
+            );
+        }
+
+        return $csv;
+    }
+}
+```
+
+## 📋 Praktik Terbaik
+
+### 1. **Prinsip Desain Taksonomi**
+
+```php
+// ✅ Baik: Tipe taksonomi yang jelas dan spesifik
+class TaxonomyTypes
+{
+    const PRODUCT_CATEGORY = 'product_category';
+    const PRODUCT_TAG = 'product_tag';
+    const CONTENT_CATEGORY = 'content_category';
+    const USER_SKILL = 'user_skill';
+}
+
+// ❌ Hindari: Tipe yang generik dan ambigu
+// 'category', 'tag', 'type' - terlalu generik
+```
+
+### 2. **Praktik Terbaik Metadata**
+
+```php
+// ✅ Baik: Metadata terstruktur dengan validasi
+class CategoryMetadata
+{
+    public static function validate(array $metadata): array
+    {
+        return Validator::make($metadata, [
+            'icon' => 'nullable|string|max:50',
+            'color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'featured' => 'boolean',
+            'seo_title' => 'nullable|string|max:60',
+            'seo_description' => 'nullable|string|max:160',
+        ])->validated();
+    }
+}
+
+// Penggunaan
+$category = Taxonomy::create([
+    'name' => 'Electronics',
+    'type' => TaxonomyTypes::PRODUCT_CATEGORY,
+    'metadata' => CategoryMetadata::validate([
+        'icon' => 'laptop',
+        'color' => '#007bff',
+        'featured' => true,
+    ]),
+]);
+```
+
+### 3. **Optimasi Performa**
+
+```php
+// ✅ Baik: Query efisien dengan indexing yang tepat
+class OptimizedTaxonomyQueries
+{
+    public function getProductsByCategory(string $categorySlug): Collection
+    {
+        return Product::select(['id', 'name', 'price', 'slug'])
+            ->withTaxonomy(
+                Taxonomy::where('slug', $categorySlug)
+                    ->where('type', TaxonomyTypes::PRODUCT_CATEGORY)
+                    ->first()
+            )
+            ->with(['taxonomies' => function ($query) {
+                $query->select(['id', 'name', 'slug', 'type'])
+                      ->whereIn('type', [TaxonomyTypes::PRODUCT_TAG, 'brand']);
+            }])
+            ->limit(20)
+            ->get();
+    }
+
+    // ✅ Baik: Operasi batch untuk performa yang lebih baik
+    public function attachCategoriesInBatch(Collection $products, array $categoryIds): void
+    {
+        $products->chunk(100)->each(function ($chunk) use ($categoryIds) {
+            foreach ($chunk as $product) {
+                $product->attachTaxonomies($categoryIds);
+            }
+        });
+    }
+}
+```
+
+### 4. **Penanganan Error dan Validasi**
+
+```php
+class TaxonomyService
+{
+    public function createWithValidation(array $data): Taxonomy
+    {
+        $validator = Validator::make($data, [
+            'name' => 'required|string|max:255',
+            'type' => 'required|string|max:50',
+            'parent_id' => 'nullable|exists:taxonomies,id',
+            'metadata' => 'nullable|array',
+        ]);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
+
+        // Periksa referensi melingkar
+        if (isset($data['parent_id'])) {
+            $this->validateNoCircularReference($data['parent_id'], $data);
+        }
+
+        return Taxonomy::create($validator->validated());
+    }
+
+    private function validateNoCircularReference(int $parentId, array $data): void
+    {
+        $parent = Taxonomy::find($parentId);
+        
+        if (!$parent) {
+            throw new InvalidArgumentException('Parent taxonomy not found');
+        }
+
+        // Periksa apakah tipe parent cocok (aturan bisnis opsional)
+        if ($parent->type !== $data['type']) {
+            throw new InvalidArgumentException('Parent must be of the same type');
+        }
+
+        // Cegah nesting yang terlalu dalam (aturan bisnis opsional)
+        if ($parent->depth >= 5) {
+            throw new InvalidArgumentException('Maximum nesting depth exceeded');
+        }
+    }
+}
+```
+
+### 5. **Strategi Testing**
+
+```php
+class TaxonomyTestCase extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->createTestTaxonomies();
+    }
+
+    private function createTestTaxonomies(): void
+    {
+        $this->electronics = Taxonomy::create([
+            'name' => 'Electronics',
+            'type' => 'category',
+        ]);
+
+        $this->smartphones = Taxonomy::create([
+            'name' => 'Smartphones',
+            'type' => 'category',
+            'parent_id' => $this->electronics->id,
+        ]);
+    }
+
+    /** @test */
+    public function it_can_attach_taxonomies_to_models(): void
+    {
+        $product = Product::factory()->create();
+        
+        $product->attachTaxonomy($this->electronics);
+        
+        $this->assertTrue($product->hasTaxonomy($this->electronics));
+        $this->assertCount(1, $product->taxonomies);
+    }
+
+    /** @test */
+    public function it_maintains_nested_set_integrity(): void
+    {
+        $this->electronics->rebuildNestedSet();
+        
+        $this->electronics->refresh();
+        $this->smartphones->refresh();
+        
+        $this->assertEquals(1, $this->electronics->lft);
+        $this->assertEquals(4, $this->electronics->rgt);
+        $this->assertEquals(2, $this->smartphones->lft);
+        $this->assertEquals(3, $this->smartphones->rgt);
+    }
+}
 ```
 
 ## Slug Kustom dan Penanganan Error
 
-Paket ini menyediakan penanganan error yang kuat untuk pembuatan dan keunikan slug:
+Paket ini menyediakan penanganan error yang robust untuk generasi slug dan keunikan:
 
-### Pengelolaan Slug Manual
+### Manajemen Slug Manual
 
 Ketika `slugs.generate` diatur ke `false` dalam konfigurasi, Anda harus menyediakan slug secara manual:
 
 ```php
 // Ini akan melempar MissingSlugException jika slugs.generate adalah false
 $taxonomy = Taxonomy::create([
-    'name' => 'Kategori Uji',
+    'name' => 'Test Category',
     'type' => TaxonomyType::Category->value,
-    // Slug yang tidak disediakan akan menyebabkan exception
+    // Slug yang hilang akan menyebabkan exception
 ]);
 
 // Cara yang benar ketika slugs.generate adalah false
 $taxonomy = Taxonomy::create([
-    'name' => 'Kategori Uji',
+    'name' => 'Test Category',
     'type' => TaxonomyType::Category->value,
-    'slug' => 'kategori-uji', // Slug yang disediakan secara manual
+    'slug' => 'test-category', // Slug yang disediakan secara manual
 ]);
 ```
 
 ### Keunikan Slug
 
-Paket ini memastikan bahwa semua slug unik di seluruh jenis taksonomi:
+Paket ini memastikan bahwa semua slug unik di seluruh tipe taksonomi:
 
 ```php
 // Ini akan melempar DuplicateSlugException jika slug sudah ada
 $taxonomy1 = Taxonomy::create([
-    'name' => 'Kategori Pertama',
-    'slug' => 'slug-unik',
+    'name' => 'First Category',
+    'slug' => 'unique-slug',
     'type' => TaxonomyType::Category->value,
 ]);
 
 // Ini akan melempar DuplicateSlugException karena slug sudah ada
 $taxonomy2 = Taxonomy::create([
-    'name' => 'Kategori Kedua',
-    'slug' => 'slug-unik', // Slug duplikat
-    'type' => TaxonomyType::Tag->value, // Bahkan dengan jenis yang berbeda
+    'name' => 'Second Category',
+    'slug' => 'unique-slug', // Slug duplikat
+    'type' => TaxonomyType::Tag->value, // Bahkan dengan tipe yang berbeda
 ]);
 ```
 
@@ -249,283 +1292,35 @@ use Aliziodev\LaravelTaxonomy\Exceptions\DuplicateSlugException;
 
 try {
     $taxonomy = Taxonomy::create([
-        'name' => 'Kategori Uji',
+        'name' => 'Test Category',
         'type' => TaxonomyType::Category->value,
     ]);
 } catch (MissingSlugException $e) {
-    // Menangani error slug yang tidak disediakan
-    return back()->withErrors(['slug' => 'Slug diperlukan.']);
+    // Tangani error slug yang hilang
+    return back()->withErrors(['slug' => 'A slug is required.']);
 } catch (DuplicateSlugException $e) {
-    // Menangani error slug duplikat
-    return back()->withErrors(['slug' => 'Slug ini sudah ada. Silakan pilih yang lain.']);
+    // Tangani error slug duplikat
+    return back()->withErrors(['slug' => 'This slug already exists. Please choose another.']);
 }
 ```
 
-## Penggunaan
-
-### Menggunakan Facade Taxonomy
-
-Facade Taxonomy menyediakan cara yang nyaman untuk bekerja dengan taksonomi:
-
-```php
-use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
-use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
-
-// Membuat taksonomi
-$category = Taxonomy::create([
-    'name' => 'Elektronik',
-    'type' => TaxonomyType::Category->value,
-    'description' => 'Produk elektronik',
-]);
-
-// Membuat taksonomi dengan induk
-$smartphone = Taxonomy::create([
-    'name' => 'Smartphone',
-    'type' => TaxonomyType::Category->value,
-    'parent_id' => $category->id,
-]);
-
-// Mencari taksonomi berdasarkan slug
-$found = Taxonomy::findBySlug('elektronik');
-
-// Memeriksa apakah taksonomi ada
-$exists = Taxonomy::exists('elektronik');
-
-// Mencari taksonomi
-$results = Taxonomy::search('elektronik');
-
-// Mendapatkan jenis taksonomi
-$types = Taxonomy::getTypes();
-
-// Mendapatkan pohon hierarkis
-$tree = Taxonomy::tree(TaxonomyType::Category);
-
-// Mendapatkan pohon datar dengan informasi kedalaman
-$flatTree = Taxonomy::flatTree(TaxonomyType::Category);
-```
-
-### Menggunakan Trait HasTaxonomy
-
-Tambahkan trait `HasTaxonomy` ke model Anda untuk mengaitkannya dengan taksonomi:
-
-```php
-use Aliziodev\LaravelTaxonomy\Traits\HasTaxonomy;
-use Illuminate\Database\Eloquent\Model;
-
-class Product extends Model
-{
-    use HasTaxonomy;
-
-    // ...
-}
-```
-
-Kemudian Anda dapat menggunakan metode berikut:
-
-```php
-// Mendapatkan produk
-$product = Product::find(1);
-
-// Melampirkan taksonomi
-$product->attachTaxonomies($category);
-$product->attachTaxonomies([$category, $tag]);
-
-// Melepaskan taksonomi
-$product->detachTaxonomies($category);
-$product->detachTaxonomies(); // Lepaskan semua
-
-// Sinkronisasi taksonomi (hapus yang ada dan tambahkan yang baru)
-$product->syncTaxonomies([$category, $tag]);
-
-// Toggle taksonomi (tambahkan jika tidak ada, hapus jika ada)
-$product->toggleTaxonomies([$category, $tag]);
-
-// Memeriksa apakah produk memiliki taksonomi
-$product->hasTaxonomies($category);
-$product->hasAllTaxonomies([$category, $tag]);
-$product->hasTaxonomyType(TaxonomyType::Category);
-
-// Mendapatkan taksonomi dari jenis tertentu
-$categories = $product->taxonomiesOfType(TaxonomyType::Category);
-```
-
-### Query Scope
-
-Trait `HasTaxonomy` juga menyediakan query scope:
-
-```php
-// Mencari produk dengan salah satu taksonomi yang diberikan
-$products = Product::withAnyTaxonomies([$category, $tag])->get();
-
-// Mencari produk dengan semua taksonomi yang diberikan
-$products = Product::withAllTaxonomies([$category, $tag])->get();
-
-// Mencari produk dengan jenis taksonomi tertentu
-$products = Product::withTaxonomyType(TaxonomyType::Category)->get();
-```
-
-### Paginasi
-
-Paket ini mendukung paginasi untuk metode pencarian dan pencarian:
-
-```php
-// Paginasi hasil pencarian (5 item per halaman, halaman 1)
-$results = Taxonomy::search('elektronik', null, 5, 1);
-
-// Paginasi taksonomi berdasarkan jenis
-$categories = Taxonomy::findByType(TaxonomyType::Category, 10, 1);
-
-// Paginasi taksonomi berdasarkan induk
-$children = Taxonomy::findByParent($parent->id, 10, 1);
-```
-
-### Contoh Controller
-
-Berikut adalah contoh lengkap penggunaan Laravel Taxonomy dalam controller:
-
-```php
-namespace App\Http\Controllers;
-
-use App\Models\Product;
-use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
-use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
-use Illuminate\Http\Request;
-
-class ProductController extends Controller
-{
-    public function index(Request $request)
-    {
-        // Mendapatkan produk yang difilter berdasarkan kategori
-        $categorySlug = $request->input('category');
-
-        $query = Product::query();
-
-        if ($categorySlug) {
-            $category = Taxonomy::findBySlug($categorySlug, TaxonomyType::Category);
-
-            if ($category) {
-                $query->withAnyTaxonomies($category);
-            }
-        }
-
-        $products = $query->paginate(12);
-
-        // Mendapatkan semua kategori untuk sidebar filter
-        $categories = Taxonomy::findByType(TaxonomyType::Category);
-
-        return view('products.index', compact('products', 'categories'));
-    }
-
-    public function show(Product $product)
-    {
-        // Mendapatkan kategori produk
-        $categories = $product->taxonomiesOfType(TaxonomyType::Category);
-
-        // Mendapatkan produk terkait yang berbagi kategori yang sama
-        $relatedProducts = Product::withAnyTaxonomies($categories)
-            ->where('id', '!=', $product->id)
-            ->limit(4)
-            ->get();
-
-        return view('products.show', compact('product', 'categories', 'relatedProducts'));
-    }
-
-    public function create()
-    {
-        // Mendapatkan semua kategori untuk form produk
-        $categories = Taxonomy::tree(TaxonomyType::Category);
-        $tags = Taxonomy::findByType(TaxonomyType::Tag);
-
-        return view('products.create', compact('categories', 'tags'));
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'price' => 'required|numeric',
-            'categories' => 'required|array',
-            'tags' => 'nullable|array',
-        ]);
-
-        $product = Product::create([
-            'name' => $validated['name'],
-            'description' => $validated['description'],
-            'price' => $validated['price'],
-        ]);
-
-        // Melampirkan kategori dan tag
-        $product->attachTaxonomies($validated['categories']);
-
-        if (isset($validated['tags'])) {
-            $product->attachTaxonomies($validated['tags']);
-        }
-
-        return redirect()->route('products.show', $product)
-            ->with('success', 'Produk berhasil dibuat.');
-    }
-
-    public function edit(Product $product)
-    {
-        $categories = Taxonomy::tree(TaxonomyType::Category);
-        $tags = Taxonomy::findByType(TaxonomyType::Tag);
-
-        $productCategoryIds = $product->taxonomiesOfType(TaxonomyType::Category)->pluck('id')->toArray();
-        $productTagIds = $product->taxonomiesOfType(TaxonomyType::Tag)->pluck('id')->toArray();
-
-        return view('products.edit', compact('product', 'categories', 'tags', 'productCategoryIds', 'productTagIds'));
-    }
-
-    public function update(Request $request, Product $product)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'price' => 'required|numeric',
-            'categories' => 'required|array',
-            'tags' => 'nullable|array',
-        ]);
-
-        $product->update([
-            'name' => $validated['name'],
-            'description' => $validated['description'],
-            'price' => $validated['price'],
-        ]);
-
-        // Sinkronisasi kategori dan tag
-        $product->syncTaxonomies($validated['categories'], 'taxonomable');
-
-        if (isset($validated['tags'])) {
-            $product->syncTaxonomies($validated['tags'], 'taxonomable');
-        } else {
-            // Hapus semua tag jika tidak ada yang dipilih
-            $product->detachTaxonomies($product->taxonomiesOfType(TaxonomyType::Tag), 'taxonomable');
-        }
-
-        return redirect()->route('products.show', $product)
-            ->with('success', 'Produk berhasil diperbarui.');
-    }
-}
-```
-
-## Pemecahan Masalah
+## Troubleshooting
 
 ### Masalah Umum
 
 #### Taksonomi Tidak Ditemukan
 
-Jika Anda mengalami kesulitan menemukan taksonomi berdasarkan slug, pastikan slug sudah benar dan pertimbangkan untuk menggunakan metode `exists` untuk memeriksa apakah taksonomi tersebut ada:
+Jika Anda mengalami kesulitan menemukan taksonomi berdasarkan slug, pastikan slug sudah benar dan pertimbangkan menggunakan method `exists` untuk memeriksa apakah ada:
 
 ```php
-if (Taxonomy::exists('elektronik')) {
-    $taxonomy = Taxonomy::findBySlug('elektronik');
+if (Taxonomy::exists('electronics')) {
+    $taxonomy = Taxonomy::findBySlug('electronics');
 }
 ```
 
-#### Masalah Hubungan
+#### Masalah Relasi
 
-Jika Anda mengalami kesulitan dengan hubungan, pastikan Anda menggunakan morph type yang benar dalam konfigurasi Anda. Jika Anda menggunakan UUID atau ULID untuk model Anda, pastikan untuk mengatur konfigurasi `morph_type` dengan benar.
+Jika Anda mengalami masalah dengan relasi, pastikan Anda menggunakan morph type yang benar dalam konfigurasi. Jika Anda menggunakan UUID atau ULID untuk model Anda, pastikan untuk mengatur konfigurasi `morph_type` sesuai.
 
 #### Masalah Cache
 
@@ -539,20 +1334,24 @@ Jika Anda tidak melihat data yang diperbarui setelah melakukan perubahan, Anda m
 
 Paket Laravel Taxonomy mengikuti praktik keamanan yang baik:
 
-- Menggunakan prepared statements untuk semua kueri database untuk mencegah SQL injection
+- Menggunakan prepared statements untuk semua query database untuk mencegah SQL injection
 - Memvalidasi data input sebelum diproses
 - Menggunakan mekanisme perlindungan bawaan Laravel
 
-Jika Anda menemukan masalah keamanan, silakan kirim email ke penulis di aliziodev@gmail.com daripada menggunakan issue tracker.
+Jika Anda menemukan masalah keamanan, silakan email penulis di aliziodev@gmail.com daripada menggunakan issue tracker.
 
-## Pengujian
+## Testing
 
-Paket ini menyertakan pengujian yang komprehensif. Anda dapat menjalankannya dengan:
+Paket ini menyertakan tes yang komprehensif. Anda dapat menjalankannya dengan:
 
 ```bash
 composer test
+
+// atau
+
+vendor/bin/pest
 ```
 
 ## Lisensi
 
-Paket Laravel Taxonomy adalah perangkat lunak open-source yang dilisensikan di bawah [lisensi MIT](https://opensource.org/licenses/MIT).
+Paket Laravel Taxonomy adalah software open-source yang dilisensikan di bawah [lisensi MIT](https://opensource.org/licenses/MIT).
