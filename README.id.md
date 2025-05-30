@@ -1,5 +1,7 @@
 # Laravel Taxonomy
 
+[![Tests](https://github.com/aliziodev/laravel-taxonomy/workflows/Tests/badge.svg)](https://github.com/aliziodev/laravel-taxonomy/actions)
+[![Code Quality](https://github.com/aliziodev/laravel-taxonomy/workflows/Code%20Quality/badge.svg)](https://github.com/aliziodev/laravel-taxonomy/actions)
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/aliziodev/laravel-taxonomy.svg?style=flat-square)](https://packagist.org/packages/aliziodev/laravel-taxonomy)
 [![Total Downloads](https://img.shields.io/packagist/dt/aliziodev/laravel-taxonomy.svg?style=flat-square)](https://packagist.org/packages/aliziodev/laravel-taxonomy)
 [![License](https://img.shields.io/packagist/l/aliziodev/laravel-taxonomy.svg?style=flat-square)](https://packagist.org/packages/aliziodev/laravel-taxonomy)
@@ -79,8 +81,9 @@ Paket ini ideal untuk:
 
 ## Persyaratan
 
-- PHP 8.1+
-- Laravel 11.0+
+- PHP 8.2+
+- Laravel 11.0+ or 12.0+
+- Composer 2.0+
 
 ## Instalasi
 
