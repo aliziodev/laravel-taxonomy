@@ -54,5 +54,4 @@ return new class extends Migration
         Schema::dropIfExists($tableNames['taxonomables']);
         Schema::dropIfExists($tableNames['taxonomies']);
     }
-
 };

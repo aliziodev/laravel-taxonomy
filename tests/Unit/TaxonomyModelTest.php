@@ -10,7 +10,6 @@ use Aliziodev\LaravelTaxonomy\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 
-
 class TaxonomyModelTest extends TestCase
 {
     use RefreshDatabase;
@@ -401,7 +400,7 @@ class TaxonomyModelTest extends TestCase
 
         // Update second taxonomy to have same name as first
         $taxonomy2->update([
-            'name' => 'First Category'
+            'name' => 'First Category',
         ]);
 
         // Refresh from database
@@ -467,7 +466,7 @@ class TaxonomyModelTest extends TestCase
         $this->expectException(DuplicateSlugException::class);
 
         $taxonomy2->update([
-            'slug' => 'first-slug'
+            'slug' => 'first-slug',
         ]);
     }
 

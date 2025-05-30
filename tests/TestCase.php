@@ -51,16 +51,15 @@ abstract class TestCase extends BaseTestCase
      * Define environment setup.
      *
      * @param  \Illuminate\Foundation\Application  $app
-     * @return void
      */
     protected function defineEnvironment($app): void
     {
         // Setup default database to use sqlite :memory:
         $app['config']->set('database.default', 'testing');
         $app['config']->set('database.connections.testing', [
-            'driver'   => 'sqlite',
+            'driver' => 'sqlite',
             'database' => ':memory:',
-            'prefix'   => '',
+            'prefix' => '',
         ]);
 
         // Use the default config

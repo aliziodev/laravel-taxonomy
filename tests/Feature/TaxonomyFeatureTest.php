@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy as TaxonomyModel;
+use Aliziodev\LaravelTaxonomy\Tests\TestCase;
 use Aliziodev\LaravelTaxonomy\Traits\HasTaxonomy;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +13,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use PHPUnit\Framework\Attributes\Test;
-use Aliziodev\LaravelTaxonomy\Tests\TestCase;
 
 class TaxonomyFeatureTest extends TestCase
 {
@@ -234,7 +234,7 @@ class TaxonomyFeatureTest extends TestCase
     {
         // Create multiple taxonomies
         $taxonomies = [];
-        for ($i = 1; $i <= 15; $i++) {
+        for ($i = 1; $i <= 15; ++$i) {
             $taxonomies[] = Taxonomy::create([
                 'name' => "Test Taxonomy {$i}",
                 'type' => TaxonomyType::Category->value,
@@ -276,14 +276,14 @@ class TaxonomyFeatureTest extends TestCase
     public function it_can_paginate_find_by_type()
     {
         // Create multiple taxonomies of different types
-        for ($i = 1; $i <= 10; $i++) {
+        for ($i = 1; $i <= 10; ++$i) {
             Taxonomy::create([
                 'name' => "Category {$i}",
                 'type' => TaxonomyType::Category->value,
             ]);
         }
 
-        for ($i = 1; $i <= 5; $i++) {
+        for ($i = 1; $i <= 5; ++$i) {
             Taxonomy::create([
                 'name' => "Tag {$i}",
                 'type' => TaxonomyType::Tag->value,
@@ -328,7 +328,7 @@ class TaxonomyFeatureTest extends TestCase
         ]);
 
         // Create multiple child taxonomies
-        for ($i = 1; $i <= 12; $i++) {
+        for ($i = 1; $i <= 12; ++$i) {
             Taxonomy::create([
                 'name' => "Child Category {$i}",
                 'type' => TaxonomyType::Category->value,
@@ -368,7 +368,7 @@ class TaxonomyFeatureTest extends TestCase
     public function it_can_paginate_search_results()
     {
         // Create taxonomies with searchable terms
-        for ($i = 1; $i <= 8; $i++) {
+        for ($i = 1; $i <= 8; ++$i) {
             Taxonomy::create([
                 'name' => "Searchable Item {$i}",
                 'type' => TaxonomyType::Category->value,
@@ -376,7 +376,7 @@ class TaxonomyFeatureTest extends TestCase
             ]);
         }
 
-        for ($i = 1; $i <= 7; $i++) {
+        for ($i = 1; $i <= 7; ++$i) {
             Taxonomy::create([
                 'name' => "Another Item {$i}",
                 'type' => TaxonomyType::Tag->value,

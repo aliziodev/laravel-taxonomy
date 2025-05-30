@@ -4,13 +4,13 @@ namespace Tests\Unit;
 
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
+use Aliziodev\LaravelTaxonomy\Tests\TestCase;
 use Aliziodev\LaravelTaxonomy\Traits\HasTaxonomy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
-use Aliziodev\LaravelTaxonomy\Tests\TestCase;
 
 class HasTaxonomyTest extends TestCase
 {

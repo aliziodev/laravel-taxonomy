@@ -6,9 +6,8 @@ use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
 use Aliziodev\LaravelTaxonomy\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 
 class ExtremeTaxonomyTest extends TestCase
@@ -17,7 +16,7 @@ class ExtremeTaxonomyTest extends TestCase
 
     /**
      * Test struktur tree ekstrem dengan deep nesting (10-20 level)
-     * Memastikan tidak ada stack overflow atau recursion error
+     * Memastikan tidak ada stack overflow atau recursion error.
      */
     #[Test]
     public function it_can_handle_extreme_deep_nesting_structure(): void
@@ -28,12 +27,12 @@ class ExtremeTaxonomyTest extends TestCase
         $taxonomies = [];
 
         // Buat chain taxonomy dengan 20 level
-        for ($i = 1; $i <= $levels; $i++) {
+        for ($i = 1; $i <= $levels; ++$i) {
             $taxonomy = Taxonomy::create([
                 'name' => "Level {$i} Category",
                 'type' => TaxonomyType::Category->value,
                 'slug' => "level-{$i}-category",
-                'parent_id' => $currentParent?->id
+                'parent_id' => $currentParent?->id,
             ]);
 
             $taxonomies[] = $taxonomy;
@@ -42,9 +41,9 @@ class ExtremeTaxonomyTest extends TestCase
 
         // Rebuild nested set untuk set nested set values
         Taxonomy::rebuildNestedSet(TaxonomyType::Category->value);
-        
+
         // Refresh models untuk mendapatkan lft/rgt values
-        $taxonomies = array_map(fn($t) => $t->fresh(), $taxonomies);
+        $taxonomies = array_map(fn ($t) => $t->fresh(), $taxonomies);
         $deepestNode = end($taxonomies);
         $rootNode = $taxonomies[0];
 
@@ -79,12 +78,12 @@ class ExtremeTaxonomyTest extends TestCase
         // Verify struktur masih konsisten setelah rebuild
         $this->assertDatabaseHas('taxonomies', [
             'id' => $rootNode->id,
-            'lft' => 1
+            'lft' => 1,
         ]);
     }
 
     /**
-     * Test dengan multiple branches pada setiap level
+     * Test dengan multiple branches pada setiap level.
      */
     #[Test]
     public function it_can_handle_extreme_wide_and_deep_structure(): void
@@ -108,7 +107,7 @@ class ExtremeTaxonomyTest extends TestCase
     }
 
     /**
-     * Helper untuk membuat struktur wide dan deep
+     * Helper untuk membuat struktur wide dan deep.
      */
     private function createWideDeepStructure(int $maxDepth, int $branchingFactor, $parentId = null, int $currentDepth = 1): void
     {
@@ -116,12 +115,12 @@ class ExtremeTaxonomyTest extends TestCase
             return;
         }
 
-        for ($i = 1; $i <= $branchingFactor; $i++) {
+        for ($i = 1; $i <= $branchingFactor; ++$i) {
             $taxonomy = Taxonomy::create([
                 'name' => "Level {$currentDepth} Branch {$i}",
                 'type' => TaxonomyType::Category->value,
                 'slug' => "level-{$currentDepth}-branch-{$i}-" . uniqid(),
-                'parent_id' => $parentId
+                'parent_id' => $parentId,
             ]);
 
             // Recursively create children
@@ -131,7 +130,7 @@ class ExtremeTaxonomyTest extends TestCase
 
     /**
      * Test deteksi dan perbaikan struktur invalid
-     * Simulasikan struktur rusak dengan mengubah lft/rgt manual
+     * Simulasikan struktur rusak dengan mengubah lft/rgt manual.
      */
     #[Test]
     public function it_can_detect_and_repair_invalid_structure(): void
@@ -140,28 +139,28 @@ class ExtremeTaxonomyTest extends TestCase
         $root = Taxonomy::create([
             'name' => 'Root',
             'type' => TaxonomyType::Category->value,
-            'slug' => 'root'
+            'slug' => 'root',
         ]);
 
         $child1 = Taxonomy::create([
             'name' => 'Child 1',
             'type' => TaxonomyType::Category->value,
             'slug' => 'child-1',
-            'parent_id' => $root->id
+            'parent_id' => $root->id,
         ]);
 
         $child2 = Taxonomy::create([
             'name' => 'Child 2',
             'type' => TaxonomyType::Category->value,
             'slug' => 'child-2',
-            'parent_id' => $root->id
+            'parent_id' => $root->id,
         ]);
 
         $grandchild = Taxonomy::create([
             'name' => 'Grandchild',
             'type' => TaxonomyType::Category->value,
             'slug' => 'grandchild',
-            'parent_id' => $child1->id
+            'parent_id' => $child1->id,
         ]);
 
         // Simpan struktur yang benar untuk perbandingan
@@ -204,13 +203,13 @@ class ExtremeTaxonomyTest extends TestCase
 
     /**
      * Test soft delete taxonomy dan dampaknya pada children
-     * (Jika menggunakan SoftDeletes trait)
+     * (Jika menggunakan SoftDeletes trait).
      */
     #[Test]
     public function it_can_handle_soft_delete_taxonomy_with_children(): void
     {
         // Skip test jika model tidak menggunakan SoftDeletes
-        if (!method_exists(Taxonomy::class, 'trashed')) {
+        if (! method_exists(Taxonomy::class, 'trashed')) {
             $this->markTestSkipped('Taxonomy model does not use SoftDeletes trait');
         }
 
@@ -218,21 +217,21 @@ class ExtremeTaxonomyTest extends TestCase
         $parent = Taxonomy::create([
             'name' => 'Parent Category',
             'type' => TaxonomyType::Category->value,
-            'slug' => 'parent-category'
+            'slug' => 'parent-category',
         ]);
 
         $child1 = Taxonomy::create([
             'name' => 'Child 1',
             'type' => TaxonomyType::Category->value,
             'slug' => 'child-1',
-            'parent_id' => $parent->id
+            'parent_id' => $parent->id,
         ]);
 
         $child2 = Taxonomy::create([
             'name' => 'Child 2',
             'type' => TaxonomyType::Category->value,
             'slug' => 'child-2',
-            'parent_id' => $parent->id
+            'parent_id' => $parent->id,
         ]);
 
         // Clear cache sebelum test
@@ -259,7 +258,7 @@ class ExtremeTaxonomyTest extends TestCase
     }
 
     /**
-     * Test race condition saat concurrent moveToParent operations
+     * Test race condition saat concurrent moveToParent operations.
      */
     #[Test]
     public function it_can_handle_race_condition_concurrent_move_operations(): void
@@ -268,28 +267,28 @@ class ExtremeTaxonomyTest extends TestCase
         $root = Taxonomy::create([
             'name' => 'Root',
             'type' => TaxonomyType::Category->value,
-            'slug' => 'root'
+            'slug' => 'root',
         ]);
 
         $parent1 = Taxonomy::create([
             'name' => 'Parent 1',
             'type' => TaxonomyType::Category->value,
             'slug' => 'parent-1',
-            'parent_id' => $root->id
+            'parent_id' => $root->id,
         ]);
 
         $parent2 = Taxonomy::create([
             'name' => 'Parent 2',
             'type' => TaxonomyType::Category->value,
             'slug' => 'parent-2',
-            'parent_id' => $root->id
+            'parent_id' => $root->id,
         ]);
 
         $movingNode = Taxonomy::create([
             'name' => 'Moving Node',
             'type' => TaxonomyType::Category->value,
             'slug' => 'moving-node',
-            'parent_id' => $parent1->id
+            'parent_id' => $parent1->id,
         ]);
 
         // Simulasi concurrent operations menggunakan database transactions
@@ -297,7 +296,7 @@ class ExtremeTaxonomyTest extends TestCase
         $exceptions = [];
 
         // Jalankan multiple move operations secara "concurrent"
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < 5; ++$i) {
             try {
                 DB::transaction(function () use ($movingNode, $parent1, $parent2, &$results) {
                     // Alternate between moving to parent1 and parent2
@@ -321,7 +320,7 @@ class ExtremeTaxonomyTest extends TestCase
     }
 
     /**
-     * Performance testing dengan 10,000 taxonomies
+     * Performance testing dengan 10,000 taxonomies.
      */
     #[Test]
     public function it_can_handle_performance_with_large_dataset(): void
@@ -337,13 +336,13 @@ class ExtremeTaxonomyTest extends TestCase
         $startTime = microtime(true);
 
         $taxonomies = [];
-        for ($i = 1; $i <= $targetCount; $i++) {
+        for ($i = 1; $i <= $targetCount; ++$i) {
             $taxonomies[] = [
                 'name' => "Category {$i}",
                 'type' => TaxonomyType::Category->value,
                 'slug' => "category-{$i}",
                 'created_at' => now(),
-                'updated_at' => now()
+                'updated_at' => now(),
             ];
 
             // Batch insert setiap 100 records
@@ -353,7 +352,7 @@ class ExtremeTaxonomyTest extends TestCase
             }
         }
 
-        if (!empty($taxonomies)) {
+        if (! empty($taxonomies)) {
             DB::table('taxonomies')->insert($taxonomies);
         }
 
@@ -399,7 +398,7 @@ class ExtremeTaxonomyTest extends TestCase
     }
 
     /**
-     * Test memory usage pada operasi besar
+     * Test memory usage pada operasi besar.
      */
     #[Test]
     public function it_can_handle_memory_usage_large_operations(): void
@@ -407,11 +406,11 @@ class ExtremeTaxonomyTest extends TestCase
         $initialMemory = memory_get_usage(true);
 
         // Buat 50 taxonomies (reduced to prevent hang)
-        for ($i = 1; $i <= 50; $i++) {
+        for ($i = 1; $i <= 50; ++$i) {
             Taxonomy::create([
                 'name' => "Memory Test {$i}",
                 'type' => TaxonomyType::Category->value,
-                'slug' => "memory-test-{$i}"
+                'slug' => "memory-test-{$i}",
             ]);
         }
 
@@ -431,16 +430,16 @@ class ExtremeTaxonomyTest extends TestCase
         $this->assertLessThan(5 * 1024 * 1024, $operationMemoryIncrease, 'Memory usage too high during operations');
 
         echo "\n=== Memory Usage Test Results ===\n";
-        echo "Initial memory: " . $this->formatBytes($initialMemory) . "\n";
-        echo "After creation: " . $this->formatBytes($afterCreationMemory) . "\n";
-        echo "Final memory: " . $this->formatBytes($finalMemory) . "\n";
-        echo "Creation increase: " . $this->formatBytes($creationMemoryIncrease) . "\n";
-        echo "Operation increase: " . $this->formatBytes($operationMemoryIncrease) . "\n";
+        echo 'Initial memory: ' . $this->formatBytes($initialMemory) . "\n";
+        echo 'After creation: ' . $this->formatBytes($afterCreationMemory) . "\n";
+        echo 'Final memory: ' . $this->formatBytes($finalMemory) . "\n";
+        echo 'Creation increase: ' . $this->formatBytes($creationMemoryIncrease) . "\n";
+        echo 'Operation increase: ' . $this->formatBytes($operationMemoryIncrease) . "\n";
         echo "=================================\n";
     }
 
     /**
-     * Helper untuk validasi nested set structure
+     * Helper untuk validasi nested set structure.
      */
     private function assertValidNestedSetStructure(): void
     {
@@ -460,7 +459,7 @@ class ExtremeTaxonomyTest extends TestCase
     }
 
     /**
-     * Helper untuk format bytes
+     * Helper untuk format bytes.
      */
     private function formatBytes(int $bytes): string
     {
@@ -469,7 +468,7 @@ class ExtremeTaxonomyTest extends TestCase
 
         while ($bytes >= 1024 && $unitIndex < count($units) - 1) {
             $bytes /= 1024;
-            $unitIndex++;
+            ++$unitIndex;
         }
 
         return round($bytes, 2) . ' ' . $units[$unitIndex];

@@ -5,9 +5,9 @@ namespace Aliziodev\LaravelTaxonomy\Tests\Unit;
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy as TaxonomyModel;
+use Aliziodev\LaravelTaxonomy\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-use Aliziodev\LaravelTaxonomy\Tests\TestCase;
 
 class TaxonomyFacadeNestedSetTest extends TestCase
 {
@@ -29,7 +29,7 @@ class TaxonomyFacadeNestedSetTest extends TestCase
         //   └── Smartphones (child)
         //       └── Android (grandchild)
         //           └── Samsung (great-grandchild)
-        
+
         $this->electronics = Taxonomy::create([
             'name' => 'Electronics',
             'slug' => 'electronics',
@@ -77,19 +77,19 @@ class TaxonomyFacadeNestedSetTest extends TestCase
         $nestedTree = Taxonomy::getNestedTree(TaxonomyType::Category);
 
         $this->assertCount(1, $nestedTree); // Should have 1 root (electronics)
-        
+
         $root = $nestedTree->first();
         $this->assertEquals('Electronics', $root->name);
         $this->assertCount(1, $root->children); // Should have 1 child (smartphones)
-        
+
         $smartphones = $root->children->first();
         $this->assertEquals('Smartphones', $smartphones->name);
         $this->assertCount(1, $smartphones->children); // Should have 1 child (android)
-        
+
         $android = $smartphones->children->first();
         $this->assertEquals('Android', $android->name);
         $this->assertCount(1, $android->children); // Should have 1 child (samsung)
-        
+
         $samsung = $android->children->first();
         $this->assertEquals('Samsung', $samsung->name);
         $this->assertCount(0, $samsung->children); // Should have no children
@@ -273,10 +273,10 @@ class TaxonomyFacadeNestedSetTest extends TestCase
         // Rebuild nested set for both types to ensure correct lft/rgt values
         Taxonomy::rebuildNestedSet(TaxonomyType::Category);
         Taxonomy::rebuildNestedSet(TaxonomyType::Tag);
-        
+
         // Test getNestedTree with null type (should return all root taxonomies)
         $result = Taxonomy::getNestedTree();
-        
+
         $this->assertCount(2, $result); // Should have 2 roots: Electronics and Parent Tag
 
         $rootNames = $result->pluck('name')->toArray();

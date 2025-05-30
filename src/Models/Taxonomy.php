@@ -80,7 +80,6 @@ class Taxonomy extends Model
         'depth' => 'integer',
     ];
 
-
     /**
      * Boot the model.
      */
@@ -90,8 +89,8 @@ class Taxonomy extends Model
 
         static::creating(function (self $taxonomy) {
             // Check if slug is required but not provided
-            if (!config('taxonomy.slugs.generate', true) && empty($taxonomy->slug)) {
-                throw new MissingSlugException();
+            if (! config('taxonomy.slugs.generate', true) && empty($taxonomy->slug)) {
+                throw new MissingSlugException;
             }
 
             // Generate slug if enabled in config and not provided
@@ -100,7 +99,7 @@ class Taxonomy extends Model
             }
 
             // If slug is provided, check if it's unique
-            if (!empty($taxonomy->slug) && static::slugExists($taxonomy->slug, null)) {
+            if (! empty($taxonomy->slug) && static::slugExists($taxonomy->slug, null)) {
                 throw new DuplicateSlugException($taxonomy->slug);
             }
 
@@ -110,7 +109,7 @@ class Taxonomy extends Model
 
         static::updating(function (self $taxonomy) {
             // If slug is being changed manually, check if it's unique
-            if ($taxonomy->isDirty('slug') && !empty($taxonomy->slug)) {
+            if ($taxonomy->isDirty('slug') && ! empty($taxonomy->slug)) {
                 if (static::slugExists($taxonomy->slug, $taxonomy->id)) {
                     throw new DuplicateSlugException($taxonomy->slug);
                 }
@@ -171,7 +170,7 @@ class Taxonomy extends Model
      */
     public function descendants(): Collection
     {
-        $descendants = new Collection();
+        $descendants = new Collection;
 
         foreach ($this->children as $child) {
             $descendants->push($child);
@@ -186,7 +185,7 @@ class Taxonomy extends Model
      */
     public function ancestors(): Collection
     {
-        $ancestors = new Collection();
+        $ancestors = new Collection;
         $parent = $this->parent;
 
         while ($parent) {
@@ -240,6 +239,7 @@ class Taxonomy extends Model
     public function scopeType(Builder $query, string|TaxonomyType $type): Builder
     {
         $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+
         return $query->where('type', $typeValue);
     }
 
@@ -272,7 +272,7 @@ class Taxonomy extends Model
 
         $query->where('parent_id', $parentId)->ordered();
 
-        $result = new Collection();
+        $result = new Collection;
 
         foreach ($query->get() as $taxonomy) {
             $taxonomy->depth = $depth;
@@ -314,16 +314,17 @@ class Taxonomy extends Model
     /**
      * Create a new taxonomy or update if it already exists.
      *
-     * @param array $attributes The attributes for the taxonomy
+     * @param  array  $attributes  The attributes for the taxonomy
      * @return self The created or updated taxonomy
+     *
      * @throws MissingSlugException If slug generation is disabled and no slug is provided
      * @throws DuplicateSlugException If a custom slug is provided but already exists
      */
     public static function createOrUpdate(array $attributes): self
     {
         // Check if slug is required but not provided
-        if (!config('taxonomy.slugs.generate', true) && !isset($attributes['slug'])) {
-            throw new MissingSlugException();
+        if (! config('taxonomy.slugs.generate', true) && ! isset($attributes['slug'])) {
+            throw new MissingSlugException;
         }
 
         // Use the provided slug or generate a base slug (without uniqueness check)
@@ -343,7 +344,7 @@ class Taxonomy extends Model
             }
 
             // If not found, ensure the slug is unique before creating
-            if (!isset($attributes['slug']) && config('taxonomy.slugs.generate', true)) {
+            if (! isset($attributes['slug']) && config('taxonomy.slugs.generate', true)) {
                 $attributes['slug'] = static::generateUniqueSlug($attributes['name'], $attributes['type']);
             }
 
@@ -352,11 +353,12 @@ class Taxonomy extends Model
 
         return $taxonomy;
     }
+
     /**
      * Check if a slug already exists.
      *
-     * @param string $slug The slug to check
-     * @param int|null $excludeId ID to exclude from the check (useful for updates)
+     * @param  string  $slug  The slug to check
+     * @param  int|null  $excludeId  ID to exclude from the check (useful for updates)
      * @return bool True if the slug exists, false otherwise
      */
     public static function slugExists(string $slug, ?int $excludeId = null): bool
@@ -372,9 +374,9 @@ class Taxonomy extends Model
     /**
      * Generate a unique slug for a taxonomy.
      *
-     * @param string $name The name to generate the slug from
-     * @param string $type The taxonomy type
-     * @param int|null $excludeId ID to exclude from the uniqueness check (useful for updates)
+     * @param  string  $name  The name to generate the slug from
+     * @param  string  $type  The taxonomy type
+     * @param  int|null  $excludeId  ID to exclude from the uniqueness check (useful for updates)
      * @return string The unique slug
      */
     protected static function generateUniqueSlug(string $name, string $type, ?int $excludeId = null): string
@@ -405,19 +407,19 @@ class Taxonomy extends Model
             $parent = static::find($this->parent_id);
             if ($parent) {
                 $this->depth = $parent->depth + 1;
-                
+
                 // Update all nodes with rgt >= parent->rgt first
                 static::where('rgt', '>=', $parent->rgt)
                     ->where('type', $this->type)
                     ->where('id', '!=', $this->id)
                     ->increment('rgt', 2);
-                
+
                 // Update all nodes with lft > parent->rgt
                 static::where('lft', '>', $parent->rgt)
                     ->where('type', $this->type)
                     ->where('id', '!=', $this->id)
                     ->increment('lft', 2);
-                
+
                 // Set this node's values
                 $this->lft = $parent->rgt;
                 $this->rgt = $parent->rgt + 1;
@@ -448,17 +450,17 @@ class Taxonomy extends Model
         if ($this->parent_id == $parentId) {
             return;
         }
-        
+
         // Check for circular reference
         if ($parentId !== null && $this->wouldCreateCircularReference($parentId)) {
             throw new \Exception('Moving this taxonomy would create a circular reference.');
         }
-        
+
         // Set new parent and save
         $this->parent_id = $parentId;
         $this->save();
     }
-    
+
     /**
      * Check if moving to the given parent would create a circular reference.
      */
@@ -468,7 +470,7 @@ class Taxonomy extends Model
         if ($parentId === $this->id) {
             return true;
         }
-        
+
         // Check if the target parent is a descendant of this node
         $descendants = $this->getDescendants();
         foreach ($descendants as $descendant) {
@@ -476,7 +478,7 @@ class Taxonomy extends Model
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -485,17 +487,17 @@ class Taxonomy extends Model
      */
     protected function removeFromNestedSet(): void
     {
-        if (!$this->lft || !$this->rgt) {
+        if (! $this->lft || ! $this->rgt) {
             return;
         }
 
         $width = $this->rgt - $this->lft + 1;
-        
+
         // Update all nodes with lft > this->rgt
         static::where('lft', '>', $this->rgt)
             ->where('type', $this->type)
             ->decrement('lft', $width);
-        
+
         // Update all nodes with rgt > this->rgt
         static::where('rgt', '>', $this->rgt)
             ->where('type', $this->type)
@@ -526,19 +528,19 @@ class Taxonomy extends Model
     {
         $node->lft = $counter++;
         $node->depth = $depth;
-        
+
         $children = static::where('parent_id', $node->id)
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
-        
+
         foreach ($children as $child) {
             $counter = static::rebuildNode($child, $counter, $depth + 1);
         }
-        
+
         $node->rgt = $counter++;
         $node->saveQuietly();
-        
+
         return $counter;
     }
 
@@ -547,8 +549,8 @@ class Taxonomy extends Model
      */
     public function getDescendants(): Collection
     {
-        if (!$this->lft || !$this->rgt) {
-            return new Collection();
+        if (! $this->lft || ! $this->rgt) {
+            return new Collection;
         }
 
         return static::where('type', $this->type)
@@ -563,8 +565,8 @@ class Taxonomy extends Model
      */
     public function getAncestors(): Collection
     {
-        if (!$this->lft || !$this->rgt) {
-            return new Collection();
+        if (! $this->lft || ! $this->rgt) {
+            return new Collection;
         }
 
         return static::where('type', $this->type)
@@ -589,7 +591,7 @@ class Taxonomy extends Model
      */
     public function isAncestorOf(self $other): bool
     {
-        if (!$this->lft || !$this->rgt || !$other->lft || !$other->rgt) {
+        if (! $this->lft || ! $this->rgt || ! $other->lft || ! $other->rgt) {
             return false;
         }
 
@@ -646,20 +648,21 @@ class Taxonomy extends Model
         if ($type !== null) {
             $query = static::query()->type($type);
             $taxonomies = $query->nestedSetOrder()->get();
+
             return static::buildNestedTree($taxonomies);
         }
-        
+
         // When no type is specified, get all types and build separate trees
         $allTypes = static::select('type')->distinct()->pluck('type');
-        $allTrees = new Collection();
-        
+        $allTrees = new Collection;
+
         foreach ($allTypes as $typeValue) {
             $query = static::query()->type($typeValue);
             $taxonomies = $query->nestedSetOrder()->get();
             $typeTree = static::buildNestedTree($taxonomies);
             $allTrees = $allTrees->merge($typeTree);
         }
-        
+
         return $allTrees;
     }
 
@@ -668,36 +671,36 @@ class Taxonomy extends Model
      */
     protected static function buildNestedTree(Collection $taxonomies): Collection
     {
-        $tree = new Collection();
+        $tree = new Collection;
         $stack = [];
-        
+
         foreach ($taxonomies as $taxonomy) {
             // Remove items from stack that are not ancestors
-            while (!empty($stack) && end($stack)->rgt < $taxonomy->lft) {
+            while (! empty($stack) && end($stack)->rgt < $taxonomy->lft) {
                 array_pop($stack);
             }
-            
+
             // Set depth based on stack size
             $taxonomy->tree_depth = count($stack);
-            
+
             if (empty($stack)) {
                 // Root level
                 $tree->push($taxonomy);
             } else {
                 // Child level - add to parent's children collection
                 $parent = end($stack);
-                if (!$parent->children_nested) {
-                    $parent->children_nested = new Collection();
+                if (! $parent->children_nested) {
+                    $parent->children_nested = new Collection;
                 }
                 $parent->children_nested->push($taxonomy);
             }
-            
+
             // Add to stack if it has children
             if ($taxonomy->rgt > $taxonomy->lft + 1) {
                 $stack[] = $taxonomy;
             }
         }
-        
+
         return $tree;
     }
 }

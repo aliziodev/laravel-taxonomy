@@ -18,9 +18,9 @@ class TaxonomyManagerNestedSetTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
-        $this->manager = new TaxonomyManager();
-        
+
+        $this->manager = new TaxonomyManager;
+
         // Create test taxonomies
         $this->createTestTaxonomies();
     }
@@ -31,7 +31,7 @@ class TaxonomyManagerNestedSetTest extends TestCase
         $electronics = Taxonomy::create([
             'name' => 'Electronics',
             'type' => TaxonomyType::Category->value,
-            'slug' => 'electronics'
+            'slug' => 'electronics',
         ]);
 
         // Create subcategory
@@ -39,7 +39,7 @@ class TaxonomyManagerNestedSetTest extends TestCase
             'name' => 'Computers',
             'type' => TaxonomyType::Category->value,
             'slug' => 'computers',
-            'parent_id' => $electronics->id
+            'parent_id' => $electronics->id,
         ]);
 
         // Create sub-subcategory
@@ -47,26 +47,26 @@ class TaxonomyManagerNestedSetTest extends TestCase
             'name' => 'Laptops',
             'type' => TaxonomyType::Category->value,
             'slug' => 'laptops',
-            'parent_id' => $computers->id
+            'parent_id' => $computers->id,
         ]);
     }
 
     public function test_get_nested_tree_returns_correct_structure(): void
     {
         $tree = $this->manager->getNestedTree(TaxonomyType::Category);
-        
+
         $this->assertCount(1, $tree); // Only one root: Electronics
-        
+
         $electronics = $tree->first();
         $this->assertEquals('electronics', $electronics->slug);
         $this->assertNotNull($electronics->children_nested);
         $this->assertCount(1, $electronics->children_nested);
-        
+
         $computers = $electronics->children_nested->first();
         $this->assertEquals('computers', $computers->slug);
         $this->assertNotNull($computers->children_nested);
         $this->assertCount(1, $computers->children_nested);
-        
+
         $laptops = $computers->children_nested->first();
         $this->assertEquals('laptops', $laptops->slug);
     }
@@ -75,15 +75,15 @@ class TaxonomyManagerNestedSetTest extends TestCase
     {
         // Clear cache first
         Cache::flush();
-        
+
         // First call should hit database
         $tree1 = $this->manager->getNestedTree(TaxonomyType::Category);
-        
+
         // Second call should hit cache
         $tree2 = $this->manager->getNestedTree(TaxonomyType::Category);
-        
+
         $this->assertEquals($tree1->toArray(), $tree2->toArray());
-        
+
         // Verify cache key exists
         $cacheKey = 'taxonomy_nested_tree_' . TaxonomyType::Category->value;
         $this->assertTrue(Cache::has($cacheKey));
@@ -93,19 +93,19 @@ class TaxonomyManagerNestedSetTest extends TestCase
     {
         $electronics = Taxonomy::where('slug', 'electronics')->first();
         $initialDescendants = $electronics->getDescendants()->count();
-        
+
         // Manually corrupt nested set values
         Taxonomy::where('slug', 'computers')->update(['lft' => null, 'rgt' => null]);
-        
+
         // Rebuild
         $this->manager->rebuildNestedSet(TaxonomyType::Category);
-        
+
         // Check structure is restored
         $electronics->refresh();
         $newDescendants = $electronics->getDescendants()->count();
-        
+
         $this->assertEquals($initialDescendants, $newDescendants);
-        
+
         // Check that all taxonomies have valid nested set values
         $allTaxonomies = Taxonomy::where('type', TaxonomyType::Category->value)->get();
         foreach ($allTaxonomies as $taxonomy) {
@@ -119,13 +119,13 @@ class TaxonomyManagerNestedSetTest extends TestCase
     {
         // Populate cache
         $this->manager->getNestedTree(TaxonomyType::Category);
-        
+
         $cacheKey = 'taxonomy_nested_tree_' . TaxonomyType::Category->value;
         $this->assertTrue(Cache::has($cacheKey));
-        
+
         // Rebuild should clear cache
         $this->manager->rebuildNestedSet(TaxonomyType::Category);
-        
+
         $this->assertFalse(Cache::has($cacheKey));
     }
 
@@ -133,13 +133,13 @@ class TaxonomyManagerNestedSetTest extends TestCase
     {
         $computers = Taxonomy::where('slug', 'computers')->first();
         $laptops = Taxonomy::where('slug', 'laptops')->first();
-        
+
         // Move laptops to be a direct child of electronics (skip computers)
         $electronics = Taxonomy::where('slug', 'electronics')->first();
         $result = $this->manager->moveToParent($laptops->id, $electronics->id);
-        
+
         $this->assertTrue($result);
-        
+
         $laptops->refresh();
         $this->assertEquals($electronics->id, $laptops->parent_id);
         $this->assertEquals(1, $laptops->depth);
@@ -155,16 +155,16 @@ class TaxonomyManagerNestedSetTest extends TestCase
     {
         // Populate cache
         $this->manager->getNestedTree(TaxonomyType::Category);
-        
+
         $cacheKey = 'taxonomy_nested_tree_' . TaxonomyType::Category->value;
         $this->assertTrue(Cache::has($cacheKey));
-        
+
         $laptops = Taxonomy::where('slug', 'laptops')->first();
         $electronics = Taxonomy::where('slug', 'electronics')->first();
-        
+
         // Move should clear cache
         $this->manager->moveToParent($laptops->id, $electronics->id);
-        
+
         $this->assertFalse(Cache::has($cacheKey));
     }
 
@@ -172,9 +172,9 @@ class TaxonomyManagerNestedSetTest extends TestCase
     {
         $electronics = Taxonomy::where('slug', 'electronics')->first();
         $descendants = $this->manager->getDescendants($electronics->id);
-        
+
         $this->assertCount(2, $descendants); // computers and laptops
-        
+
         $descendantSlugs = $descendants->pluck('slug')->toArray();
         $this->assertContains('computers', $descendantSlugs);
         $this->assertContains('laptops', $descendantSlugs);
@@ -190,9 +190,9 @@ class TaxonomyManagerNestedSetTest extends TestCase
     {
         $laptops = Taxonomy::where('slug', 'laptops')->first();
         $ancestors = $this->manager->getAncestors($laptops->id);
-        
+
         $this->assertCount(2, $ancestors); // computers and electronics
-        
+
         $ancestorSlugs = $ancestors->pluck('slug')->toArray();
         $this->assertContains('computers', $ancestorSlugs);
         $this->assertContains('electronics', $ancestorSlugs);
@@ -208,7 +208,7 @@ class TaxonomyManagerNestedSetTest extends TestCase
     {
         $electronics = Taxonomy::where('slug', 'electronics')->first();
         $ancestors = $this->manager->getAncestors($electronics->id);
-        
+
         $this->assertCount(0, $ancestors);
     }
 
@@ -218,24 +218,24 @@ class TaxonomyManagerNestedSetTest extends TestCase
         $techTag = Taxonomy::create([
             'name' => 'Technology',
             'type' => TaxonomyType::Tag->value,
-            'slug' => 'technology'
+            'slug' => 'technology',
         ]);
 
         $webTag = Taxonomy::create([
             'name' => 'Web Development',
             'type' => TaxonomyType::Tag->value,
             'slug' => 'web-development',
-            'parent_id' => $techTag->id
+            'parent_id' => $techTag->id,
         ]);
 
         // Get trees for different types
         $categoryTree = $this->manager->getNestedTree(TaxonomyType::Category);
         $tagTree = $this->manager->getNestedTree(TaxonomyType::Tag);
-        
+
         // Category tree should have electronics
         $this->assertCount(1, $categoryTree);
         $this->assertEquals('electronics', $categoryTree->first()->slug);
-        
+
         // Tag tree should have technology
         $this->assertCount(1, $tagTree);
         $this->assertEquals('technology', $tagTree->first()->slug);
@@ -249,17 +249,17 @@ class TaxonomyManagerNestedSetTest extends TestCase
         $this->manager->getNestedTree(TaxonomyType::Category);
         $this->manager->tree(TaxonomyType::Category);
         $this->manager->flatTree(TaxonomyType::Category);
-        
+
         // Create some cache keys
         $nestedTreeKey = 'taxonomy_nested_tree_' . TaxonomyType::Category->value;
         $treeKey = 'taxonomy_tree_' . TaxonomyType::Category->value . '_';
         $flatTreeKey = 'taxonomy_flat_tree_' . TaxonomyType::Category->value . '_0_0';
-        
+
         $this->assertTrue(Cache::has($nestedTreeKey));
-        
+
         // Rebuild should clear caches for this type
         $this->manager->rebuildNestedSet(TaxonomyType::Category);
-        
+
         $this->assertFalse(Cache::has($nestedTreeKey));
     }
 }

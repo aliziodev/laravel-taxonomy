@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Cache;
 
 /**
  * TaxonomyManager provides a centralized way to manage taxonomies.
- * 
+ *
  * This class offers methods for creating, retrieving, and manipulating taxonomies,
  * with built-in caching for improved performance.
  */
@@ -18,8 +18,8 @@ class TaxonomyManager
 {
     /**
      * Create a new taxonomy.
-     * 
-     * @param array $attributes The attributes for the new taxonomy
+     *
+     * @param  array  $attributes  The attributes for the new taxonomy
      * @return \Aliziodev\LaravelTaxonomy\Models\Taxonomy The created taxonomy
      */
     public function create(array $attributes): Taxonomy
@@ -45,12 +45,12 @@ class TaxonomyManager
 
     /**
      * Get a nested tree representation of the taxonomy hierarchy.
-     * 
+     *
      * This method returns a hierarchical tree of taxonomies with parent-child relationships.
      * Results are cached for 24 hours for improved performance.
-     * 
-     * @param string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType|null $type The taxonomy type to filter by (optional)
-     * @param int|null $parentId The parent ID to start the tree from (null for root level)
+     *
+     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType|null  $type  The taxonomy type to filter by (optional)
+     * @param  int|null  $parentId  The parent ID to start the tree from (null for root level)
      * @return \Illuminate\Database\Eloquent\Collection The hierarchical collection of taxonomies
      */
     public function tree(string|TaxonomyType|null $type = null, ?int $parentId = null): Collection
@@ -65,13 +65,13 @@ class TaxonomyManager
 
     /**
      * Get a flat tree representation of the taxonomy hierarchy.
-     * 
+     *
      * This method returns a flat list of taxonomies with depth information.
      * Results are cached for 24 hours for improved performance.
-     * 
-     * @param string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType|null $type The taxonomy type to filter by (optional)
-     * @param int|null $parentId The parent ID to start the tree from (null for root level)
-     * @param int $depth The current depth level (used internally for recursion)
+     *
+     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType|null  $type  The taxonomy type to filter by (optional)
+     * @param  int|null  $parentId  The parent ID to start the tree from (null for root level)
+     * @param  int  $depth  The current depth level (used internally for recursion)
      * @return \Illuminate\Database\Eloquent\Collection The flat collection of taxonomies with depth information
      */
     public function flatTree(string|TaxonomyType|null $type = null, ?int $parentId = null, int $depth = 0): Collection
@@ -90,6 +90,7 @@ class TaxonomyManager
     public function getTypes(): Collection
     {
         $types = collect(config('taxonomy.types', TaxonomyType::values()));
+
         return new Collection($types->all());
     }
 
@@ -113,7 +114,7 @@ class TaxonomyManager
     {
         $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
         Taxonomy::rebuildNestedSet($typeValue);
-        
+
         // Clear related caches
         $this->clearCacheForTypeInternal($typeValue);
     }
@@ -124,20 +125,20 @@ class TaxonomyManager
     public function moveToParent(int $taxonomyId, ?int $parentId): bool
     {
         $taxonomy = Taxonomy::find($taxonomyId);
-        if (!$taxonomy) {
+        if (! $taxonomy) {
             return false;
         }
-        
+
         // Validate parent exists if parentId is provided
-        if ($parentId !== null && !Taxonomy::find($parentId)) {
+        if ($parentId !== null && ! Taxonomy::find($parentId)) {
             return false;
         }
 
         $taxonomy->moveToParent($parentId);
-        
+
         // Clear related caches
         $this->clearCacheForTypeInternal($taxonomy->type);
-        
+
         return true;
     }
 
@@ -147,8 +148,8 @@ class TaxonomyManager
     public function getDescendants(int $taxonomyId): Collection
     {
         $taxonomy = Taxonomy::find($taxonomyId);
-        if (!$taxonomy) {
-            return new Collection();
+        if (! $taxonomy) {
+            return new Collection;
         }
 
         return $taxonomy->getDescendants();
@@ -160,8 +161,8 @@ class TaxonomyManager
     public function getAncestors(int $taxonomyId): Collection
     {
         $taxonomy = Taxonomy::find($taxonomyId);
-        if (!$taxonomy) {
-            return new Collection();
+        if (! $taxonomy) {
+            return new Collection;
         }
 
         return $taxonomy->getAncestors();
@@ -186,7 +187,7 @@ class TaxonomyManager
             "taxonomy_flat_tree_{$type}_*",
             "taxonomy_nested_tree_{$type}",
         ];
-        
+
         // For exact cache keys, use forget directly
         Cache::forget("taxonomy_nested_tree_{$type}");
 
@@ -203,6 +204,7 @@ class TaxonomyManager
         return Taxonomy::where('slug', $slug)
             ->when($type, function ($query) use ($type) {
                 $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+
                 return $query->where('type', $typeValue);
             })
             ->exists();
@@ -218,10 +220,10 @@ class TaxonomyManager
 
     /**
      * Find multiple taxonomies by their IDs.
-     * 
-     * @param array $ids The taxonomy IDs
-     * @param int|null $perPage Number of items per page (null for no pagination)
-     * @param int $page The page number
+     *
+     * @param  array  $ids  The taxonomy IDs
+     * @param  int|null  $perPage  Number of items per page (null for no pagination)
+     * @param  int  $page  The page number
      * @return \Illuminate\Database\Eloquent\Collection|\Illuminate\Pagination\LengthAwarePaginator Collection of taxonomies or paginator
      */
     public function findMany(array $ids, ?int $perPage = null, int $page = 1): Collection|LengthAwarePaginator
@@ -237,10 +239,10 @@ class TaxonomyManager
 
     /**
      * Find taxonomies by type.
-     * 
-     * @param string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType $type The taxonomy type
-     * @param int|null $perPage Number of items per page (null for no pagination)
-     * @param int $page The page number
+     *
+     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType  $type  The taxonomy type
+     * @param  int|null  $perPage  Number of items per page (null for no pagination)
+     * @param  int  $page  The page number
      * @return \Illuminate\Database\Eloquent\Collection|\Illuminate\Pagination\LengthAwarePaginator Collection of taxonomies or paginator
      */
     public function findByType(string|TaxonomyType $type, ?int $perPage = null, int $page = 1): Collection|LengthAwarePaginator
@@ -256,10 +258,10 @@ class TaxonomyManager
 
     /**
      * Find taxonomies by parent ID.
-     * 
-     * @param int|null $parentId The parent ID (null for root level)
-     * @param int|null $perPage Number of items per page (null for no pagination)
-     * @param int $page The page number
+     *
+     * @param  int|null  $parentId  The parent ID (null for root level)
+     * @param  int|null  $perPage  Number of items per page (null for no pagination)
+     * @param  int  $page  The page number
      * @return \Illuminate\Database\Eloquent\Collection|\Illuminate\Pagination\LengthAwarePaginator Collection of taxonomies or paginator
      */
     public function findByParent(?int $parentId = null, ?int $perPage = null, int $page = 1): Collection|LengthAwarePaginator
@@ -275,11 +277,11 @@ class TaxonomyManager
 
     /**
      * Search for taxonomies by name or description.
-     * 
-     * @param string $term The search term
-     * @param string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType|null $type The taxonomy type to filter by (optional)
-     * @param int|null $perPage Number of items per page (null for no pagination)
-     * @param int $page The page number
+     *
+     * @param  string  $term  The search term
+     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType|null  $type  The taxonomy type to filter by (optional)
+     * @param  int|null  $perPage  Number of items per page (null for no pagination)
+     * @param  int  $page  The page number
      * @return \Illuminate\Database\Eloquent\Collection|\Illuminate\Pagination\LengthAwarePaginator Collection of taxonomies or paginator
      */
     public function search(string $term, string|TaxonomyType|null $type = null, ?int $perPage = null, int $page = 1): Collection|LengthAwarePaginator
@@ -291,6 +293,7 @@ class TaxonomyManager
             })
             ->when($type, function ($query) use ($type) {
                 $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+
                 return $query->where('type', $typeValue);
             })
             ->ordered();

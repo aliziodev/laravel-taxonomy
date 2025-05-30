@@ -5,8 +5,8 @@ namespace Aliziodev\LaravelTaxonomy\Tests\Unit;
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
 use Aliziodev\LaravelTaxonomy\Tests\Models\Product;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Aliziodev\LaravelTaxonomy\Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class HasTaxonomyHierarchicalTest extends TestCase
 {
@@ -27,7 +27,7 @@ class HasTaxonomyHierarchicalTest extends TestCase
         //   └── Smartphones (child)
         //       └── Android (grandchild)
         //           └── Samsung (great-grandchild)
-        
+
         $this->electronics = Taxonomy::create([
             'name' => 'Electronics',
             'slug' => 'electronics',
@@ -59,7 +59,7 @@ class HasTaxonomyHierarchicalTest extends TestCase
             'name' => 'Test Product',
             'description' => 'Test Description',
         ]);
-        
+
         // Rebuild nested set to ensure correct lft/rgt values
         Taxonomy::rebuildNestedSet(TaxonomyType::Category->value);
     }
@@ -175,7 +175,7 @@ class HasTaxonomyHierarchicalTest extends TestCase
 
         // Check if product has ancestor of samsung (should be true, electronics is ancestor of samsung)
         $this->assertTrue($this->product->hasAncestorTaxonomy($this->samsung->id));
-        
+
         // Check if product has ancestor of electronics (should be false, electronics has no ancestors)
         $this->assertFalse($this->product->hasAncestorTaxonomy($this->electronics->id));
     }
@@ -187,10 +187,10 @@ class HasTaxonomyHierarchicalTest extends TestCase
 
         // Check if product has descendant of electronics (should be true, smartphones is descendant of electronics)
         $this->assertTrue($this->product->hasDescendantTaxonomy($this->electronics->id));
-        
+
         // Check if product has descendant of smartphones (should be false, no descendants attached)
         $this->assertFalse($this->product->hasDescendantTaxonomy($this->smartphones->id));
-        
+
         // Check if product has descendant of samsung (should be false, samsung has no descendants)
         $this->assertFalse($this->product->hasDescendantTaxonomy($this->samsung->id));
     }
