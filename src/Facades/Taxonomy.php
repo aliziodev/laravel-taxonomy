@@ -26,6 +26,14 @@ use Illuminate\Support\Facades\Facade;
  * @method static Collection|LengthAwarePaginator findByParent(int $parentId = null, int|null $perPage = null, int $page = 1) Find taxonomies by parent ID
  * @method static Collection|LengthAwarePaginator search(string $term, string|TaxonomyType|null $type = null, int|null $perPage = null, int $page = 1) Search for taxonomies by name or description
  * 
+ * Nested Set Methods:
+ * @method static Collection getNestedTree(string|TaxonomyType|null $type = null) Get a nested tree structure with proper hierarchy
+ * @method static void rebuildNestedSet(string|TaxonomyType|null $type = null) Rebuild the nested set values for all taxonomies of a given type
+ * @method static bool moveToParent(int $taxonomyId, int|null $newParentId = null) Move a taxonomy to a new parent
+ * @method static Collection getDescendants(int $taxonomyId) Get all descendants of a taxonomy
+ * @method static Collection getAncestors(int $taxonomyId) Get all ancestors of a taxonomy
+ * @method static void clearCacheForType(string|TaxonomyType $type) Clear cache for a specific taxonomy type
+ * 
  * @see \Aliziodev\LaravelTaxonomy\TaxonomyManager
  */
 class Taxonomy extends Facade
