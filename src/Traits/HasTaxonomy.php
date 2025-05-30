@@ -232,4 +232,145 @@ trait HasTaxonomy
 
         return [];
     }
+
+    /**
+     * Get hierarchical taxonomies for this model including descendants.
+     *
+     * @param string|TaxonomyType|null $type
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getHierarchicalTaxonomies(string|TaxonomyType|null $type = null): \Illuminate\Database\Eloquent\Collection
+    {
+        $taxonomies = $type ? $this->taxonomiesOfType($type) : $this->taxonomies()->get();
+        $hierarchical = new \Illuminate\Database\Eloquent\Collection();
+
+        foreach ($taxonomies as $taxonomy) {
+            // Add the taxonomy itself
+            $hierarchical->push($taxonomy);
+            
+            // Add all its descendants
+            $descendants = $taxonomy->getDescendants();
+            foreach ($descendants as $descendant) {
+                $hierarchical->push($descendant);
+            }
+        }
+
+        return $hierarchical->unique('id');
+    }
+
+    /**
+     * Get all ancestor taxonomies for this model's taxonomies.
+     *
+     * @param string|TaxonomyType|null $type
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getAncestorTaxonomies(string|TaxonomyType|null $type = null): \Illuminate\Database\Eloquent\Collection
+    {
+        $taxonomies = $type ? $this->taxonomiesOfType($type) : $this->taxonomies()->get();
+        $ancestors = new \Illuminate\Database\Eloquent\Collection();
+
+        foreach ($taxonomies as $taxonomy) {
+            // Add all its ancestors
+            $taxonomyAncestors = $taxonomy->getAncestors();
+            foreach ($taxonomyAncestors as $ancestor) {
+                $ancestors->push($ancestor);
+            }
+        }
+
+        return $ancestors->unique('id');
+    }
+
+    /**
+     * Scope to get models that have taxonomies within a specific hierarchy.
+     *
+     * @param Builder $query
+     * @param int $taxonomyId
+     * @param bool $includeDescendants
+     * @return Builder
+     */
+    public function scopeWithTaxonomyHierarchy(Builder $query, int $taxonomyId, bool $includeDescendants = true): Builder
+    {
+        $taxonomy = Taxonomy::find($taxonomyId);
+        
+        if (!$taxonomy) {
+            return $query->whereRaw('1 = 0'); // Return empty result
+        }
+
+        $taxonomyIds = collect([$taxonomyId]);
+        
+        if ($includeDescendants) {
+            $descendants = $taxonomy->getDescendants();
+            $taxonomyIds = $taxonomyIds->merge($descendants->pluck('id'));
+        }
+
+        return $query->whereHas('taxonomies', function ($q) use ($taxonomyIds) {
+            $q->whereIn('taxonomies.id', $taxonomyIds->toArray());
+        });
+    }
+
+    /**
+     * Scope to get models that have taxonomies at a specific depth level.
+     *
+     * @param Builder $query
+     * @param int $depth
+     * @param string|TaxonomyType|null $type
+     * @return Builder
+     */
+    public function scopeWithTaxonomyAtDepth(Builder $query, int $depth, string|TaxonomyType|null $type = null): Builder
+    {
+        return $query->whereHas('taxonomies', function ($q) use ($depth, $type) {
+            $q->atDepth($depth);
+            
+            if ($type) {
+                $q->where('taxonomies.type', $type instanceof TaxonomyType ? $type->value : $type);
+            }
+        });
+    }
+
+    /**
+     * Check if this model has any taxonomy that is an ancestor of the given taxonomy.
+     *
+     * @param int $taxonomyId
+     * @return bool
+     */
+    public function hasAncestorTaxonomy(int $taxonomyId): bool
+    {
+        $taxonomy = Taxonomy::find($taxonomyId);
+        
+        if (!$taxonomy) {
+            return false;
+        }
+
+        $ancestors = $taxonomy->getAncestors();
+        $modelTaxonomyIds = $this->taxonomies->pluck('id');
+
+        return $ancestors->pluck('id')->intersect($modelTaxonomyIds)->isNotEmpty();
+    }
+
+    /**
+     * Check if this model has any taxonomy that is a descendant of the given taxonomy.
+     *
+     * @param int $taxonomyId
+     * @return bool
+     */
+    public function hasDescendantTaxonomy(int $taxonomyId): bool
+    {
+        $taxonomy = Taxonomy::find($taxonomyId);
+        
+        if (!$taxonomy) {
+            return false;
+        }
+
+        // Check if any of the model's taxonomies are descendants of the given taxonomy
+        $modelTaxonomyIds = $this->taxonomies->pluck('id');
+        
+        foreach ($modelTaxonomyIds as $modelTaxonomyId) {
+            $modelTaxonomy = Taxonomy::find($modelTaxonomyId);
+            if ($modelTaxonomy && $modelTaxonomy->isDescendantOf($taxonomy)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
 }
