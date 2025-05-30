@@ -19,6 +19,9 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->foreignId('parent_id')->nullable()->constrained('taxonomies');
             $table->integer('sort_order')->default(0);
+            $table->unsignedInteger('lft')->nullable()->index();
+            $table->unsignedInteger('rgt')->nullable()->index();
+            $table->unsignedInteger('depth')->nullable()->index();
             $table->json('meta')->nullable();
             $table->timestamps();
             $table->softDeletes();
