@@ -449,9 +449,35 @@ class Taxonomy extends Model
             return;
         }
         
+        // Check for circular reference
+        if ($parentId !== null && $this->wouldCreateCircularReference($parentId)) {
+            throw new \Exception('Moving this taxonomy would create a circular reference.');
+        }
+        
         // Set new parent and save
         $this->parent_id = $parentId;
         $this->save();
+    }
+    
+    /**
+     * Check if moving to the given parent would create a circular reference.
+     */
+    protected function wouldCreateCircularReference(int $parentId): bool
+    {
+        // If trying to move to itself
+        if ($parentId === $this->id) {
+            return true;
+        }
+        
+        // Check if the target parent is a descendant of this node
+        $descendants = $this->getDescendants();
+        foreach ($descendants as $descendant) {
+            if ($descendant->id === $parentId) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     /**
