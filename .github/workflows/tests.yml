@@ -49,7 +49,9 @@ jobs:
         run: composer show -D
       
       - name: Execute tests
-        run: php vendor/bin/pest
+        run: php vendor/bin/pest --no-coverage
+        env:
+          PEST_NO_COVERAGE: true
       
       - name: Execute PHPStan
         run: vendor/bin/phpstan analyse --memory-limit=2G
