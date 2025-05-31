@@ -412,13 +412,11 @@ class ExtremeTaxonomyTest extends TestCase
         $this->assertEquals($firstTaxonomy->id, $freshLastTaxonomy->parent_id);
 
         // Output performance metrics
-        echo "\n=== Performance Test Results ===\n";
-        echo "Dataset size: {$targetCount} taxonomies\n";
-        echo "Creation time: {$creationTime} seconds\n";
-        echo "Rebuild time: {$rebuildTime} seconds\n";
-        echo "GetNestedTree time: {$getTreeTime} seconds\n";
-        echo "MoveToParent time: {$moveTime} seconds\n";
-        echo "================================\n";
+        // Verify performance test results
+        $this->assertLessThan(60.0, $creationTime, "Creation time should be under 60 seconds for {$targetCount} taxonomies");
+        $this->assertLessThan(45.0, $rebuildTime, "Rebuild time should be under 45 seconds for {$targetCount} taxonomies");
+        $this->assertLessThan(10.0, $getTreeTime, "GetNestedTree time should be under 10 seconds for {$targetCount} taxonomies");
+        $this->assertLessThan(5.0, $moveTime, "MoveToParent time should be under 5 seconds for {$targetCount} taxonomies");
     }
 
     /**
@@ -455,13 +453,18 @@ class ExtremeTaxonomyTest extends TestCase
         $this->assertLessThan(10 * 1024 * 1024, $creationMemoryIncrease, 'Memory usage too high during creation');
         $this->assertLessThan(5 * 1024 * 1024, $operationMemoryIncrease, 'Memory usage too high during operations');
 
-        echo "\n=== Memory Usage Test Results ===\n";
-        echo 'Initial memory: ' . $this->formatBytes($initialMemory) . "\n";
-        echo 'After creation: ' . $this->formatBytes($afterCreationMemory) . "\n";
-        echo 'Final memory: ' . $this->formatBytes($finalMemory) . "\n";
-        echo 'Creation increase: ' . $this->formatBytes($creationMemoryIncrease) . "\n";
-        echo 'Operation increase: ' . $this->formatBytes($operationMemoryIncrease) . "\n";
-        echo "=================================\n";
+        // Verify memory usage is within acceptable limits
+        $maxMemoryIncrease = 512 * 1024 * 1024; // 512MB
+        $this->assertLessThan($maxMemoryIncrease, $creationMemoryIncrease, 'Creation memory increase should be under 512MB');
+        $this->assertLessThan($maxMemoryIncrease / 2, $operationMemoryIncrease, 'Operation memory increase should be under 256MB');
+        
+        // Memory bisa sama karena garbage collection, jadi kita test bahwa tidak ada memory leak besar
+        $this->assertGreaterThanOrEqual($initialMemory, $afterCreationMemory, 'Memory should not decrease after creation');
+        $this->assertGreaterThanOrEqual($afterCreationMemory, $finalMemory, 'Memory should not decrease after operations');
+        
+        // Memory usage tracking completed without major leaks
+        $memoryEfficient = ($creationMemoryIncrease < 50 * 1024 * 1024) && ($operationMemoryIncrease < 25 * 1024 * 1024);
+        $this->assertTrue($memoryEfficient, 'Memory usage should be efficient for the operations performed');
     }
 
     /**
@@ -484,21 +487,5 @@ class ExtremeTaxonomyTest extends TestCase
                 $this->assertLessThan($parent->rgt, $taxonomy->rgt, "Child rgt not less than parent rgt for taxonomy {$taxonomy->id}");
             }
         }
-    }
-
-    /**
-     * Helper untuk format bytes.
-     */
-    private function formatBytes(int $bytes): string
-    {
-        $units = ['B', 'KB', 'MB', 'GB'];
-        $unitIndex = 0;
-
-        while ($bytes >= 1024 && $unitIndex < count($units) - 1) {
-            $bytes /= 1024;
-            ++$unitIndex;
-        }
-
-        return round($bytes, 2) . ' ' . $units[$unitIndex];
     }
 }

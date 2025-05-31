@@ -175,12 +175,10 @@ class TaxonomyStressTest extends TestCase
 
         $this->assertEquals($batchSize / 2, Taxonomy::count());
 
-        echo "\n=== Batch Operations Performance ===\n";
-        echo "Batch size: {$batchSize}\n";
-        echo "Creation time: {$batchCreationTime} seconds\n";
-        echo "Update time: {$batchUpdateTime} seconds\n";
-        echo "Delete time: {$batchDeleteTime} seconds\n";
-        echo "===================================\n";
+        // Verify batch operations performance
+        $this->assertLessThan(30.0, $batchCreationTime, "Batch creation should complete within 30 seconds for {$batchSize} items");
+        $this->assertLessThan(20.0, $batchUpdateTime, "Batch update should complete within 20 seconds for {$batchSize} items");
+        $this->assertLessThan(15.0, $batchDeleteTime, "Batch delete should complete within 15 seconds for {$batchSize} items");
     }
 
     /**
@@ -234,11 +232,10 @@ class TaxonomyStressTest extends TestCase
         $aggregationQueryTime = microtime(true) - $startTime;
         $this->assertLessThan(1.0, $aggregationQueryTime, "Aggregation queries took too long: {$aggregationQueryTime} seconds");
 
-        echo "\n=== Query Performance Results ===\n";
-        echo "Complex query time: {$complexQueryTime} seconds\n";
-        echo "Nested set query time: {$nestedSetQueryTime} seconds\n";
-        echo "Aggregation query time: {$aggregationQueryTime} seconds\n";
-        echo "================================\n";
+        // Verify query performance
+        $this->assertLessThan(5.0, $complexQueryTime, 'Complex query should complete within 5 seconds');
+        $this->assertLessThan(3.0, $nestedSetQueryTime, 'Nested set query should complete within 3 seconds');
+        $this->assertLessThan(2.0, $aggregationQueryTime, 'Aggregation query should complete within 2 seconds');
     }
 
     /**
@@ -304,12 +301,13 @@ class TaxonomyStressTest extends TestCase
             $this->assertNull(Cache::get($key));
         }
 
-        echo "\n=== Cache Performance Results ===\n";
-        echo "First call (cache miss): {$firstCallTime} seconds\n";
-        echo "Second call (cache hit): {$secondCallTime} seconds\n";
-        echo "Third call (cache rebuild): {$thirdCallTime} seconds\n";
-        echo 'Cache speedup: ' . round($firstCallTime / $secondCallTime, 2) . "x\n";
-        echo "================================\n";
+        // Verify cache performance improvements (dengan threshold yang lebih realistis)
+        // Cache hit tidak selalu lebih cepat karena overhead kecil, jadi kita test performa yang wajar
+        $this->assertLessThan(1.0, $secondCallTime, 'Cache hit should be reasonably fast');
+        $this->assertLessThan(1.0, $thirdCallTime, 'Cache rebuild should be reasonably fast');
+        
+        // Verify bahwa semua operasi dalam batas waktu yang wajar
+        $this->assertLessThan(2.0, $firstCallTime, 'Initial call should complete within reasonable time');
     }
 
     /**
@@ -357,12 +355,10 @@ class TaxonomyStressTest extends TestCase
         $this->assertLessThan(1.0, $avgTime, "Average operation time too high: {$avgTime} seconds");
         $this->assertLessThan(5.0, $maxTime, "Max operation time too high: {$maxTime} seconds");
 
-        echo "\n=== Connection Stress Test Results ===\n";
-        echo "Total operations: {$connectionCount}\n";
-        echo "Average time: {$avgTime} seconds\n";
-        echo "Min time: {$minTime} seconds\n";
-        echo "Max time: {$maxTime} seconds\n";
-        echo "=====================================\n";
+        // Verify connection stress test performance
+        $this->assertLessThan(1.0, $avgTime, 'Average operation time should be under 1 second');
+        $this->assertLessThan(5.0, $maxTime, 'Maximum operation time should be under 5 seconds');
+        $this->assertGreaterThan(0, $minTime, 'Minimum operation time should be positive');
     }
 
     /**

@@ -99,10 +99,9 @@ class TaxonomyConcurrencyTest extends TestCase
             Log::info('Concurrent move errors:', $errors);
         }
 
-        echo "\n=== Concurrent Move Test Results ===\n";
-        echo 'Successful moves: ' . count($results) . "\n";
-        echo 'Failed moves: ' . count($errors) . "\n";
-        echo "===================================\n";
+        // Verify concurrent move operations completed
+        $this->assertGreaterThan(0, count($results), 'Should have successful moves');
+        $this->assertLessThanOrEqual(count($results), count($errors), 'Errors should not exceed successful operations');
     }
 
     /**
@@ -156,11 +155,9 @@ class TaxonomyConcurrencyTest extends TestCase
             'Slug uniqueness not properly handled'
         );
 
-        echo "\n=== Concurrent Creation Test Results ===\n";
-        echo 'Successful creations: ' . count($results) . "\n";
-        echo 'Failed creations: ' . count($errors) . "\n";
-        echo 'Unique slugs: ' . count($uniqueSlugs) . "\n";
-        echo "=======================================\n";
+        // Verify concurrent creation operations completed
+        $this->assertGreaterThan(0, count($results), 'Should have successful creations');
+        $this->assertGreaterThan(0, count($uniqueSlugs), 'Should have unique slugs created');
     }
 
     /**
@@ -211,13 +208,14 @@ class TaxonomyConcurrencyTest extends TestCase
         // Verify minimal satu rebuild berhasil
         $this->assertGreaterThan(0, count($rebuildResults), 'No successful rebuilds');
 
-        echo "\n=== Concurrent Rebuild Test Results ===\n";
-        echo 'Successful rebuilds: ' . count($rebuildResults) . "\n";
-        echo 'Failed rebuilds: ' . count($rebuildErrors) . "\n";
+        // Verify concurrent rebuild operations completed
+        $this->assertGreaterThan(0, count($rebuildResults), 'Should have successful rebuilds');
+        $this->assertLessThanOrEqual(count($rebuildResults), count($rebuildErrors), 'Errors should not exceed successful operations');
+
+        // Verify rebuild performance
         foreach ($rebuildResults as $result) {
-            echo "Rebuild {$result['rebuild_id']}: {$result['duration']} seconds\n";
+            $this->assertLessThan(30.0, $result['duration'], "Rebuild {$result['rebuild_id']} should complete within 30 seconds");
         }
-        echo "======================================\n";
     }
 
     /**
@@ -274,15 +272,18 @@ class TaxonomyConcurrencyTest extends TestCase
             );
         }
 
-        echo "\n=== Concurrent Cache Test Results ===\n";
-        echo 'Successful accesses: ' . count($cacheResults) . "\n";
-        echo 'Failed accesses: ' . count($cacheErrors) . "\n";
-        echo "First access time: {$firstAccess} seconds\n";
-        echo "Avg subsequent time: {$avgSubsequentTime} seconds\n";
-        if ($firstAccess > 0 && $avgSubsequentTime > 0) {
-            echo 'Cache speedup: ' . round($firstAccess / $avgSubsequentTime, 2) . "x\n";
+        // Verify concurrent cache operations completed
+        $this->assertGreaterThan(0, count($cacheResults), 'Should have successful cache accesses');
+        
+        // Cache performance bisa bervariasi, jadi kita test bahwa operasi berjalan dalam waktu wajar
+        $this->assertLessThan(1.0, $avgSubsequentTime, 'Subsequent cache accesses should be reasonably fast');
+        $this->assertLessThan(2.0, $firstAccess, 'First access should complete within reasonable time');
+        
+        // Verify cache speedup (dengan tolerance yang lebih besar)
+        if ($avgSubsequentTime > 0 && $firstAccess > $avgSubsequentTime) {
+            $speedup = round($firstAccess / $avgSubsequentTime, 2);
+            // Cache speedup detected but not strictly required
         }
-        echo "====================================\n";
     }
 
     /**
@@ -368,13 +369,13 @@ class TaxonomyConcurrencyTest extends TestCase
         // Verify final state is consistent
         $this->assertValidNestedSetStructure();
 
-        echo "\n=== Deadlock Test Results ===\n";
-        echo 'Successful transactions: ' . count($deadlockResults) . "\n";
-        echo 'Failed transactions: ' . count($deadlockErrors) . "\n";
+        // Verify deadlock handling completed
+        $this->assertGreaterThan(0, count($deadlockResults), 'Should have successful transactions');
+
+        // Verify deadlock errors are handled properly
         foreach ($deadlockErrors as $error) {
-            echo "Error: {$error}\n";
+            $this->assertStringContainsString('deadlock', strtolower($error), 'Error should be deadlock-related');
         }
-        echo "============================\n";
     }
 
     /**
@@ -420,11 +421,12 @@ class TaxonomyConcurrencyTest extends TestCase
         $this->assertArrayHasKey('initial_name', $isolationResults);
         $this->assertArrayHasKey('updated_name', $isolationResults);
 
-        echo "\n=== Transaction Isolation Test Results ===\n";
-        echo "Initial name: {$isolationResults['initial_name']}\n";
-        echo "Updated name: {$isolationResults['updated_name']}\n";
-        echo 'Names are ' . ($isolationResults['initial_name'] === $isolationResults['updated_name'] ? 'same' : 'different') . "\n";
-        echo "=========================================\n";
+        // Verify transaction isolation behavior
+        $this->assertNotEquals(
+            $isolationResults['initial_name'],
+            $isolationResults['updated_name'],
+            'Transaction isolation should allow concurrent updates'
+        );
     }
 
     /**
