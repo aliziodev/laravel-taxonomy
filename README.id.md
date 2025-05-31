@@ -141,13 +141,6 @@ return [
         'generate' => true,                // Auto-generate slug dari nama
         'regenerate_on_update' => false,  // Regenerate slug ketika nama berubah
     ],
-
-    // Pengaturan cache
-    'cache' => [
-        'enabled' => true,                 // Enable/disable caching
-        'ttl' => 24 * 60,                 // Cache TTL dalam menit (24 jam)
-        'prefix' => 'taxonomy',           // Prefix key cache
-    ],
 ];
 ```
 

@@ -141,13 +141,6 @@ return [
         'generate' => true,                // Auto-generate slugs from names
         'regenerate_on_update' => false,  // Regenerate slug when name changes
     ],
-
-    // Cache settings
-    'cache' => [
-        'enabled' => true,                 // Enable/disable caching
-        'ttl' => 24 * 60,                 // Cache TTL in minutes (24 hours)
-        'prefix' => 'taxonomy',           // Cache key prefix
-    ],
 ];
 ```
 
