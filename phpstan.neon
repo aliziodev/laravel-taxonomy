@@ -12,8 +12,6 @@ parameters:
     # Ignore errors
     ignoreErrors:
         - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder.*#'
-        - '#Call to an undefined method Illuminate\\Database\\Query\\Builder.*#'
-        - '#Access to an undefined property Aliziodev\\LaravelTaxonomy\\Facades\\Taxonomy::\$.*#'
     
     # Exclude files
     excludePaths:

@@ -18,7 +18,7 @@ class TaxonomyProvider extends ServiceProvider
     /**
      * The commands to be registered.
      *
-     * @var array
+     * @var array<int, class-string>
      */
     protected $commands = [
         InstallCommand::class,

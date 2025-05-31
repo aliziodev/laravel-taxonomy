@@ -19,7 +19,7 @@ class TaxonomyManager
     /**
      * Create a new taxonomy.
      *
-     * @param  array  $attributes  The attributes for the new taxonomy
+     * @param  array<string, mixed>  $attributes  The attributes for the new taxonomy
      * @return \Aliziodev\LaravelTaxonomy\Models\Taxonomy The created taxonomy
      */
     public function create(array $attributes): Taxonomy
@@ -29,6 +29,8 @@ class TaxonomyManager
 
     /**
      * Create a new taxonomy or update if it already exists.
+     *
+     * @param  array<string, mixed>  $attributes  The attributes for the new taxonomy
      */
     public function createOrUpdate(array $attributes): Taxonomy
     {
@@ -51,7 +53,7 @@ class TaxonomyManager
      *
      * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType|null  $type  The taxonomy type to filter by (optional)
      * @param  int|null  $parentId  The parent ID to start the tree from (null for root level)
-     * @return \Illuminate\Database\Eloquent\Collection The hierarchical collection of taxonomies
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy> The hierarchical collection of taxonomies
      */
     public function tree(string|TaxonomyType|null $type = null, ?int $parentId = null): Collection
     {
@@ -72,7 +74,7 @@ class TaxonomyManager
      * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType|null  $type  The taxonomy type to filter by (optional)
      * @param  int|null  $parentId  The parent ID to start the tree from (null for root level)
      * @param  int  $depth  The current depth level (used internally for recursion)
-     * @return \Illuminate\Database\Eloquent\Collection The flat collection of taxonomies with depth information
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy> The flat collection of taxonomies with depth information
      */
     public function flatTree(string|TaxonomyType|null $type = null, ?int $parentId = null, int $depth = 0): Collection
     {
@@ -86,16 +88,21 @@ class TaxonomyManager
 
     /**
      * Get all available taxonomy types.
+     *
+     * @return \Illuminate\Support\Collection<int, string>
      */
-    public function getTypes(): Collection
+    public function getTypes(): \Illuminate\Support\Collection
     {
-        $types = collect(config('taxonomy.types', TaxonomyType::values()));
+        /** @var array<int, string> $typesArray */
+        $typesArray = config('taxonomy.types', TaxonomyType::values());
 
-        return new Collection($types->all());
+        return collect($typesArray);
     }
 
     /**
      * Get nested tree using nested set (more efficient).
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>
      */
     public function getNestedTree(string|TaxonomyType|null $type = null): Collection
     {
@@ -144,6 +151,8 @@ class TaxonomyManager
 
     /**
      * Get all descendants of a taxonomy.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>
      */
     public function getDescendants(int $taxonomyId): Collection
     {
@@ -157,6 +166,8 @@ class TaxonomyManager
 
     /**
      * Get all ancestors of a taxonomy.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>
      */
     public function getAncestors(int $taxonomyId): Collection
     {
@@ -221,10 +232,10 @@ class TaxonomyManager
     /**
      * Find multiple taxonomies by their IDs.
      *
-     * @param  array  $ids  The taxonomy IDs
+     * @param  array<int, int>  $ids  The taxonomy IDs
      * @param  int|null  $perPage  Number of items per page (null for no pagination)
      * @param  int  $page  The page number
-     * @return \Illuminate\Database\Eloquent\Collection|\Illuminate\Pagination\LengthAwarePaginator Collection of taxonomies or paginator
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Illuminate\Pagination\LengthAwarePaginator<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy> Collection of taxonomies or paginator
      */
     public function findMany(array $ids, ?int $perPage = null, int $page = 1): Collection|LengthAwarePaginator
     {
@@ -243,7 +254,7 @@ class TaxonomyManager
      * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType  $type  The taxonomy type
      * @param  int|null  $perPage  Number of items per page (null for no pagination)
      * @param  int  $page  The page number
-     * @return \Illuminate\Database\Eloquent\Collection|\Illuminate\Pagination\LengthAwarePaginator Collection of taxonomies or paginator
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Illuminate\Pagination\LengthAwarePaginator<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy> Collection of taxonomies or paginator
      */
     public function findByType(string|TaxonomyType $type, ?int $perPage = null, int $page = 1): Collection|LengthAwarePaginator
     {
@@ -262,7 +273,7 @@ class TaxonomyManager
      * @param  int|null  $parentId  The parent ID (null for root level)
      * @param  int|null  $perPage  Number of items per page (null for no pagination)
      * @param  int  $page  The page number
-     * @return \Illuminate\Database\Eloquent\Collection|\Illuminate\Pagination\LengthAwarePaginator Collection of taxonomies or paginator
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Illuminate\Pagination\LengthAwarePaginator<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy> Collection of taxonomies or paginator
      */
     public function findByParent(?int $parentId = null, ?int $perPage = null, int $page = 1): Collection|LengthAwarePaginator
     {
@@ -282,7 +293,7 @@ class TaxonomyManager
      * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType|null  $type  The taxonomy type to filter by (optional)
      * @param  int|null  $perPage  Number of items per page (null for no pagination)
      * @param  int  $page  The page number
-     * @return \Illuminate\Database\Eloquent\Collection|\Illuminate\Pagination\LengthAwarePaginator Collection of taxonomies or paginator
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Illuminate\Pagination\LengthAwarePaginator<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy> Collection of taxonomies or paginator
      */
     public function search(string $term, string|TaxonomyType|null $type = null, ?int $perPage = null, int $page = 1): Collection|LengthAwarePaginator
     {

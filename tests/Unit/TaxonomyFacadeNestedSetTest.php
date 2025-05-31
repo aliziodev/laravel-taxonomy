@@ -80,27 +80,27 @@ class TaxonomyFacadeNestedSetTest extends TestCase
 
         $root = $nestedTree->first();
         $this->assertNotNull($root);
-        $this->assertInstanceOf(Taxonomy::class, $root);
+        $this->assertInstanceOf(TaxonomyModel::class, $root);
         $this->assertEquals('Electronics', $root->name);
         $this->assertNotNull($root->children);
         $this->assertCount(1, $root->children); // Should have 1 child (smartphones)
 
         $smartphones = $root->children->first();
         $this->assertNotNull($smartphones);
-        $this->assertInstanceOf(Taxonomy::class, $smartphones);
+        $this->assertInstanceOf(TaxonomyModel::class, $smartphones);
         $this->assertEquals('Smartphones', $smartphones->name);
         $this->assertNotNull($smartphones->children);
         $this->assertCount(1, $smartphones->children); // Should have 1 child (android)
 
         $android = $smartphones->children->first();
         $this->assertNotNull($android);
-        $this->assertInstanceOf(Taxonomy::class, $android);
+        $this->assertInstanceOf(TaxonomyModel::class, $android);
         $this->assertEquals('Android', $android->name);
         $this->assertCount(1, $android->children); // Should have 1 child (samsung)
 
         $samsung = $android->children->first();
         $this->assertNotNull($samsung);
-        $this->assertInstanceOf(Taxonomy::class, $samsung);
+        $this->assertInstanceOf(TaxonomyModel::class, $samsung);
         $this->assertEquals('Samsung', $samsung->name);
         $this->assertNotNull($samsung->children);
         $this->assertCount(0, $samsung->children); // Should have no children
@@ -115,20 +115,20 @@ class TaxonomyFacadeNestedSetTest extends TestCase
         $this->assertCount(1, $categoryTree);
         $categoryFirst = $categoryTree->first();
         $this->assertNotNull($categoryFirst);
-        $this->assertInstanceOf(Taxonomy::class, $categoryFirst);
+        $this->assertInstanceOf(TaxonomyModel::class, $categoryFirst);
         $this->assertEquals('Electronics', $categoryFirst->name);
 
         // Tag tree should have parent tag as root
         $this->assertCount(1, $tagTree);
         $tagFirst = $tagTree->first();
         $this->assertNotNull($tagFirst);
-        $this->assertInstanceOf(Taxonomy::class, $tagFirst);
+        $this->assertInstanceOf(TaxonomyModel::class, $tagFirst);
         $this->assertEquals('Parent Tag', $tagFirst->name);
         $this->assertNotNull($tagFirst->children);
         $this->assertCount(1, $tagFirst->children);
         $childTag = $tagFirst->children->first();
         $this->assertNotNull($childTag);
-        $this->assertInstanceOf(Taxonomy::class, $childTag);
+        $this->assertInstanceOf(TaxonomyModel::class, $childTag);
         $this->assertEquals('Child Tag', $childTag->name);
     }
 
@@ -281,7 +281,7 @@ class TaxonomyFacadeNestedSetTest extends TestCase
         $this->assertCount(1, $nestedTree);
         $nestedFirst = $nestedTree->first();
         $this->assertNotNull($nestedFirst);
-        $this->assertInstanceOf(Taxonomy::class, $nestedFirst);
+        $this->assertInstanceOf(TaxonomyModel::class, $nestedFirst);
         $this->assertEquals('Electronics', $nestedFirst->name);
 
         Taxonomy::rebuildNestedSet('category');

@@ -27,7 +27,7 @@ use Illuminate\Support\Str;
  * @property int|null $lft
  * @property int|null $rgt
  * @property int|null $depth
- * @property array|null $meta
+ * @property array<string, mixed>|null $meta
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
@@ -51,11 +51,11 @@ use Illuminate\Support\Str;
  * @method static \Illuminate\Database\Eloquent\Builder<static> whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static> whereSlug($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static> whereType($value)
- * @method static static create(array $attributes = [])
- * @method static static|null find(mixed $id, array $columns = ['*'])
- * @method static static findOrFail(mixed $id, array $columns = ['*'])
- * @method static static|null first(array $columns = ['*'])
- * @method static static firstOrFail(array $columns = ['*'])
+ * @method static static create(array<string, mixed> $attributes = [])
+ * @method static static|null find(mixed $id, array<int, string> $columns = ['*'])
+ * @method static static findOrFail(mixed $id, array<int, string> $columns = ['*'])
+ * @method static static|null first(array<int, string> $columns = ['*'])
+ * @method static static firstOrFail(array<int, string> $columns = ['*'])
  */
 class Taxonomy extends Model
 {
@@ -64,7 +64,7 @@ class Taxonomy extends Model
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $fillable = [
         'name',
@@ -164,32 +164,41 @@ class Taxonomy extends Model
     /**
      * Get the parent taxonomy.
      */
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<self, $this>
+     */
     public function parent(): BelongsTo
     {
-        return $this->belongsTo(static::class, 'parent_id');
+        return $this->belongsTo(self::class, 'parent_id');
     }
 
     /**
      * Get the children taxonomies.
      */
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<self, $this>
+     */
     public function children(): HasMany
     {
-        return $this->hasMany(static::class, 'parent_id')->orderBy('sort_order');
+        return $this->hasMany(self::class, 'parent_id')->orderBy('sort_order');
     }
 
     /**
      * Get all descendants of the taxonomy.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     * @return \Illuminate\Database\Eloquent\Collection<int, self>
      */
     public function descendants(): Collection
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, static> $descendants */
+        /** @var \Illuminate\Database\Eloquent\Collection<int, self> $descendants */
         $descendants = new Collection;
 
         foreach ($this->children as $child) {
+            /* @var self $child */
             $descendants->push($child);
-            $descendants = $descendants->merge($child->descendants());
+            /** @var \Illuminate\Database\Eloquent\Collection<int, self> $childDescendants */
+            $childDescendants = $child->descendants();
+            $descendants = $descendants->merge($childDescendants);
         }
 
         return $descendants;
@@ -198,15 +207,16 @@ class Taxonomy extends Model
     /**
      * Get all ancestors of the taxonomy.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     * @return \Illuminate\Database\Eloquent\Collection<int, self>
      */
     public function ancestors(): Collection
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, static> $ancestors */
+        /** @var \Illuminate\Database\Eloquent\Collection<int, self> $ancestors */
         $ancestors = new Collection;
         $parent = $this->parent;
 
         while ($parent) {
+            /* @var self $parent */
             $ancestors->push($parent);
             $parent = $parent->parent;
         }
@@ -254,6 +264,10 @@ class Taxonomy extends Model
     /**
      * Scope a query to only include taxonomies of a given type.
      */
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<static>
+     */
     public function scopeType(Builder $query, string|TaxonomyType $type): Builder
     {
         $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
@@ -264,6 +278,10 @@ class Taxonomy extends Model
     /**
      * Scope a query to only include root taxonomies (no parent).
      */
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<static>
+     */
     public function scopeRoot(Builder $query): Builder
     {
         return $query->whereNull('parent_id');
@@ -271,6 +289,10 @@ class Taxonomy extends Model
 
     /**
      * Scope a query to order taxonomies by sort_order.
+     */
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<static>
      */
     public function scopeOrdered(Builder $query): Builder
     {
@@ -342,6 +364,9 @@ class Taxonomy extends Model
      *
      * @throws MissingSlugException If slug generation is disabled and no slug is provided
      * @throws DuplicateSlugException If a custom slug is provided but already exists
+     */
+    /**
+     * @param  array<string, mixed>  $attributes
      */
     public static function createOrUpdate(array $attributes): self
     {
@@ -579,11 +604,14 @@ class Taxonomy extends Model
             return new Collection;
         }
 
-        return static::where('type', $this->type)
+        /** @var \Illuminate\Database\Eloquent\Collection<int, static> $result */
+        $result = static::where('type', $this->type)
             ->where('lft', '>', $this->lft)
             ->where('rgt', '<', $this->rgt)
             ->orderBy('lft')
             ->get();
+
+        return $result;
     }
 
     /**
@@ -597,11 +625,14 @@ class Taxonomy extends Model
             return new Collection;
         }
 
-        return static::where('type', $this->type)
+        /** @var \Illuminate\Database\Eloquent\Collection<int, static> $result */
+        $result = static::where('type', $this->type)
             ->where('lft', '<', $this->lft)
             ->where('rgt', '>', $this->rgt)
             ->orderBy('lft')
             ->get();
+
+        return $result;
     }
 
     /**
@@ -611,9 +642,12 @@ class Taxonomy extends Model
      */
     public function getChildren(): Collection
     {
-        return static::where('parent_id', $this->id)
+        /** @var \Illuminate\Database\Eloquent\Collection<int, static> $result */
+        $result = static::where('parent_id', $this->id)
             ->orderBy('lft')
             ->get();
+
+        return $result;
     }
 
     /**
@@ -649,6 +683,10 @@ class Taxonomy extends Model
     /**
      * Scope to get only root taxonomies using nested set.
      */
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<static>
+     */
     public function scopeRoots(Builder $query): Builder
     {
         return $query->where('depth', 0);
@@ -657,6 +695,10 @@ class Taxonomy extends Model
     /**
      * Scope to get taxonomies at a specific depth.
      */
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<static>
+     */
     public function scopeAtDepth(Builder $query, int $depth): Builder
     {
         return $query->where('depth', $depth);
@@ -664,6 +706,10 @@ class Taxonomy extends Model
 
     /**
      * Scope to get taxonomies ordered by nested set.
+     */
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<static>
      */
     public function scopeNestedSetOrder(Builder $query): Builder
     {
@@ -719,7 +765,7 @@ class Taxonomy extends Model
             }
 
             // Set depth based on stack size
-            $taxonomy->tree_depth = count($stack);
+            $taxonomy->setAttribute('tree_depth', count($stack));
 
             if (empty($stack)) {
                 // Root level
@@ -730,7 +776,7 @@ class Taxonomy extends Model
                 if ($parent && ! $parent->children_nested) {
                     /** @var \Illuminate\Database\Eloquent\Collection<int, static> $childrenNested */
                     $childrenNested = new Collection;
-                    $parent->children_nested = $childrenNested;
+                    $parent->setAttribute('children_nested', $childrenNested);
                 }
                 if ($parent && $parent->children_nested) {
                     $parent->children_nested->push($taxonomy);

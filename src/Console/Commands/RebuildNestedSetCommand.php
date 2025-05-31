@@ -34,15 +34,16 @@ class RebuildNestedSetCommand extends Command
         $force = $this->option('force');
 
         // Validate type if provided
-        if ($type && ! $this->isValidType($type)) {
-            $this->error("Invalid taxonomy type: {$type}");
+        if ($type !== null && ! $this->isValidType(is_string($type) ? $type : '')) {
+            $typeStr = is_string($type) ? $type : 'invalid';
+            $this->error('Invalid taxonomy type: ' . $typeStr);
             $this->info('Available types: ' . implode(', ', $this->getAvailableTypes()));
 
             return self::FAILURE;
         }
 
         // Get types to rebuild
-        $types = $type ? [$type] : $this->getExistingTypes();
+        $types = $type !== null && is_string($type) ? [$type] : $this->getExistingTypes();
 
         if (empty($types)) {
             $this->info('No taxonomies found to rebuild.');
@@ -105,6 +106,8 @@ class RebuildNestedSetCommand extends Command
 
     /**
      * Get all available taxonomy types from enum.
+     *
+     * @return array<string>
      */
     protected function getAvailableTypes(): array
     {
@@ -113,6 +116,8 @@ class RebuildNestedSetCommand extends Command
 
     /**
      * Get existing taxonomy types from database.
+     *
+     * @return array<string>
      */
     protected function getExistingTypes(): array
     {
@@ -124,6 +129,8 @@ class RebuildNestedSetCommand extends Command
 
     /**
      * Show confirmation dialog.
+     *
+     * @param  array<string>  $types
      */
     protected function confirmRebuild(array $types): bool
     {

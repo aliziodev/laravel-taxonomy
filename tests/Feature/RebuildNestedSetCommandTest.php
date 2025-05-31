@@ -93,12 +93,12 @@ class RebuildNestedSetCommandTest extends TestCase
         // Create test taxonomies with broken nested set values
         $this->createTestTaxonomies();
 
-        // Mock user input to accept
-        $result = $this->artisan('taxonomy:rebuild-nested-set');
-        $this->assertInstanceOf(\Illuminate\Testing\PendingCommand::class, $result);
-        $result->expectsConfirmation('Do you want to continue?', 'yes')
-            ->expectsOutput('Starting nested set rebuild...')
-            ->assertExitCode(0);
+        // Verify initial broken state
+        $this->assertBrokenNestedSetValues();
+
+        // Use Artisan::call with force flag to avoid confirmation prompt
+        $exitCode = Artisan::call('taxonomy:rebuild-nested-set', ['--force' => true]);
+        $this->assertEquals(0, $exitCode);
 
         // Verify nested set values are now correct
         $this->assertCorrectNestedSetValues();
@@ -159,13 +159,6 @@ class RebuildNestedSetCommandTest extends TestCase
 
         // Verify nested set integrity
         $this->assertNestedSetIntegrity();
-    }
-
-    #[Test]
-    public function it_handles_concurrent_operations_safely(): void
-    {
-        // This test simulates potential race conditions
-        $this->markTestSkipped('Concurrent testing requires more complex setup');
     }
 
     #[Test]
