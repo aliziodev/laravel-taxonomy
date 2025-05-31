@@ -64,7 +64,7 @@ class HasTaxonomyHierarchicalTest extends TestCase
         Taxonomy::rebuildNestedSet(TaxonomyType::Category->value);
     }
 
-    public function test_get_hierarchical_taxonomies_includes_descendants()
+    public function test_get_hierarchical_taxonomies_includes_descendants(): void
     {
         // Attach smartphones taxonomy to product
         $this->product->attachTaxonomies([$this->smartphones->id]);
@@ -79,7 +79,7 @@ class HasTaxonomyHierarchicalTest extends TestCase
         $this->assertFalse($hierarchical->contains('id', $this->electronics->id));
     }
 
-    public function test_get_hierarchical_taxonomies_with_multiple_taxonomies()
+    public function test_get_hierarchical_taxonomies_with_multiple_taxonomies(): void
     {
         // Attach both electronics and android taxonomies
         $this->product->attachTaxonomies([$this->electronics->id, $this->android->id]);
@@ -94,7 +94,7 @@ class HasTaxonomyHierarchicalTest extends TestCase
         $this->assertTrue($hierarchical->contains('id', $this->samsung->id));
     }
 
-    public function test_get_ancestor_taxonomies_returns_correct_ancestors()
+    public function test_get_ancestor_taxonomies_returns_correct_ancestors(): void
     {
         // Attach samsung taxonomy to product
         $this->product->attachTaxonomies([$this->samsung->id]);
@@ -109,7 +109,7 @@ class HasTaxonomyHierarchicalTest extends TestCase
         $this->assertFalse($ancestors->contains('id', $this->samsung->id));
     }
 
-    public function test_scope_with_taxonomy_hierarchy_includes_descendants()
+    public function test_scope_with_taxonomy_hierarchy_includes_descendants(): void
     {
         $product1 = Product::create(['name' => 'Product 1', 'description' => 'Desc 1']);
         $product2 = Product::create(['name' => 'Product 2', 'description' => 'Desc 2']);
@@ -129,7 +129,7 @@ class HasTaxonomyHierarchicalTest extends TestCase
         $this->assertFalse($products->contains('id', $product3->id)); // has electronics (ancestor, not descendant)
     }
 
-    public function test_scope_with_taxonomy_hierarchy_excludes_descendants_when_disabled()
+    public function test_scope_with_taxonomy_hierarchy_excludes_descendants_when_disabled(): void
     {
         $product1 = Product::create(['name' => 'Product 1', 'description' => 'Desc 1']);
         $product2 = Product::create(['name' => 'Product 2', 'description' => 'Desc 2']);
@@ -145,7 +145,7 @@ class HasTaxonomyHierarchicalTest extends TestCase
         $this->assertFalse($products->contains('id', $product2->id)); // has android (descendant, but excluded)
     }
 
-    public function test_scope_with_taxonomy_at_depth_filters_correctly()
+    public function test_scope_with_taxonomy_at_depth_filters_correctly(): void
     {
         $product1 = Product::create(['name' => 'Product 1', 'description' => 'Desc 1']);
         $product2 = Product::create(['name' => 'Product 2', 'description' => 'Desc 2']);
@@ -168,7 +168,7 @@ class HasTaxonomyHierarchicalTest extends TestCase
         $this->assertTrue($productsAtDepth2->contains('id', $product3->id));
     }
 
-    public function test_has_ancestor_taxonomy_returns_correct_result()
+    public function test_has_ancestor_taxonomy_returns_correct_result(): void
     {
         // Attach electronics taxonomy to product
         $this->product->attachTaxonomies([$this->electronics->id]);
@@ -180,7 +180,7 @@ class HasTaxonomyHierarchicalTest extends TestCase
         $this->assertFalse($this->product->hasAncestorTaxonomy($this->electronics->id));
     }
 
-    public function test_has_descendant_taxonomy_returns_correct_result()
+    public function test_has_descendant_taxonomy_returns_correct_result(): void
     {
         // Attach smartphones taxonomy to product (smartphones is descendant of electronics)
         $this->product->attachTaxonomies([$this->smartphones->id]);
@@ -195,7 +195,7 @@ class HasTaxonomyHierarchicalTest extends TestCase
         $this->assertFalse($this->product->hasDescendantTaxonomy($this->samsung->id));
     }
 
-    public function test_hierarchical_methods_handle_invalid_taxonomy_id()
+    public function test_hierarchical_methods_handle_invalid_taxonomy_id(): void
     {
         $this->product->attachTaxonomies([$this->electronics->id]);
 
@@ -207,7 +207,7 @@ class HasTaxonomyHierarchicalTest extends TestCase
         $this->assertFalse($this->product->hasDescendantTaxonomy(99999));
     }
 
-    public function test_hierarchical_methods_work_with_different_types()
+    public function test_hierarchical_methods_work_with_different_types(): void
     {
         // Create tag hierarchy
         $tagParent = Taxonomy::create([

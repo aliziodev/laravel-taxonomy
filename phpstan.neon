@@ -13,21 +13,23 @@ parameters:
     ignoreErrors:
         - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder.*#'
         - '#Call to an undefined method Illuminate\\Database\\Query\\Builder.*#'
+        - '#Access to an undefined property Aliziodev\\LaravelTaxonomy\\Facades\\Taxonomy::\$.*#'
     
     # Exclude files
     excludePaths:
-        - tests/bootstrap.php
+        - tests/bootstrap.php (?)
     
     # Check missing typehints
-    checkMissingIterableValueType: false
-    checkGenericClassInNonGenericObjectType: false
+    # checkMissingIterableValueType: false
+    # checkGenericClassInNonGenericObjectType: false
     
     # Laravel specific
     checkOctaneCompatibility: true
     noUnnecessaryCollectionCall: true
+    treatPhpDocTypesAsCertain: false
     noUnnecessaryCollectionCallOnly: []
     noUnnecessaryCollectionCallExcept: []
     
     # Pest specific
-    stubFiles:
-        - vendor/pestphp/pest/stubs/Laravel.php
+    # stubFiles:
+    #     - vendor/pestphp/pest/stubs/Laravel.php

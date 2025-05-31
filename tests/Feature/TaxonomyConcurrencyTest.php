@@ -334,7 +334,10 @@ class TaxonomyConcurrencyTest extends TestCase
                 usleep(100000); // 100ms
 
                 // Try to move childB to nodeA (requires lock on nodeB)
-                $childB->fresh()->moveToParent($lockedA->id);
+                $freshChildB = $childB->fresh();
+                $this->assertNotNull($freshChildB);
+                $this->assertNotNull($lockedA);
+                $freshChildB->moveToParent($lockedA->id);
 
                 $deadlockResults[] = 'Transaction 1 completed';
             });
@@ -351,7 +354,10 @@ class TaxonomyConcurrencyTest extends TestCase
                 usleep(100000); // 100ms
 
                 // Try to move childA to nodeB (requires lock on nodeA)
-                $childA->fresh()->moveToParent($lockedB->id);
+                $freshChildA = $childA->fresh();
+                $this->assertNotNull($freshChildA);
+                $this->assertNotNull($lockedB);
+                $freshChildA->moveToParent($lockedB->id);
 
                 $deadlockResults[] = 'Transaction 2 completed';
             });
@@ -390,6 +396,7 @@ class TaxonomyConcurrencyTest extends TestCase
             DB::transaction(function () use ($taxonomy, &$isolationResults) {
                 // Read initial value
                 $initial = Taxonomy::find($taxonomy->id);
+                $this->assertNotNull($initial);
                 $isolationResults['initial_name'] = $initial->name;
 
                 // Simulate concurrent update (in real scenario, this would be another process)
@@ -399,6 +406,7 @@ class TaxonomyConcurrencyTest extends TestCase
 
                 // Read again within same transaction
                 $updated = Taxonomy::find($taxonomy->id);
+                $this->assertNotNull($updated);
                 $isolationResults['updated_name'] = $updated->name;
 
                 // The behavior depends on isolation level

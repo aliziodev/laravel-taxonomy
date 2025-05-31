@@ -123,7 +123,7 @@ class TaxonomyStressTest extends TestCase
     #[Test]
     public function it_can_handle_massive_batch_operations(): void
     {
-        if (env('SKIP_HEAVY_TESTS', false)) {
+        if (config('app.skip_heavy_tests', false)) {
             $this->markTestSkipped('Heavy tests skipped');
         }
 
@@ -318,7 +318,7 @@ class TaxonomyStressTest extends TestCase
     #[Test]
     public function it_can_handle_database_connection_stress(): void
     {
-        if (env('SKIP_CONNECTION_TESTS', false)) {
+        if (config('app.skip_connection_tests', false)) {
             $this->markTestSkipped('Connection stress tests skipped');
         }
 
@@ -419,6 +419,7 @@ class TaxonomyStressTest extends TestCase
 
         // Test retrieval dan parsing metadata besar
         $retrieved = Taxonomy::find($taxonomy->id);
+        $this->assertNotNull($retrieved);
         $decodedMetadata = $retrieved->meta;
 
         $this->assertIsArray($decodedMetadata);

@@ -15,7 +15,7 @@ class TaxonomyModelTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function it_can_create_a_taxonomy()
+    public function it_can_create_a_taxonomy(): void
     {
         $taxonomy = Taxonomy::create([
             'name' => 'Test Category',
@@ -34,7 +34,7 @@ class TaxonomyModelTest extends TestCase
     }
 
     #[Test]
-    public function it_can_create_a_taxonomy_with_custom_slug()
+    public function it_can_create_a_taxonomy_with_custom_slug(): void
     {
         $taxonomy = Taxonomy::create([
             'name' => 'Test Category',
@@ -46,7 +46,7 @@ class TaxonomyModelTest extends TestCase
     }
 
     #[Test]
-    public function it_can_create_a_taxonomy_with_parent()
+    public function it_can_create_a_taxonomy_with_parent(): void
     {
         $parent = Taxonomy::create([
             'name' => 'Parent Category',
@@ -60,13 +60,16 @@ class TaxonomyModelTest extends TestCase
         ]);
 
         $this->assertEquals($parent->id, $child->parent_id);
+        $this->assertNotNull($child->parent);
         $this->assertEquals('Parent Category', $child->parent->name);
         $this->assertCount(1, $parent->children);
-        $this->assertEquals('Child Category', $parent->children->first()->name);
+        $firstChild = $parent->children->first();
+        $this->assertNotNull($firstChild);
+        $this->assertEquals('Child Category', $firstChild->name);
     }
 
     #[Test]
-    public function it_can_create_a_taxonomy_with_metadata()
+    public function it_can_create_a_taxonomy_with_metadata(): void
     {
         $taxonomy = Taxonomy::create([
             'name' => 'Test Category',
@@ -74,12 +77,13 @@ class TaxonomyModelTest extends TestCase
             'meta' => ['color' => 'red', 'featured' => true],
         ]);
 
+        $this->assertNotNull($taxonomy->meta);
         $this->assertEquals('red', $taxonomy->meta['color']);
         $this->assertTrue($taxonomy->meta['featured']);
     }
 
     #[Test]
-    public function it_can_get_ancestors()
+    public function it_can_get_ancestors(): void
     {
         $grandparent = Taxonomy::create([
             'name' => 'Grandparent Category',
@@ -101,12 +105,16 @@ class TaxonomyModelTest extends TestCase
         $ancestors = $child->ancestors();
 
         $this->assertCount(2, $ancestors);
-        $this->assertEquals('Parent Category', $ancestors->first()->name);
-        $this->assertEquals('Grandparent Category', $ancestors->last()->name);
+        $firstAncestor = $ancestors->first();
+        $this->assertNotNull($firstAncestor);
+        $this->assertEquals('Parent Category', $firstAncestor->name);
+        $lastAncestor = $ancestors->last();
+        $this->assertNotNull($lastAncestor);
+        $this->assertEquals('Grandparent Category', $lastAncestor->name);
     }
 
     #[Test]
-    public function it_can_get_descendants()
+    public function it_can_get_descendants(): void
     {
         $parent = Taxonomy::create([
             'name' => 'Parent Category',
@@ -140,7 +148,7 @@ class TaxonomyModelTest extends TestCase
     }
 
     #[Test]
-    public function it_can_get_path_attribute()
+    public function it_can_get_path_attribute(): void
     {
         $grandparent = Taxonomy::create([
             'name' => 'Grandparent Category',
@@ -163,7 +171,7 @@ class TaxonomyModelTest extends TestCase
     }
 
     #[Test]
-    public function it_can_get_full_slug_attribute()
+    public function it_can_get_full_slug_attribute(): void
     {
         $grandparent = Taxonomy::create([
             'name' => 'Grandparent Category',
@@ -186,7 +194,7 @@ class TaxonomyModelTest extends TestCase
     }
 
     #[Test]
-    public function it_can_find_by_slug()
+    public function it_can_find_by_slug(): void
     {
         $taxonomy = Taxonomy::create([
             'name' => 'Test Category',
@@ -200,7 +208,7 @@ class TaxonomyModelTest extends TestCase
     }
 
     #[Test]
-    public function it_can_find_by_slug_and_type()
+    public function it_can_find_by_slug_and_type(): void
     {
         $category = Taxonomy::create([
             'name' => 'Test Term',
@@ -224,7 +232,7 @@ class TaxonomyModelTest extends TestCase
     }
 
     #[Test]
-    public function it_can_create_or_update_taxonomy()
+    public function it_can_create_or_update_taxonomy(): void
     {
         // Create new taxonomy
         $taxonomy = Taxonomy::createOrUpdate([
@@ -256,7 +264,7 @@ class TaxonomyModelTest extends TestCase
     }
 
     #[Test]
-    public function it_can_get_flat_tree()
+    public function it_can_get_flat_tree(): void
     {
         $parent = Taxonomy::create([
             'name' => 'Parent Category',
@@ -286,6 +294,10 @@ class TaxonomyModelTest extends TestCase
         $flatTree = Taxonomy::flatTree(TaxonomyType::Category);
 
         $this->assertCount(4, $flatTree);
+        $this->assertNotNull($flatTree[0]);
+        $this->assertNotNull($flatTree[1]);
+        $this->assertNotNull($flatTree[2]);
+        $this->assertNotNull($flatTree[3]);
         $this->assertEquals(0, $flatTree[0]->depth);
         $this->assertEquals(1, $flatTree[1]->depth);
         $this->assertEquals(1, $flatTree[2]->depth);
@@ -299,7 +311,7 @@ class TaxonomyModelTest extends TestCase
     }
 
     #[Test]
-    public function it_can_get_tree()
+    public function it_can_get_tree(): void
     {
         $parent = Taxonomy::create([
             'name' => 'Parent Category',
@@ -327,13 +339,15 @@ class TaxonomyModelTest extends TestCase
         $tree = Taxonomy::tree(TaxonomyType::Category);
 
         $this->assertCount(1, $tree); // Only root level items
+        $this->assertNotNull($tree[0]);
         $this->assertEquals('Parent Category', $tree[0]->name);
         $this->assertCount(2, $tree[0]->children);
+        $this->assertNotNull($tree[0]->children[0]);
         $this->assertCount(1, $tree[0]->children[0]->children);
     }
 
     #[Test]
-    public function it_generates_unique_slugs_for_same_name_and_type()
+    public function it_generates_unique_slugs_for_same_name_and_type(): void
     {
         // Create first taxonomy
         $taxonomy1 = Taxonomy::create([
@@ -362,7 +376,7 @@ class TaxonomyModelTest extends TestCase
     }
 
     #[Test]
-    public function it_ensures_unique_slugs_across_different_types()
+    public function it_ensures_unique_slugs_across_different_types(): void
     {
         // Create first taxonomy with Category type
         $taxonomy1 = Taxonomy::create([
@@ -382,7 +396,7 @@ class TaxonomyModelTest extends TestCase
     }
 
     #[Test]
-    public function it_generates_unique_slug_when_updating()
+    public function it_generates_unique_slug_when_updating(): void
     {
         // Create two taxonomies
         $taxonomy1 = Taxonomy::create([
@@ -412,7 +426,7 @@ class TaxonomyModelTest extends TestCase
     }
 
     #[Test]
-    public function it_throws_exception_when_slug_generation_is_disabled_and_no_slug_provided()
+    public function it_throws_exception_when_slug_generation_is_disabled_and_no_slug_provided(): void
     {
         // Disable slug generation
         config(['taxonomy.slugs.generate' => false]);
@@ -427,7 +441,7 @@ class TaxonomyModelTest extends TestCase
     }
 
     #[Test]
-    public function it_throws_exception_when_custom_slug_already_exists()
+    public function it_throws_exception_when_custom_slug_already_exists(): void
     {
         // Create a taxonomy with a specific slug
         Taxonomy::create([
@@ -447,7 +461,7 @@ class TaxonomyModelTest extends TestCase
     }
 
     #[Test]
-    public function it_throws_exception_when_updating_with_duplicate_slug()
+    public function it_throws_exception_when_updating_with_duplicate_slug(): void
     {
         // Create two taxonomies
         $taxonomy1 = Taxonomy::create([
@@ -471,7 +485,7 @@ class TaxonomyModelTest extends TestCase
     }
 
     #[Test]
-    public function it_throws_exception_when_create_or_update_with_missing_slug()
+    public function it_throws_exception_when_create_or_update_with_missing_slug(): void
     {
         // Disable slug generation
         config(['taxonomy.slugs.generate' => false]);
@@ -486,7 +500,7 @@ class TaxonomyModelTest extends TestCase
     }
 
     #[Test]
-    public function it_throws_exception_when_create_or_update_with_duplicate_slug()
+    public function it_throws_exception_when_create_or_update_with_duplicate_slug(): void
     {
         // Create a taxonomy with a specific slug
         Taxonomy::create([

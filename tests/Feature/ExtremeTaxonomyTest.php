@@ -46,26 +46,36 @@ class ExtremeTaxonomyTest extends TestCase
         $taxonomies = array_map(fn ($t) => $t->fresh(), $taxonomies);
         $deepestNode = end($taxonomies);
         $rootNode = $taxonomies[0];
+        $this->assertNotNull($deepestNode);
+        $this->assertNotNull($rootNode);
 
-        // Test getAncestors() - harus return 19 ancestors untuk node terdalam
+        // Test getAncestors() - deepest node harus punya 19 ancestors
         $ancestors = $deepestNode->getAncestors();
         $this->assertCount(19, $ancestors);
-        $this->assertEquals($rootNode->id, $ancestors->first()->id);
+        $firstAncestor = $ancestors->first();
+        $this->assertNotNull($firstAncestor);
+        $this->assertEquals($rootNode->id, $firstAncestor->id);
 
         // Test getDescendants() - root harus punya 19 descendants
         $descendants = $rootNode->getDescendants();
         $this->assertCount(19, $descendants);
-        $this->assertEquals($deepestNode->id, $descendants->last()->id);
+        $lastDescendant = $descendants->last();
+        $this->assertNotNull($lastDescendant);
+        $this->assertEquals($deepestNode->id, $lastDescendant->id);
 
         // Test move operation pada deep structure
         $middleNode = $taxonomies[10]; // Level 11
         $newParent = $taxonomies[5];   // Level 6
+        $this->assertNotNull($middleNode);
+        $this->assertNotNull($newParent);
 
         // Move middle node ke parent yang lebih tinggi
         $middleNode->moveToParent($newParent->id);
 
         // Verify struktur masih valid setelah move
-        $this->assertEquals($newParent->id, $middleNode->fresh()->parent_id);
+        $refreshedMiddleNode = $middleNode->fresh();
+        $this->assertNotNull($refreshedMiddleNode);
+        $this->assertEquals($newParent->id, $refreshedMiddleNode->parent_id);
 
         // Test rebuild() pada struktur kompleks
         $startTime = microtime(true);
@@ -103,13 +113,13 @@ class ExtremeTaxonomyTest extends TestCase
         $getTreeTime = microtime(true) - $startTime;
 
         $this->assertLessThan(2.0, $getTreeTime, 'getNestedTree() took too long: ' . $getTreeTime . ' seconds');
-        $this->assertNotEmpty($tree);
+        $this->assertGreaterThan(0, $tree->count());
     }
 
     /**
      * Helper untuk membuat struktur wide dan deep.
      */
-    private function createWideDeepStructure(int $maxDepth, int $branchingFactor, $parentId = null, int $currentDepth = 1): void
+    private function createWideDeepStructure(int $maxDepth, int $branchingFactor, ?int $parentId = null, int $currentDepth = 1): void
     {
         if ($currentDepth > $maxDepth) {
             return;
@@ -173,6 +183,7 @@ class ExtremeTaxonomyTest extends TestCase
 
         // Verify struktur memang rusak
         $damagedChild1 = Taxonomy::find($child1->id);
+        $this->assertNotNull($damagedChild1);
         $this->assertEquals(10, $damagedChild1->lft);
         $this->assertEquals(15, $damagedChild1->rgt);
 
@@ -186,6 +197,8 @@ class ExtremeTaxonomyTest extends TestCase
         $repairedChild1 = Taxonomy::find($child1->id);
         $repairedGrandchild = Taxonomy::find($grandchild->id);
 
+        $this->assertNotNull($repairedChild1);
+        $this->assertNotNull($repairedGrandchild);
         $this->assertEquals($root->id, $repairedChild1->parent_id);
         $this->assertEquals($child1->id, $repairedGrandchild->parent_id);
 
@@ -195,6 +208,7 @@ class ExtremeTaxonomyTest extends TestCase
 
             if ($taxonomy->parent_id) {
                 $parent = Taxonomy::find($taxonomy->parent_id);
+                $this->assertNotNull($parent);
                 $this->assertGreaterThan($parent->lft, $taxonomy->lft);
                 $this->assertLessThan($parent->rgt, $taxonomy->rgt);
             }
@@ -209,7 +223,7 @@ class ExtremeTaxonomyTest extends TestCase
     public function it_can_handle_soft_delete_taxonomy_with_children(): void
     {
         // Skip test jika model tidak menggunakan SoftDeletes
-        if (! method_exists(Taxonomy::class, 'trashed')) {
+        if (! in_array('Illuminate\Database\Eloquent\SoftDeletes', trait_uses_recursive(Taxonomy::class))) {
             $this->markTestSkipped('Taxonomy model does not use SoftDeletes trait');
         }
 
@@ -254,7 +268,9 @@ class ExtremeTaxonomyTest extends TestCase
 
         // Test restore functionality
         $parent->restore();
-        $this->assertFalse($parent->fresh()->trashed());
+        $freshParent = $parent->fresh();
+        $this->assertNotNull($freshParent);
+        $this->assertFalse($freshParent->trashed());
     }
 
     /**
@@ -302,7 +318,9 @@ class ExtremeTaxonomyTest extends TestCase
                     // Alternate between moving to parent1 and parent2
                     $targetParent = (count($results) % 2 === 0) ? $parent2 : $parent1;
 
-                    $movingNode->fresh()->moveToParent($targetParent->id);
+                    $freshMovingNode = $movingNode->fresh();
+                    $this->assertNotNull($freshMovingNode);
+                    $freshMovingNode->moveToParent($targetParent->id);
                     $results[] = $targetParent->id;
                 });
             } catch (\Exception $e) {
@@ -312,6 +330,7 @@ class ExtremeTaxonomyTest extends TestCase
 
         // Verify final state is consistent
         $finalNode = $movingNode->fresh();
+        $this->assertNotNull($finalNode);
         $this->assertNotNull($finalNode->parent_id);
         $this->assertTrue(in_array($finalNode->parent_id, [$parent1->id, $parent2->id]));
 
@@ -326,7 +345,7 @@ class ExtremeTaxonomyTest extends TestCase
     public function it_can_handle_performance_with_large_dataset(): void
     {
         // Skip jika environment tidak mendukung test berat
-        if (env('SKIP_PERFORMANCE_TESTS', false)) {
+        if (config('app.skip_performance_tests', false)) {
             $this->markTestSkipped('Performance tests skipped');
         }
 
@@ -372,11 +391,14 @@ class ExtremeTaxonomyTest extends TestCase
         $getTreeTime = microtime(true) - $startTime;
 
         $this->assertLessThan(3.0, $getTreeTime, "getNestedTree() with {$targetCount} taxonomies took too long: {$getTreeTime} seconds");
-        $this->assertNotEmpty($tree);
+        $this->assertGreaterThan(0, $tree->count());
 
         // Test 4: moveToParent() performance pada dataset besar
         $firstTaxonomy = Taxonomy::first();
         $lastTaxonomy = Taxonomy::orderBy('id', 'desc')->first();
+
+        $this->assertNotNull($firstTaxonomy);
+        $this->assertNotNull($lastTaxonomy);
 
         $startTime = microtime(true);
         $lastTaxonomy->moveToParent($firstTaxonomy->id);
@@ -385,7 +407,9 @@ class ExtremeTaxonomyTest extends TestCase
         $this->assertLessThan(2.0, $moveTime, "moveToParent() on large dataset took too long: {$moveTime} seconds");
 
         // Verify move was successful
-        $this->assertEquals($firstTaxonomy->id, $lastTaxonomy->fresh()->parent_id);
+        $freshLastTaxonomy = $lastTaxonomy->fresh();
+        $this->assertNotNull($freshLastTaxonomy);
+        $this->assertEquals($firstTaxonomy->id, $freshLastTaxonomy->parent_id);
 
         // Output performance metrics
         echo "\n=== Performance Test Results ===\n";
@@ -418,7 +442,9 @@ class ExtremeTaxonomyTest extends TestCase
 
         // Jalankan operasi yang memory-intensive
         $tree = Taxonomy::getNestedTree();
-        $descendants = Taxonomy::first()->getDescendants();
+        $firstTaxonomy = Taxonomy::first();
+        $this->assertNotNull($firstTaxonomy);
+        $descendants = $firstTaxonomy->getDescendants();
 
         $finalMemory = memory_get_usage(true);
 
@@ -446,12 +472,14 @@ class ExtremeTaxonomyTest extends TestCase
         $taxonomies = Taxonomy::orderBy('lft')->get();
 
         foreach ($taxonomies as $taxonomy) {
+            $this->assertNotNull($taxonomy);
             // lft harus lebih kecil dari rgt
             $this->assertLessThan($taxonomy->rgt, $taxonomy->lft, "Invalid lft/rgt for taxonomy {$taxonomy->id}");
 
             // Jika punya parent, harus berada dalam range parent
             if ($taxonomy->parent_id) {
                 $parent = Taxonomy::find($taxonomy->parent_id);
+                $this->assertNotNull($parent);
                 $this->assertGreaterThan($parent->lft, $taxonomy->lft, "Child lft not greater than parent lft for taxonomy {$taxonomy->id}");
                 $this->assertLessThan($parent->rgt, $taxonomy->rgt, "Child rgt not less than parent rgt for taxonomy {$taxonomy->id}");
             }

@@ -77,8 +77,9 @@ class RebuildNestedSetCommandTest extends TestCase
         $this->createTestTaxonomies();
 
         // Mock user input to decline
-        $this->artisan('taxonomy:rebuild-nested-set')
-            ->expectsConfirmation('Do you want to continue?', 'no')
+        $result = $this->artisan('taxonomy:rebuild-nested-set');
+        $this->assertInstanceOf(\Illuminate\Testing\PendingCommand::class, $result);
+        $result->expectsConfirmation('Do you want to continue?', 'no')
             ->expectsOutput('Operation cancelled.')
             ->assertExitCode(0);
 
@@ -93,8 +94,9 @@ class RebuildNestedSetCommandTest extends TestCase
         $this->createTestTaxonomies();
 
         // Mock user input to accept
-        $this->artisan('taxonomy:rebuild-nested-set')
-            ->expectsConfirmation('Do you want to continue?', 'yes')
+        $result = $this->artisan('taxonomy:rebuild-nested-set');
+        $this->assertInstanceOf(\Illuminate\Testing\PendingCommand::class, $result);
+        $result->expectsConfirmation('Do you want to continue?', 'yes')
             ->expectsOutput('Starting nested set rebuild...')
             ->assertExitCode(0);
 
@@ -105,8 +107,9 @@ class RebuildNestedSetCommandTest extends TestCase
     #[Test]
     public function it_handles_invalid_taxonomy_type(): void
     {
-        $this->artisan('taxonomy:rebuild-nested-set', ['type' => 'invalid_type'])
-            ->expectsOutput('Invalid taxonomy type: invalid_type')
+        $result = $this->artisan('taxonomy:rebuild-nested-set', ['type' => 'invalid_type']);
+        $this->assertInstanceOf(\Illuminate\Testing\PendingCommand::class, $result);
+        $result->expectsOutput('Invalid taxonomy type: invalid_type')
             ->assertExitCode(1);
     }
 
@@ -116,8 +119,9 @@ class RebuildNestedSetCommandTest extends TestCase
         // Clear all taxonomies
         Taxonomy::truncate();
 
-        $this->artisan('taxonomy:rebuild-nested-set', ['--force' => true])
-            ->expectsOutput('No taxonomies found to rebuild.')
+        $result = $this->artisan('taxonomy:rebuild-nested-set', ['--force' => true]);
+        $this->assertInstanceOf(\Illuminate\Testing\PendingCommand::class, $result);
+        $result->expectsOutput('No taxonomies found to rebuild.')
             ->assertExitCode(0);
     }
 
@@ -128,6 +132,7 @@ class RebuildNestedSetCommandTest extends TestCase
         $this->createTestTaxonomies();
 
         $result = $this->artisan('taxonomy:rebuild-nested-set', ['--force' => true]);
+        $this->assertInstanceOf(\Illuminate\Testing\PendingCommand::class, $result);
 
         $result->expectsOutput('Starting nested set rebuild...')
             ->expectsOutputToContain('Rebuilding type:')

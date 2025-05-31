@@ -6,6 +6,7 @@ use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
 use Aliziodev\LaravelTaxonomy\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 
 class NestedSetTest extends TestCase
 {
@@ -80,6 +81,7 @@ class NestedSetTest extends TestCase
         ]);
     }
 
+    #[Test]
     public function test_nested_set_values_are_set_correctly_on_creation(): void
     {
         $electronics = Taxonomy::where('slug', 'electronics')->first();
@@ -87,24 +89,29 @@ class NestedSetTest extends TestCase
         $laptops = Taxonomy::where('slug', 'laptops')->first();
 
         // Root should have depth 0
+        $this->assertNotNull($electronics);
         $this->assertEquals(0, $electronics->depth);
         $this->assertNotNull($electronics->lft);
         $this->assertNotNull($electronics->rgt);
 
         // Child should have depth 1
+        $this->assertNotNull($computers);
         $this->assertEquals(1, $computers->depth);
         $this->assertTrue($computers->lft > $electronics->lft);
         $this->assertTrue($computers->rgt < $electronics->rgt);
 
         // Grandchild should have depth 2
+        $this->assertNotNull($laptops);
         $this->assertEquals(2, $laptops->depth);
         $this->assertTrue($laptops->lft > $computers->lft);
         $this->assertTrue($laptops->rgt < $computers->rgt);
     }
 
+    #[Test]
     public function test_get_descendants_returns_correct_taxonomies(): void
     {
         $electronics = Taxonomy::where('slug', 'electronics')->first();
+        $this->assertNotNull($electronics);
         $descendants = $electronics->getDescendants();
 
         // Electronics should have 4 descendants: computers, phones, laptops, desktops
@@ -117,9 +124,11 @@ class NestedSetTest extends TestCase
         $this->assertContains('desktops', $descendantSlugs);
     }
 
+    #[Test]
     public function test_get_ancestors_returns_correct_taxonomies(): void
     {
         $laptops = Taxonomy::where('slug', 'laptops')->first();
+        $this->assertNotNull($laptops);
         $ancestors = $laptops->getAncestors();
 
         // Laptops should have 2 ancestors: computers and electronics
@@ -130,12 +139,18 @@ class NestedSetTest extends TestCase
         $this->assertContains('electronics', $ancestorSlugs);
     }
 
+    #[Test]
     public function test_is_ancestor_of_works_correctly(): void
     {
         $electronics = Taxonomy::where('slug', 'electronics')->first();
         $computers = Taxonomy::where('slug', 'computers')->first();
         $laptops = Taxonomy::where('slug', 'laptops')->first();
         $clothing = Taxonomy::where('slug', 'clothing')->first();
+
+        $this->assertNotNull($electronics);
+        $this->assertNotNull($computers);
+        $this->assertNotNull($laptops);
+        $this->assertNotNull($clothing);
 
         $this->assertTrue($electronics->isAncestorOf($computers));
         $this->assertTrue($electronics->isAncestorOf($laptops));
@@ -146,11 +161,16 @@ class NestedSetTest extends TestCase
         $this->assertFalse($electronics->isAncestorOf($clothing));
     }
 
+    #[Test]
     public function test_is_descendant_of_works_correctly(): void
     {
         $electronics = Taxonomy::where('slug', 'electronics')->first();
         $computers = Taxonomy::where('slug', 'computers')->first();
         $laptops = Taxonomy::where('slug', 'laptops')->first();
+
+        $this->assertNotNull($electronics);
+        $this->assertNotNull($computers);
+        $this->assertNotNull($laptops);
 
         $this->assertTrue($computers->isDescendantOf($electronics));
         $this->assertTrue($laptops->isDescendantOf($electronics));
@@ -160,10 +180,14 @@ class NestedSetTest extends TestCase
         $this->assertFalse($computers->isDescendantOf($laptops));
     }
 
+    #[Test]
     public function test_move_to_parent_updates_nested_set_correctly(): void
     {
         $phones = Taxonomy::where('slug', 'phones')->first();
         $clothing = Taxonomy::where('slug', 'clothing')->first();
+
+        $this->assertNotNull($phones);
+        $this->assertNotNull($clothing);
 
         // Move phones from electronics to clothing
         $phones->moveToParent($clothing->id);
@@ -180,13 +204,16 @@ class NestedSetTest extends TestCase
 
         // Check that phones is no longer a descendant of electronics
         $electronics = Taxonomy::where('slug', 'electronics')->first();
+        $this->assertNotNull($electronics);
         $this->assertFalse($electronics->isAncestorOf($phones));
     }
 
+    #[Test]
     public function test_rebuild_nested_set_maintains_correct_structure(): void
     {
         // Get initial structure
         $electronics = Taxonomy::where('slug', 'electronics')->first();
+        $this->assertNotNull($electronics);
         $initialDescendants = $electronics->getDescendants()->count();
 
         // Rebuild nested set
@@ -208,6 +235,7 @@ class NestedSetTest extends TestCase
         }
     }
 
+    #[Test]
     public function test_get_nested_tree_returns_correct_structure(): void
     {
         $tree = Taxonomy::getNestedTree(TaxonomyType::Category);
@@ -221,15 +249,18 @@ class NestedSetTest extends TestCase
 
         // Find electronics in tree and check its children
         $electronics = $tree->firstWhere('slug', 'electronics');
+        $this->assertNotNull($electronics);
         $this->assertNotNull($electronics->children_nested);
         $this->assertCount(2, $electronics->children_nested); // computers and phones
 
         // Check computers has children
         $computers = $electronics->children_nested->firstWhere('slug', 'computers');
+        $this->assertNotNull($computers);
         $this->assertNotNull($computers->children_nested);
         $this->assertCount(2, $computers->children_nested); // laptops and desktops
     }
 
+    #[Test]
     public function test_scopes_work_correctly(): void
     {
         // Test roots scope
@@ -255,12 +286,18 @@ class NestedSetTest extends TestCase
         }
     }
 
+    #[Test]
     public function test_deleting_taxonomy_maintains_nested_set_integrity(): void
     {
         $computers = Taxonomy::where('slug', 'computers')->first();
         $laptops = Taxonomy::where('slug', 'laptops')->first();
         $desktops = Taxonomy::where('slug', 'desktops')->first();
         $electronics = Taxonomy::where('slug', 'electronics')->first();
+
+        $this->assertNotNull($computers);
+        $this->assertNotNull($laptops);
+        $this->assertNotNull($desktops);
+        $this->assertNotNull($electronics);
 
         // Delete computers (which has children)
         $computers->delete();
@@ -275,17 +312,23 @@ class NestedSetTest extends TestCase
         $this->assertEquals(1, $desktops->depth);
     }
 
+    #[Test]
     public function test_get_level_returns_correct_depth(): void
     {
         $electronics = Taxonomy::where('slug', 'electronics')->first();
         $computers = Taxonomy::where('slug', 'computers')->first();
         $laptops = Taxonomy::where('slug', 'laptops')->first();
 
+        $this->assertNotNull($electronics);
+        $this->assertNotNull($computers);
+        $this->assertNotNull($laptops);
+
         $this->assertEquals(0, $electronics->getLevel());
         $this->assertEquals(1, $computers->getLevel());
         $this->assertEquals(2, $laptops->getLevel());
     }
 
+    #[Test]
     public function test_nested_set_works_with_different_types(): void
     {
         // Create tags with nested structure
@@ -311,6 +354,7 @@ class NestedSetTest extends TestCase
 
         // Ensure tags don't interfere with categories
         $electronics = Taxonomy::where('slug', 'electronics')->first();
+        $this->assertNotNull($electronics);
         $electronics->refresh();
 
         $this->assertFalse($techTag->isAncestorOf($electronics));

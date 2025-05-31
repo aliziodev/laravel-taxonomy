@@ -14,6 +14,7 @@ class TaxonomyPerformanceTest extends TestCase
 {
     use RefreshDatabase;
 
+    /** @var array<string, mixed> */
     private array $performanceMetrics = [];
 
     protected function setUp(): void
@@ -34,7 +35,7 @@ class TaxonomyPerformanceTest extends TestCase
     #[Test]
     public function it_can_handle_large_scale_performance_10k_taxonomies(): void
     {
-        if (env('SKIP_LARGE_PERFORMANCE_TESTS', false)) {
+        if (config('app.skip_large_performance_tests', false)) {
             $this->markTestSkipped('Large performance tests skipped');
         }
 
@@ -72,6 +73,8 @@ class TaxonomyPerformanceTest extends TestCase
         $lastNode = Taxonomy::orderBy('id', 'desc')->first();
 
         $this->measurePerformance('move_operation_10k', function () use ($lastNode, $firstNode) {
+            $this->assertNotNull($lastNode);
+            $this->assertNotNull($firstNode);
             $lastNode->moveToParent($firstNode->id);
         });
 
@@ -79,10 +82,12 @@ class TaxonomyPerformanceTest extends TestCase
         $randomNode = Taxonomy::inRandomOrder()->first();
 
         $this->measurePerformance('get_ancestors_10k', function () use ($randomNode) {
+            $this->assertNotNull($randomNode);
             return $randomNode->getAncestors();
         });
 
         $this->measurePerformance('get_descendants_10k', function () use ($randomNode) {
+            $this->assertNotNull($randomNode);
             return $randomNode->getDescendants();
         });
 
@@ -117,6 +122,7 @@ class TaxonomyPerformanceTest extends TestCase
 
             // Test getAncestors performance by depth
             $this->measurePerformance("ancestors_depth_{$depth}", function () use ($deepestNode) {
+                $this->assertNotNull($deepestNode);
                 return $deepestNode->getAncestors();
             });
 
@@ -126,7 +132,10 @@ class TaxonomyPerformanceTest extends TestCase
             });
 
             // Verify ancestor count matches depth
-            $ancestors = $deepestNode->fresh()->getAncestors();
+            $this->assertNotNull($deepestNode);
+            $freshNode = $deepestNode->fresh();
+            $this->assertNotNull($freshNode);
+            $ancestors = $freshNode->getAncestors();
             $this->assertCount($depth - 1, $ancestors);
         }
     }
@@ -367,8 +376,8 @@ class TaxonomyPerformanceTest extends TestCase
 
         // Analyze concurrent performance
         $avgTime = array_sum($concurrentResults) / count($concurrentResults);
-        $maxTime = max($concurrentResults);
-        $minTime = min($concurrentResults);
+        $maxTime = count($concurrentResults) > 0 ? max($concurrentResults) : 0;
+        $minTime = count($concurrentResults) > 0 ? min($concurrentResults) : 0;
 
         $this->performanceMetrics['concurrent_operations'] = [
             'operation_count' => $operationCount,
@@ -404,7 +413,10 @@ class TaxonomyPerformanceTest extends TestCase
         $this->assertPerformanceThreshold('single_move_operation', 1.0);
 
         // Verify move was successful
-        $this->assertEquals($targetParent->id, $sourceNode->fresh()->parent_id);
+        $this->assertNotNull($sourceNode);
+        $freshSourceNode = $sourceNode->fresh();
+        $this->assertNotNull($freshSourceNode);
+        $this->assertEquals($targetParent->id, $freshSourceNode->parent_id);
 
         // Test 2: Multiple move operations performance
         $nodes = Taxonomy::limit(10)->get();
@@ -425,6 +437,8 @@ class TaxonomyPerformanceTest extends TestCase
         $rootNode = Taxonomy::whereNull('parent_id')->first();
 
         $this->measurePerformance('move_deep_nested_node', function () use ($deepNode, $rootNode) {
+            $this->assertNotNull($deepNode);
+            $this->assertNotNull($rootNode);
             $deepNode->moveToParent($rootNode->id);
         });
 
@@ -447,6 +461,7 @@ class TaxonomyPerformanceTest extends TestCase
         $rootNode = Taxonomy::whereNull('parent_id')->first();
 
         $this->measurePerformance('small_tree_descendants', function () use ($rootNode) {
+            $this->assertNotNull($rootNode);
             return $rootNode->getDescendants();
         });
 
@@ -460,6 +475,7 @@ class TaxonomyPerformanceTest extends TestCase
         $rootNode = Taxonomy::whereNull('parent_id')->first();
 
         $descendants = $this->measurePerformance('medium_tree_descendants', function () use ($rootNode) {
+            $this->assertNotNull($rootNode);
             return $rootNode->getDescendants();
         });
 
@@ -474,6 +490,7 @@ class TaxonomyPerformanceTest extends TestCase
         $rootNode = Taxonomy::whereNull('parent_id')->first();
 
         $descendants = $this->measurePerformance('deep_tree_descendants', function () use ($rootNode) {
+            $this->assertNotNull($rootNode);
             return $rootNode->getDescendants();
         });
 
@@ -617,7 +634,10 @@ class TaxonomyPerformanceTest extends TestCase
 
         // Verify children telah dipindah ke alternative parent
         foreach ($newChildren as $child) {
-            $this->assertEquals($alternativeParent->id, $child->fresh()->parent_id);
+            $this->assertNotNull($child);
+            $freshChild = $child->fresh();
+            $this->assertNotNull($freshChild);
+            $this->assertEquals($alternativeParent->id, $freshChild->parent_id);
         }
 
         // Test 3: Bulk delete performance
@@ -713,7 +733,7 @@ class TaxonomyPerformanceTest extends TestCase
     /**
      * Helper: Create wide tree structure.
      */
-    private function createWideTree(int $width, int $depth, $parentId = null, int $currentDepth = 1): void
+    private function createWideTree(int $width, int $depth, ?int $parentId = null, int $currentDepth = 1): void
     {
         if ($currentDepth > $depth) {
             return;

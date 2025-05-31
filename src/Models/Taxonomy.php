@@ -24,26 +24,38 @@ use Illuminate\Support\Str;
  * @property string|null $description
  * @property int|null $parent_id
  * @property int $sort_order
+ * @property int|null $lft
+ * @property int|null $rgt
+ * @property int|null $depth
  * @property array|null $meta
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property-read \Illuminate\Database\Eloquent\Collection|\Aliziodev\LaravelTaxonomy\Models\Taxonomy[] $children
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy> $children
  * @property-read \Aliziodev\LaravelTaxonomy\Models\Taxonomy|null $parent
  * @property-read string $path
  * @property-read string $full_slug
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>|null $children_nested
+ * @property-read int|null $tree_depth
  *
- * @method static \Illuminate\Database\Eloquent\Builder|Taxonomy type(string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType $type)
- * @method static \Illuminate\Database\Eloquent\Builder|Taxonomy root()
- * @method static \Illuminate\Database\Eloquent\Builder|Taxonomy ordered()
- * @method static \Illuminate\Database\Eloquent\Builder|Taxonomy newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder|Taxonomy newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder|Taxonomy query()
- * @method static \Illuminate\Database\Eloquent\Builder|Taxonomy whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Taxonomy whereName($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Taxonomy whereSlug($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Taxonomy whereType($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Taxonomy create(array $attributes)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> type(string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType $type)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> root()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> ordered()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> roots()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> atDepth(int $depth)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> nestedSetOrder()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> whereSlug($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> whereType($value)
+ * @method static static create(array $attributes = [])
+ * @method static static|null find(mixed $id, array $columns = ['*'])
+ * @method static static findOrFail(mixed $id, array $columns = ['*'])
+ * @method static static|null first(array $columns = ['*'])
+ * @method static static firstOrFail(array $columns = ['*'])
  */
 class Taxonomy extends Model
 {
@@ -167,9 +179,12 @@ class Taxonomy extends Model
 
     /**
      * Get all descendants of the taxonomy.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, static>
      */
     public function descendants(): Collection
     {
+        /** @var \Illuminate\Database\Eloquent\Collection<int, static> $descendants */
         $descendants = new Collection;
 
         foreach ($this->children as $child) {
@@ -182,9 +197,12 @@ class Taxonomy extends Model
 
     /**
      * Get all ancestors of the taxonomy.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, static>
      */
     public function ancestors(): Collection
     {
+        /** @var \Illuminate\Database\Eloquent\Collection<int, static> $ancestors */
         $ancestors = new Collection;
         $parent = $this->parent;
 
@@ -261,6 +279,8 @@ class Taxonomy extends Model
 
     /**
      * Get a flat tree representation of the taxonomy hierarchy.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, static>
      */
     public static function flatTree(string|TaxonomyType|null $type = null, ?int $parentId = null, int $depth = 0): Collection
     {
@@ -272,6 +292,7 @@ class Taxonomy extends Model
 
         $query->where('parent_id', $parentId)->ordered();
 
+        /** @var \Illuminate\Database\Eloquent\Collection<int, static> $result */
         $result = new Collection;
 
         foreach ($query->get() as $taxonomy) {
@@ -285,6 +306,8 @@ class Taxonomy extends Model
 
     /**
      * Get a nested tree representation of the taxonomy hierarchy.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, static>
      */
     public static function tree(string|TaxonomyType|null $type = null, ?int $parentId = null): Collection
     {
@@ -404,8 +427,9 @@ class Taxonomy extends Model
     protected function setNestedSetValues(): void
     {
         if ($this->parent_id) {
+            /** @var static|null $parent */
             $parent = static::find($this->parent_id);
-            if ($parent) {
+            if ($parent && $parent->rgt !== null && $parent->depth !== null) {
                 $this->depth = $parent->depth + 1;
 
                 // Update all nodes with rgt >= parent->rgt first
@@ -487,7 +511,7 @@ class Taxonomy extends Model
      */
     protected function removeFromNestedSet(): void
     {
-        if (! $this->lft || ! $this->rgt) {
+        if ($this->lft === null || $this->rgt === null) {
             return;
         }
 
@@ -546,10 +570,12 @@ class Taxonomy extends Model
 
     /**
      * Get all descendants using nested set.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, static>
      */
     public function getDescendants(): Collection
     {
-        if (! $this->lft || ! $this->rgt) {
+        if ($this->lft === null || $this->rgt === null) {
             return new Collection;
         }
 
@@ -562,10 +588,12 @@ class Taxonomy extends Model
 
     /**
      * Get all ancestors using nested set.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, static>
      */
     public function getAncestors(): Collection
     {
-        if (! $this->lft || ! $this->rgt) {
+        if ($this->lft === null || $this->rgt === null) {
             return new Collection;
         }
 
@@ -578,6 +606,8 @@ class Taxonomy extends Model
 
     /**
      * Get direct children using nested set.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, static>
      */
     public function getChildren(): Collection
     {
@@ -591,7 +621,7 @@ class Taxonomy extends Model
      */
     public function isAncestorOf(self $other): bool
     {
-        if (! $this->lft || ! $this->rgt || ! $other->lft || ! $other->rgt) {
+        if ($this->lft === null || $this->rgt === null || $other->lft === null || $other->rgt === null) {
             return false;
         }
 
@@ -642,6 +672,8 @@ class Taxonomy extends Model
 
     /**
      * Get nested tree using nested set (more efficient than recursive queries).
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, static>
      */
     public static function getNestedTree(string|TaxonomyType|null $type = null): Collection
     {
@@ -654,6 +686,7 @@ class Taxonomy extends Model
 
         // When no type is specified, get all types and build separate trees
         $allTypes = static::select('type')->distinct()->pluck('type');
+        /** @var \Illuminate\Database\Eloquent\Collection<int, static> $allTrees */
         $allTrees = new Collection;
 
         foreach ($allTypes as $typeValue) {
@@ -668,15 +701,20 @@ class Taxonomy extends Model
 
     /**
      * Build nested tree structure from flat collection.
+     *
+     * @param  \Illuminate\Database\Eloquent\Collection<int, static>  $taxonomies
+     * @return \Illuminate\Database\Eloquent\Collection<int, static>
      */
     protected static function buildNestedTree(Collection $taxonomies): Collection
     {
+        /** @var \Illuminate\Database\Eloquent\Collection<int, static> $tree */
         $tree = new Collection;
+        /** @var array<static> $stack */
         $stack = [];
 
         foreach ($taxonomies as $taxonomy) {
             // Remove items from stack that are not ancestors
-            while (! empty($stack) && end($stack)->rgt < $taxonomy->lft) {
+            while (! empty($stack) && ($lastItem = end($stack)) && $lastItem->rgt !== null && $taxonomy->lft !== null && $lastItem->rgt < $taxonomy->lft) {
                 array_pop($stack);
             }
 
@@ -689,14 +727,18 @@ class Taxonomy extends Model
             } else {
                 // Child level - add to parent's children collection
                 $parent = end($stack);
-                if (! $parent->children_nested) {
-                    $parent->children_nested = new Collection;
+                if ($parent && ! $parent->children_nested) {
+                    /** @var \Illuminate\Database\Eloquent\Collection<int, static> $childrenNested */
+                    $childrenNested = new Collection;
+                    $parent->children_nested = $childrenNested;
                 }
-                $parent->children_nested->push($taxonomy);
+                if ($parent && $parent->children_nested) {
+                    $parent->children_nested->push($taxonomy);
+                }
             }
 
             // Add to stack if it has children
-            if ($taxonomy->rgt > $taxonomy->lft + 1) {
+            if ($taxonomy->rgt !== null && $taxonomy->lft !== null && $taxonomy->rgt > $taxonomy->lft + 1) {
                 $stack[] = $taxonomy;
             }
         }

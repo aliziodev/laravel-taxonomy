@@ -5,10 +5,9 @@ namespace Tests\Feature;
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy as TaxonomyModel;
+use Aliziodev\LaravelTaxonomy\Tests\Models\Product;
 use Aliziodev\LaravelTaxonomy\Tests\TestCase;
-use Aliziodev\LaravelTaxonomy\Traits\HasTaxonomy;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
@@ -24,7 +23,7 @@ class TaxonomyFeatureTest extends TestCase
     }
 
     #[Test]
-    public function it_can_use_taxonomy_facade()
+    public function it_can_use_taxonomy_facade(): void
     {
         // Create taxonomy using facade
         $category = Taxonomy::create([
@@ -40,7 +39,7 @@ class TaxonomyFeatureTest extends TestCase
     }
 
     #[Test]
-    public function it_can_create_taxonomy_hierarchy_using_facade()
+    public function it_can_create_taxonomy_hierarchy_using_facade(): void
     {
         // Create parent taxonomy
         $parent = Taxonomy::create([
@@ -66,15 +65,23 @@ class TaxonomyFeatureTest extends TestCase
         $tree = Taxonomy::tree(TaxonomyType::Category);
 
         $this->assertCount(1, $tree);
+        $this->assertNotNull($tree[0]);
+        $this->assertInstanceOf(TaxonomyModel::class, $tree[0]);
         $this->assertEquals('Electronics', $tree[0]->name);
+        $this->assertNotNull($tree[0]->children);
         $this->assertCount(1, $tree[0]->children);
+        $this->assertNotNull($tree[0]->children[0]);
+        $this->assertInstanceOf(TaxonomyModel::class, $tree[0]->children[0]);
         $this->assertEquals('Smartphones', $tree[0]->children[0]->name);
+        $this->assertNotNull($tree[0]->children[0]->children);
         $this->assertCount(1, $tree[0]->children[0]->children);
+        $this->assertNotNull($tree[0]->children[0]->children[0]);
+        $this->assertInstanceOf(TaxonomyModel::class, $tree[0]->children[0]->children[0]);
         $this->assertEquals('Android Phones', $tree[0]->children[0]->children[0]->name);
     }
 
     #[Test]
-    public function it_can_find_taxonomy_by_slug_using_facade()
+    public function it_can_find_taxonomy_by_slug_using_facade(): void
     {
         // Create taxonomy
         $category = Taxonomy::create([
@@ -90,7 +97,7 @@ class TaxonomyFeatureTest extends TestCase
     }
 
     #[Test]
-    public function it_can_check_if_taxonomy_exists_using_facade()
+    public function it_can_check_if_taxonomy_exists_using_facade(): void
     {
         // Create taxonomy
         Taxonomy::create([
@@ -107,7 +114,7 @@ class TaxonomyFeatureTest extends TestCase
     }
 
     #[Test]
-    public function it_can_search_taxonomies_using_facade()
+    public function it_can_search_taxonomies_using_facade(): void
     {
         // Create taxonomies
         Taxonomy::create([
@@ -136,7 +143,7 @@ class TaxonomyFeatureTest extends TestCase
     }
 
     #[Test]
-    public function it_can_get_taxonomy_types_using_facade()
+    public function it_can_get_taxonomy_types_using_facade(): void
     {
         // Get types using facade
         $types = Taxonomy::getTypes();
@@ -146,7 +153,7 @@ class TaxonomyFeatureTest extends TestCase
     }
 
     #[Test]
-    public function it_can_use_taxonomy_with_models()
+    public function it_can_use_taxonomy_with_models(): void
     {
         // Create taxonomies
         $category = Taxonomy::create([
@@ -185,11 +192,14 @@ class TaxonomyFeatureTest extends TestCase
 
         $newElectronicsProducts = Product::withAllTaxonomies([$category, $tag2])->get();
         $this->assertCount(1, $newElectronicsProducts);
-        $this->assertEquals('Laptop', $newElectronicsProducts->first()->name);
+        $firstProduct = $newElectronicsProducts->first();
+        $this->assertNotNull($firstProduct);
+        $this->assertInstanceOf(Product::class, $firstProduct);
+        $this->assertEquals('Laptop', $firstProduct->name);
     }
 
     #[Test]
-    public function it_caches_taxonomy_trees()
+    public function it_caches_taxonomy_trees(): void
     {
         // Create taxonomies
         $parent = Taxonomy::create([
@@ -219,18 +229,27 @@ class TaxonomyFeatureTest extends TestCase
         // Second call should return cached result (without the new taxonomy)
         $tree2 = Taxonomy::tree(TaxonomyType::Category);
 
+        $this->assertNotNull($tree1[0]);
+        $this->assertInstanceOf(TaxonomyModel::class, $tree1[0]);
+        $this->assertNotNull($tree1[0]->children);
         $this->assertCount(1, $tree1[0]->children);
+        $this->assertNotNull($tree2[0]);
+        $this->assertInstanceOf(TaxonomyModel::class, $tree2[0]);
+        $this->assertNotNull($tree2[0]->children);
         $this->assertCount(1, $tree2[0]->children);
 
         // Clear cache and get fresh result
         Cache::flush();
         $tree3 = Taxonomy::tree(TaxonomyType::Category);
 
+        $this->assertNotNull($tree3[0]);
+        $this->assertInstanceOf(TaxonomyModel::class, $tree3[0]);
+        $this->assertNotNull($tree3[0]->children);
         $this->assertCount(2, $tree3[0]->children);
     }
 
     #[Test]
-    public function it_can_paginate_find_many_taxonomies()
+    public function it_can_paginate_find_many_taxonomies(): void
     {
         // Create multiple taxonomies
         $taxonomies = [];
@@ -273,7 +292,7 @@ class TaxonomyFeatureTest extends TestCase
     }
 
     #[Test]
-    public function it_can_paginate_find_by_type()
+    public function it_can_paginate_find_by_type(): void
     {
         // Create multiple taxonomies of different types
         for ($i = 1; $i <= 10; ++$i) {
@@ -319,7 +338,7 @@ class TaxonomyFeatureTest extends TestCase
     }
 
     #[Test]
-    public function it_can_paginate_find_by_parent()
+    public function it_can_paginate_find_by_parent(): void
     {
         // Create a parent taxonomy
         $parent = Taxonomy::create([
@@ -365,7 +384,7 @@ class TaxonomyFeatureTest extends TestCase
     }
 
     #[Test]
-    public function it_can_paginate_search_results()
+    public function it_can_paginate_search_results(): void
     {
         // Create taxonomies with searchable terms
         for ($i = 1; $i <= 8; ++$i) {
@@ -413,12 +432,4 @@ class TaxonomyFeatureTest extends TestCase
         $this->assertInstanceOf(Collection::class, $allResults);
         $this->assertCount(15, $allResults);
     }
-}
-
-// Test model class for feature tests
-class Product extends Model
-{
-    use HasTaxonomy;
-
-    protected $fillable = ['name'];
 }
