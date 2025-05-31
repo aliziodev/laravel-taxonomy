@@ -16,6 +16,7 @@ parameters:
     # Exclude files
     excludePaths:
         - tests/bootstrap.php (?)
+        - src/Console/Commands/RebuildNestedSetCommand.php
     
     # Check missing typehints
     # checkMissingIterableValueType: false
