@@ -49,7 +49,7 @@ jobs:
         run: composer show -D
       
       - name: Execute tests
-        run: vendor/bin/pest
+        run: php vendor/bin/pest
       
       - name: Execute PHPStan
         run: vendor/bin/phpstan analyse --memory-limit=2G
