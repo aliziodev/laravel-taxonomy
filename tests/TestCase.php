@@ -16,7 +16,9 @@ abstract class TestCase extends BaseTestCase
 
         // Run migrations
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
-        $this->artisan('migrate', ['--database' => 'testing'])->run();
+        $result = $this->artisan('migrate', ['--database' => 'testing']);
+        $this->assertInstanceOf(\Illuminate\Testing\PendingCommand::class, $result);
+        $result->run();
 
         // Create products table for testing
         $this->createProductsTable();
@@ -27,6 +29,7 @@ abstract class TestCase extends BaseTestCase
      */
     protected function createProductsTable(): void
     {
+        $this->assertNotNull($this->app);
         $this->app['db']->connection()->getSchemaBuilder()->create('products', function ($table) {
             $table->id();
             $table->string('name');

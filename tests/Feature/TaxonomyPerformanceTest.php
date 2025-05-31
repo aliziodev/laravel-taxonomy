@@ -83,11 +83,13 @@ class TaxonomyPerformanceTest extends TestCase
 
         $this->measurePerformance('get_ancestors_10k', function () use ($randomNode) {
             $this->assertNotNull($randomNode);
+
             return $randomNode->getAncestors();
         });
 
         $this->measurePerformance('get_descendants_10k', function () use ($randomNode) {
             $this->assertNotNull($randomNode);
+
             return $randomNode->getDescendants();
         });
 
@@ -123,6 +125,7 @@ class TaxonomyPerformanceTest extends TestCase
             // Test getAncestors performance by depth
             $this->measurePerformance("ancestors_depth_{$depth}", function () use ($deepestNode) {
                 $this->assertNotNull($deepestNode);
+
                 return $deepestNode->getAncestors();
             });
 
@@ -462,6 +465,7 @@ class TaxonomyPerformanceTest extends TestCase
 
         $this->measurePerformance('small_tree_descendants', function () use ($rootNode) {
             $this->assertNotNull($rootNode);
+
             return $rootNode->getDescendants();
         });
 
@@ -476,6 +480,7 @@ class TaxonomyPerformanceTest extends TestCase
 
         $descendants = $this->measurePerformance('medium_tree_descendants', function () use ($rootNode) {
             $this->assertNotNull($rootNode);
+
             return $rootNode->getDescendants();
         });
 
@@ -491,6 +496,7 @@ class TaxonomyPerformanceTest extends TestCase
 
         $descendants = $this->measurePerformance('deep_tree_descendants', function () use ($rootNode) {
             $this->assertNotNull($rootNode);
+
             return $rootNode->getDescendants();
         });
 
