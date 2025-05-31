@@ -305,7 +305,7 @@ class TaxonomyStressTest extends TestCase
         // Cache hit tidak selalu lebih cepat karena overhead kecil, jadi kita test performa yang wajar
         $this->assertLessThan(1.0, $secondCallTime, 'Cache hit should be reasonably fast');
         $this->assertLessThan(1.0, $thirdCallTime, 'Cache rebuild should be reasonably fast');
-        
+
         // Verify bahwa semua operasi dalam batas waktu yang wajar
         $this->assertLessThan(2.0, $firstCallTime, 'Initial call should complete within reasonable time');
     }

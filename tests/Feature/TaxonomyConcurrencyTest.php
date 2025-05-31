@@ -274,11 +274,11 @@ class TaxonomyConcurrencyTest extends TestCase
 
         // Verify concurrent cache operations completed
         $this->assertGreaterThan(0, count($cacheResults), 'Should have successful cache accesses');
-        
+
         // Cache performance bisa bervariasi, jadi kita test bahwa operasi berjalan dalam waktu wajar
         $this->assertLessThan(1.0, $avgSubsequentTime, 'Subsequent cache accesses should be reasonably fast');
         $this->assertLessThan(2.0, $firstAccess, 'First access should complete within reasonable time');
-        
+
         // Verify cache speedup (dengan tolerance yang lebih besar)
         if ($avgSubsequentTime > 0 && $firstAccess > $avgSubsequentTime) {
             $speedup = round($firstAccess / $avgSubsequentTime, 2);

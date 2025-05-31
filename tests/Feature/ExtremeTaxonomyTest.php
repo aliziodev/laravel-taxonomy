@@ -457,11 +457,11 @@ class ExtremeTaxonomyTest extends TestCase
         $maxMemoryIncrease = 512 * 1024 * 1024; // 512MB
         $this->assertLessThan($maxMemoryIncrease, $creationMemoryIncrease, 'Creation memory increase should be under 512MB');
         $this->assertLessThan($maxMemoryIncrease / 2, $operationMemoryIncrease, 'Operation memory increase should be under 256MB');
-        
+
         // Memory bisa sama karena garbage collection, jadi kita test bahwa tidak ada memory leak besar
         $this->assertGreaterThanOrEqual($initialMemory, $afterCreationMemory, 'Memory should not decrease after creation');
         $this->assertGreaterThanOrEqual($afterCreationMemory, $finalMemory, 'Memory should not decrease after operations');
-        
+
         // Memory usage tracking completed without major leaks
         $memoryEfficient = ($creationMemoryIncrease < 50 * 1024 * 1024) && ($operationMemoryIncrease < 25 * 1024 * 1024);
         $this->assertTrue($memoryEfficient, 'Memory usage should be efficient for the operations performed');
