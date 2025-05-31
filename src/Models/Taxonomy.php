@@ -500,7 +500,7 @@ class Taxonomy extends Model
             return;
         }
 
-        // Check for circular reference
+        // Check for circular reference using parent_id relationships
         if ($parentId !== null && $this->wouldCreateCircularReference($parentId)) {
             throw new \Exception('Moving this taxonomy would create a circular reference.');
         }
@@ -508,6 +508,9 @@ class Taxonomy extends Model
         // Set new parent and save
         $this->parent_id = $parentId;
         $this->save();
+
+        // Rebuild nested set structure for this taxonomy type
+        static::rebuildNestedSet($this->type);
     }
 
     /**
@@ -520,12 +523,27 @@ class Taxonomy extends Model
             return true;
         }
 
-        // Check if the target parent is a descendant of this node
-        $descendants = $this->getDescendants();
-        foreach ($descendants as $descendant) {
-            if ($descendant->id === $parentId) {
+        // Check if the target parent is a descendant of this node using parent_id relationships
+        // This is more reliable than using nested set values which might be outdated
+        $currentParentId = $parentId;
+        $visited = [];
+
+        while ($currentParentId !== null) {
+            // Prevent infinite loops
+            if (in_array($currentParentId, $visited)) {
                 return true;
             }
+
+            $visited[] = $currentParentId;
+
+            // If we reach the current node, it would create a circular reference
+            if ($currentParentId === $this->id) {
+                return true;
+            }
+
+            // Get the parent of the current node
+            $parent = static::find($currentParentId);
+            $currentParentId = $parent ? $parent->parent_id : null;
         }
 
         return false;
