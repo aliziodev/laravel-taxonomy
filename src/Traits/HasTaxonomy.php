@@ -221,6 +221,26 @@ trait HasTaxonomy
     }
 
     /**
+     * Scope a query to include models that have taxonomy with the given slug.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
+     * @param  string  $slug  The taxonomy slug
+     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType|null  $type  Optional taxonomy type filter
+     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     */
+    public function scopeWithTaxonomySlug(Builder $query, string $slug, string|TaxonomyType|null $type = null, string $name = 'taxonomable'): Builder
+    {
+        return $query->whereHas('taxonomies', function ($q) use ($slug, $type) {
+            $q->where('slug', $slug);
+
+            if ($type) {
+                $q->where('type', $type instanceof TaxonomyType ? $type->value : $type);
+            }
+        });
+    }
+
+    /**
      * Get the taxonomy IDs from the given taxonomies.
      *
      * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>|null  $taxonomies
