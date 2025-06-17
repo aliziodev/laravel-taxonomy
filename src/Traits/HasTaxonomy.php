@@ -221,6 +221,77 @@ trait HasTaxonomy
     }
 
     /**
+     * Scope a query to include models that have specific taxonomies.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
+     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies
+     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     */
+    public function scopeWithTaxonomy(Builder $query, $taxonomies, string $name = 'taxonomable'): Builder
+    {
+        $taxonomyIds = $this->getTaxonomyIds($taxonomies);
+
+        return $query->whereHas('taxonomies', function ($query) use ($taxonomyIds) {
+            $query->whereIn('taxonomies.id', $taxonomyIds);
+        });
+    }
+
+    /**
+     * Scope a query to exclude models that have specific taxonomies.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
+     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies
+     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     */
+    public function scopeWithoutTaxonomies(Builder $query, $taxonomies, string $name = 'taxonomable'): Builder
+    {
+        $taxonomyIds = $this->getTaxonomyIds($taxonomies);
+
+        return $query->whereDoesntHave('taxonomies', function ($query) use ($taxonomyIds) {
+            $query->whereIn('taxonomies.id', $taxonomyIds);
+        });
+    }
+
+    /**
+     * Filter models by multiple taxonomy criteria.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
+     * @param  array<string, mixed>  $filters
+     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     */
+    public function scopeFilterByTaxonomies(Builder $query, array $filters, string $name = 'taxonomable'): Builder
+    {
+        foreach ($filters as $key => $value) {
+            if ($key === 'exclude' && ! empty($value)) {
+                $query->withoutTaxonomies($value, $name);
+            } elseif ($key === 'include' && ! empty($value)) {
+                $query->withTaxonomy($value, $name);
+            } elseif (! empty($value)) {
+                // Handle specific taxonomy types
+                if (is_array($value)) {
+                    // For array values, use OR logic within the same type
+                    $query->where(function ($subQuery) use ($key, $value) {
+                        foreach ($value as $val) {
+                            $subQuery->orWhereHas('taxonomies', function ($q) use ($key, $val) {
+                                $q->where('type', $key)->where('slug', $val);
+                            });
+                        }
+                    });
+                } elseif (is_string($value)) {
+                    $query->withTaxonomySlug($value, $key, $name);
+                } else {
+                    $query->withTaxonomy($value, $name);
+                }
+            }
+        }
+
+        return $query;
+    }
+
+    /**
      * Scope a query to include models that have taxonomy with the given slug.
      *
      * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
