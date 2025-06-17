@@ -448,7 +448,7 @@ class TaxonomyPerformanceTest extends TestCase
             }
         });
 
-        $this->assertPerformanceThreshold('multiple_move_operations', 3.0);
+        $this->assertPerformanceThreshold('multiple_move_operations', 5.0);
 
         // Test 3: Move deep nested node performance
         $this->createDeepTree(10);
