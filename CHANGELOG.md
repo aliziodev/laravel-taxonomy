@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [2.1.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.0.2...v2.1.0) (2025-06-17)
+
+### Features
+
+* implement automated changelog system ([0c8c6c0](https://github.com/aliziodev/laravel-taxonomy/commit/0c8c6c00b96396cabff2488f18f8321d739e37a0))
+
 ## [2.0.0] - 2025-05-31
 
 ### 🚀 Major Features Added
