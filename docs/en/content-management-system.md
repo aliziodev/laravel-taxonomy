@@ -9,7 +9,7 @@
 $newsCategory = Taxonomy::create([
     'name' => 'News',
     'type' => TaxonomyType::Category->value,
-    'metadata' => [
+    'meta' => [
         'template' => 'news-layout',
         'show_date' => true,
         'allow_comments' => true,
@@ -20,7 +20,7 @@ $techNews = Taxonomy::create([
     'name' => 'Technology',
     'type' => TaxonomyType::Category->value,
     'parent_id' => $newsCategory->id,
-    'metadata' => [
+    'meta' => [
         'featured_color' => '#007bff',
         'rss_enabled' => true,
     ],
@@ -32,7 +32,7 @@ foreach ($tags as $tagName) {
     Taxonomy::create([
         'name' => $tagName,
         'type' => TaxonomyType::Tag->value,
-        'metadata' => [
+        'meta' => [
             'trending' => in_array($tagName, ['AI', 'Machine Learning']),
             'skill_level' => $tagName === 'Laravel' ? 'intermediate' : 'beginner',
         ],
@@ -162,7 +162,7 @@ class ContentOrganizationService
     public function getTrendingContent(int $days = 7): Collection
     {
         $trendingTags = Taxonomy::where('type', TaxonomyType::Tag->value)
-            ->whereJsonContains('metadata->trending', true)
+            ->whereJsonContains('meta->trending', true)
             ->get();
 
         return Article::published()
@@ -186,7 +186,7 @@ class ContentOrganizationService
 }
 ```
 
-## 6. SEO and metadata management
+## 6. SEO and meta management
 
 ```php
 class SEOService

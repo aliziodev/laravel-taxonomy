@@ -9,7 +9,7 @@
 $programmingSkill = Taxonomy::create([
     'name' => 'Programming',
     'type' => 'skill',
-    'metadata' => [
+    'meta' => [
         'icon' => 'code',
         'industry' => 'Technology',
         'demand_level' => 'high',
@@ -20,7 +20,7 @@ $webDevelopment = Taxonomy::create([
     'name' => 'Web Development',
     'type' => 'skill',
     'parent_id' => $programmingSkill->id,
-    'metadata' => [
+    'meta' => [
         'prerequisites' => ['HTML', 'CSS', 'JavaScript'],
         'career_paths' => ['Frontend Developer', 'Full Stack Developer'],
     ],
@@ -38,7 +38,7 @@ foreach ($difficulties as $difficulty) {
         'name' => $difficulty['name'],
         'type' => 'difficulty',
         'sort_order' => $difficulty['order'],
-        'metadata' => [
+        'meta' => [
             'color' => $difficulty['color'],
             'estimated_hours' => $difficulty['order'] * 20,
         ],
@@ -325,7 +325,7 @@ class LearningAnalyticsService
 
     private function calculateDemandScore(Taxonomy $skill, int $enrollments): float
     {
-        $industryDemand = $skill->metadata['demand_level'] ?? 'medium';
+        $industryDemand = $skill->meta['demand_level'] ?? 'medium';
         $baseScore = match($industryDemand) {
             'high' => 100,
             'medium' => 70,

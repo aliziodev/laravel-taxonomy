@@ -24,7 +24,7 @@ class TaxonomyAnalyticsService
                     'name' => $taxonomy->name,
                     'usage_count' => $taxonomy->models_count,
                     'last_used' => $taxonomy->models()->latest('created_at')->first()?->created_at,
-                    'metadata' => $taxonomy->metadata,
+                    'meta' => $taxonomy->meta,
                 ];
             })
             ->toArray();
@@ -152,7 +152,7 @@ class ReportingController extends Controller
             $file = fopen('php://output', 'w');
             
             // Tambahkan header CSV
-            fputcsv($file, ['ID', 'Name', 'Usage Count', 'Last Used', 'Metadata']);
+            fputcsv($file, ['ID', 'Name', 'Usage Count', 'Last Used', 'Meta']);
             
             foreach ($data as $row) {
                 fputcsv($file, [
@@ -160,7 +160,7 @@ class ReportingController extends Controller
                     $row['name'],
                     $row['usage_count'],
                     $row['last_used'],
-                    json_encode($row['metadata']),
+                    json_encode($row['meta']),
                 ]);
             }
             
@@ -371,7 +371,7 @@ class ReportBuilder
             'taxonomies.id',
             'taxonomies.name',
             'taxonomies.type',
-            'taxonomies.metadata',
+            'taxonomies.meta',
             DB::raw('COUNT(taxonomables.id) as usage_count'),
             DB::raw('MAX(taxonomables.created_at) as last_used'),
         ]);
@@ -554,7 +554,7 @@ class AutomatedReportingService
     private function getOptimizationSuggestions(): array
     {
         return [
-            'Pertimbangkan menambahkan indeks pada field metadata yang sering di-query',
+            'Pertimbangkan menambahkan indeks pada field meta yang sering di-query',
             'Arsipkan asosiasi taksonomi lama untuk meningkatkan performa',
             'Implementasikan caching yang lebih agresif untuk operasi read-heavy',
         ];

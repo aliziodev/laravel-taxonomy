@@ -378,7 +378,7 @@ class TaxonomyStressTest extends TestCase
                 'type' => $type,
                 'slug' => "diverse-{$type}-{$i}",
                 'parent_id' => $parentId,
-                'metadata' => json_encode([
+                'meta' => json_encode([
                     'tags' => $i % 5 === 0 ? ['important'] : ['normal'],
                     'priority' => rand(1, 10),
                     'created_batch' => 'diverse_dataset',
@@ -393,21 +393,21 @@ class TaxonomyStressTest extends TestCase
     }
 
     /**
-     * Test edge case: taxonomy dengan metadata sangat besar.
+     * Test edge case: taxonomy dengan meta sangat besar.
      */
     #[Test]
     public function it_can_handle_large_metadata(): void
     {
-        // Buat metadata yang sangat besar (mendekati limit JSON)
+        // Buat meta yang sangat besar (mendekati limit JSON)
         $largeArray = [];
         for ($i = 1; $i <= 1000; ++$i) {
-            $largeArray["key_{$i}"] = str_repeat("Large metadata value {$i} ", 50);
+            $largeArray["key_{$i}"] = str_repeat("Large meta value {$i} ", 50);
         }
 
         $taxonomy = Taxonomy::create([
-            'name' => 'Large Metadata Category',
+            'name' => 'Large Meta Category',
             'type' => TaxonomyType::Category->value,
-            'slug' => 'large-metadata-category',
+            'slug' => 'large-meta-category',
             'meta' => $largeArray,
         ]);
 

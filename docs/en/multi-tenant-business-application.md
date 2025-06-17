@@ -10,10 +10,10 @@ class TenantTaxonomy extends Model
     use HasTaxonomy, SoftDeletes;
 
     protected $table = 'taxonomies';
-    protected $fillable = ['name', 'slug', 'type', 'description', 'parent_id', 'tenant_id', 'metadata'];
+    protected $fillable = ['name', 'slug', 'type', 'description', 'parent_id', 'tenant_id', 'meta'];
 
     protected $casts = [
-        'metadata' => 'array',
+        'meta' => 'array',
     ];
 
     public function scopeForTenant($query, $tenantId)
@@ -37,27 +37,27 @@ class TenantTaxonomyService
     {
         $defaultStructure = [
             'departments' => [
-                'Sales' => ['metadata' => ['color' => '#007bff', 'manager_required' => true]],
-                'Marketing' => ['metadata' => ['color' => '#28a745', 'budget_tracking' => true]],
+                'Sales' => ['meta' => ['color' => '#007bff', 'manager_required' => true]],
+                'Marketing' => ['meta' => ['color' => '#28a745', 'budget_tracking' => true]],
                 'Engineering' => [
-                    'metadata' => ['color' => '#6f42c1', 'technical' => true],
+                    'meta' => ['color' => '#6f42c1', 'technical' => true],
                     'children' => [
-                        'Frontend' => ['metadata' => ['skills' => ['React', 'Vue', 'Angular']]],
-                        'Backend' => ['metadata' => ['skills' => ['Laravel', 'Node.js', 'Python']]],
-                        'DevOps' => ['metadata' => ['skills' => ['Docker', 'Kubernetes', 'AWS']]],
+                        'Frontend' => ['meta' => ['skills' => ['React', 'Vue', 'Angular']]],
+                        'Backend' => ['meta' => ['skills' => ['Laravel', 'Node.js', 'Python']]],
+                        'DevOps' => ['meta' => ['skills' => ['Docker', 'Kubernetes', 'AWS']]],
                     ],
                 ],
             ],
             'project_types' => [
-                'Internal' => ['metadata' => ['billable' => false]],
-                'Client Work' => ['metadata' => ['billable' => true, 'requires_contract' => true]],
-                'R&D' => ['metadata' => ['billable' => false, 'innovation' => true]],
+                'Internal' => ['meta' => ['billable' => false]],
+                'Client Work' => ['meta' => ['billable' => true, 'requires_contract' => true]],
+                'R&D' => ['meta' => ['billable' => false, 'innovation' => true]],
             ],
             'priorities' => [
-                'Low' => ['metadata' => ['color' => '#6c757d', 'sla_days' => 30]],
-                'Medium' => ['metadata' => ['color' => '#ffc107', 'sla_days' => 14]],
-                'High' => ['metadata' => ['color' => '#fd7e14', 'sla_days' => 7]],
-                'Critical' => ['metadata' => ['color' => '#dc3545', 'sla_days' => 1]],
+                'Low' => ['meta' => ['color' => '#6c757d', 'sla_days' => 30]],
+                'Medium' => ['meta' => ['color' => '#ffc107', 'sla_days' => 14]],
+                'High' => ['meta' => ['color' => '#fd7e14', 'sla_days' => 7]],
+                'Critical' => ['meta' => ['color' => '#dc3545', 'sla_days' => 1]],
             ],
         ];
 
@@ -74,7 +74,7 @@ class TenantTaxonomyService
                 'type' => $type,
                 'tenant_id' => $tenant->id,
                 'parent_id' => $parentId,
-                'metadata' => $config['metadata'] ?? [],
+                'meta' => $config['meta'] ?? [],
             ]);
 
             if (isset($config['children'])) {
@@ -150,9 +150,9 @@ class DashboardController extends Controller
             ->map(function ($priority) {
                 return [
                     'name' => $priority->name,
-                    'color' => $priority->metadata['color'] ?? '#6c757d',
+                    'color' => $priority->meta['color'] ?? '#6c757d',
                     'count' => $priority->models->count(),
-                    'sla_days' => $priority->metadata['sla_days'] ?? null,
+                    'sla_days' => $priority->meta['sla_days'] ?? null,
                 ];
             });
 
@@ -218,14 +218,14 @@ class TenantCustomizationService
         $colorVariations = $this->generateColorVariations($primaryColor);
         
         $taxonomies = TenantTaxonomy::forTenant($tenant->id)
-            ->whereJsonContains('metadata->color', null, 'or')
+            ->whereJsonContains('meta->color', null, 'or')
             ->get();
 
         foreach ($taxonomies as $index => $taxonomy) {
             $colorIndex = $index % count($colorVariations);
-            $metadata = $taxonomy->metadata;
-            $metadata['color'] = $colorVariations[$colorIndex];
-            $taxonomy->update(['metadata' => $metadata]);
+            $meta = $taxonomy->meta;
+            $meta['color'] = $colorVariations[$colorIndex];
+            $taxonomy->update(['meta' => $meta]);
         }
     }
 
@@ -360,8 +360,8 @@ class TenantAnalyticsService
                 return [
                     'priority' => $priority->name,
                     'count' => $priority->models_count,
-                    'color' => $priority->metadata['color'] ?? '#6c757d',
-                    'sla_days' => $priority->metadata['sla_days'] ?? null,
+                    'color' => $priority->meta['color'] ?? '#6c757d',
+                    'sla_days' => $priority->meta['sla_days'] ?? null,
                 ];
             })
             ->toArray();

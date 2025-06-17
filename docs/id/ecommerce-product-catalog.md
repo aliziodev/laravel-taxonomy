@@ -12,7 +12,7 @@ use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 $electronics = Taxonomy::create([
     'name' => 'Electronics',
     'type' => TaxonomyType::Category->value,
-    'metadata' => [
+    'meta' => [
         'icon' => 'laptop',
         'banner_image' => 'electronics-banner.jpg',
         'seo_title' => 'Electronics - Latest Gadgets & Devices',
@@ -22,7 +22,7 @@ $electronics = Taxonomy::create([
 $clothing = Taxonomy::create([
     'name' => 'Clothing',
     'type' => TaxonomyType::Category->value,
-    'metadata' => [
+    'meta' => [
         'icon' => 'shirt',
         'seasonal' => true,
     ],
@@ -33,7 +33,7 @@ $smartphones = Taxonomy::create([
     'name' => 'Smartphones',
     'type' => TaxonomyType::Category->value,
     'parent_id' => $electronics->id,
-    'metadata' => [
+    'meta' => [
         'filters' => ['brand', 'price_range', 'storage', 'color'],
         'popular' => true,
     ],
@@ -49,7 +49,7 @@ $laptops = Taxonomy::create([
 $apple = Taxonomy::create([
     'name' => 'Apple',
     'type' => 'brand',
-    'metadata' => [
+    'meta' => [
         'logo' => 'apple-logo.png',
         'premium' => true,
         'warranty_years' => 1,
@@ -59,7 +59,7 @@ $apple = Taxonomy::create([
 $samsung = Taxonomy::create([
     'name' => 'Samsung',
     'type' => 'brand',
-    'metadata' => [
+    'meta' => [
         'logo' => 'samsung-logo.png',
         'country' => 'South Korea',
     ],
@@ -76,7 +76,7 @@ foreach ($colors as $color) {
     Taxonomy::create([
         'name' => $color['name'],
         'type' => TaxonomyType::Color->value,
-        'metadata' => ['hex_code' => $color['hex']],
+        'meta' => ['hex_code' => $color['hex']],
     ]);
 }
 ```
@@ -113,7 +113,7 @@ class CategoryController extends Controller
                     'id' => $category->id,
                     'name' => $category->name,
                     'slug' => $category->slug,
-                    'icon' => $category->metadata['icon'] ?? null,
+                    'icon' => $category->meta['icon'] ?? null,
                     'product_count' => $category->models()->count(),
                     'children' => $category->children->map(function ($child) {
                         return [

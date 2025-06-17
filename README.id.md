@@ -271,7 +271,7 @@ $category = Taxonomy::create([
     'name' => 'Books',
     'type' => TaxonomyType::Category->value,
     'description' => 'Semua jenis buku',
-    'metadata' => [
+    'meta' => [
         'icon' => 'book',
         'color' => '#3498db',
         'featured' => true,
@@ -452,14 +452,14 @@ $nestedTree = Taxonomy::getNestedTree(TaxonomyType::Category);        // Urutan 
 
 ## 📊 Dukungan Metadata
 
-Simpan data tambahan dengan setiap taksonomi menggunakan metadata JSON:
+Simpan data tambahan dengan setiap taksonomi menggunakan meta JSON:
 
 ```php
-// Buat taksonomi dengan metadata
+// Buat taksonomi dengan meta
 $category = Taxonomy::create([
     'name' => 'Premium Products',
     'type' => TaxonomyType::Category->value,
-    'metadata' => [
+    'meta' => [
         'icon' => 'star',
         'color' => '#gold',
         'display_order' => 1,
@@ -477,14 +477,14 @@ $category = Taxonomy::create([
 ]);
 
 // Akses metadata
-$icon = $category->metadata['icon'] ?? 'default';
-$seoTitle = $category->metadata['seo']['title'] ?? $category->name;
+$icon = $category->meta['icon'] ?? 'default';
+$seoTitle = $category->meta['seo']['title'] ?? $category->name;
 
-// Update metadata
+// Update meta
 $category->update([
-    'metadata' => array_merge($category->metadata ?? [], [
+    'meta' => array_merge($category->meta ?? [], [
         'updated_at' => now()->toISOString(),
-        'view_count' => ($category->metadata['view_count'] ?? 0) + 1,
+        'view_count' => ($category->meta['view_count'] ?? 0) + 1,
     ]),
 ]);
 ```
@@ -825,7 +825,7 @@ class Product extends Model
 // Loading taksonomi dengan model secara efisien
 $products = Product::with([
     'taxonomies' => function ($query) {
-        $query->select('id', 'name', 'slug', 'type', 'metadata')
+        $query->select('id', 'name', 'slug', 'type', 'meta')
               ->orderBy('type')
               ->orderBy('name');
     }
@@ -876,8 +876,8 @@ class ProductFilterService
         if (!empty($filters['price_range'])) {
             $priceRange = Taxonomy::findBySlug($filters['price_range'], 'price_range');
             if ($priceRange) {
-                $min = $priceRange->metadata['min_price'] ?? 0;
-                $max = $priceRange->metadata['max_price'] ?? PHP_INT_MAX;
+                $min = $priceRange->meta['min_price'] ?? 0;
+                $max = $priceRange->meta['max_price'] ?? PHP_INT_MAX;
                 $query->whereBetween('price', [$min, $max]);
             }
         }
@@ -974,7 +974,7 @@ class TaxonomyImportExportService
                 'slug' => $taxonomy->slug,
                 'type' => $taxonomy->type,
                 'description' => $taxonomy->description,
-                'metadata' => $taxonomy->metadata,
+                'meta' => $taxonomy->meta,
                 'sort_order' => $taxonomy->sort_order,
             ];
 
@@ -1004,7 +1004,7 @@ class TaxonomyImportExportService
             'type' => $item['type'],
             'description' => $item['description'] ?? null,
             'parent_id' => $parentId,
-            'metadata' => $item['metadata'] ?? [],
+            'meta' => $item['meta'] ?? [],
             'sort_order' => $item['sort_order'] ?? 0,
         ]);
 
@@ -1027,7 +1027,7 @@ class TaxonomyImportExportService
             ->orderBy('lft')
             ->get();
 
-        $csv = "Name,Slug,Type,Parent,Description,Metadata\n";
+        $csv = "Name,Slug,Type,Parent,Description,Meta\n";
         
         foreach ($taxonomies as $taxonomy) {
             $csv .= sprintf(
@@ -1037,7 +1037,7 @@ class TaxonomyImportExportService
                 $taxonomy->type,
                 $taxonomy->parent?->name ?? '',
                 $taxonomy->description ?? '',
-                json_encode($taxonomy->metadata)
+                json_encode($taxonomy->meta)
             );
         }
 
@@ -1067,7 +1067,7 @@ class TaxonomyTypes
 ### 2. **Praktik Terbaik Metadata**
 
 ```php
-// ✅ Baik: Metadata terstruktur dengan validasi
+// ✅ Baik: meta terstruktur dengan validasi
 class CategoryMetadata
 {
     public static function validate(array $metadata): array
@@ -1086,7 +1086,7 @@ class CategoryMetadata
 $category = Taxonomy::create([
     'name' => 'Electronics',
     'type' => TaxonomyTypes::PRODUCT_CATEGORY,
-    'metadata' => CategoryMetadata::validate([
+    'meta' => CategoryMetadata::validate([
         'icon' => 'laptop',
         'color' => '#007bff',
         'featured' => true,
@@ -1139,7 +1139,7 @@ class TaxonomyService
             'name' => 'required|string|max:255',
             'type' => 'required|string|max:50',
             'parent_id' => 'nullable|exists:taxonomies,id',
-            'metadata' => 'nullable|array',
+            'meta' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {

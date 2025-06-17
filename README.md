@@ -11,79 +11,84 @@
 Laravel Taxonomy is a flexible and powerful package for managing taxonomies, categories, tags, and hierarchical structures in Laravel applications. Features nested-set support for optimal query performance on hierarchical data structures.
 
 ## 📖 Documentation
-- [🇺🇸 English Documentation](README.md)
-- [🇮🇩 Dokumentasi Bahasa Indonesia](README.id.md)
+
+-   [🇺🇸 English Documentation](README.md)
+-   [🇮🇩 Dokumentasi Bahasa Indonesia](README.id.md)
 
 ## 📋 Table of Contents
 
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Configuration](#️-configuration)
-- [Quick Start](#-quick-start)
-- [Basic Usage](#-basic-usage)
-- [Hierarchical Data & Nested Sets](#-hierarchical-data--nested-sets)
-- [Metadata Support](#-metadata-support)
-- [Bulk Operations](#-bulk-operations)
-- [Caching & Performance](#-caching--performance)
-- [Custom Taxonomy Types](#️-custom-taxonomy-types)
-- [Real-World Usage Scenarios](#-real-world-usage-scenarios)
-- [Advanced Features](#-advanced-features)
-- [Best Practices](#-best-practices)
-- [Custom Slugs and Error Handling](#custom-slugs-and-error-handling)
-- [Troubleshooting](#troubleshooting)
-- [Security](#security)
-- [Testing](#testing)
-- [License](#license)
+-   [Overview](#overview)
+-   [Key Features](#key-features)
+-   [Requirements](#requirements)
+-   [Installation](#installation)
+-   [Configuration](#️-configuration)
+-   [Quick Start](#-quick-start)
+-   [Basic Usage](#-basic-usage)
+-   [Hierarchical Data & Nested Sets](#-hierarchical-data--nested-sets)
+-   [Metadata Support](#-metadata-support)
+-   [Bulk Operations](#-bulk-operations)
+-   [Caching & Performance](#-caching--performance)
+-   [Custom Taxonomy Types](#️-custom-taxonomy-types)
+-   [Real-World Usage Scenarios](#-real-world-usage-scenarios)
+-   [Advanced Features](#-advanced-features)
+-   [Best Practices](#-best-practices)
+-   [Custom Slugs and Error Handling](#custom-slugs-and-error-handling)
+-   [Troubleshooting](#troubleshooting)
+-   [Security](#security)
+-   [Testing](#testing)
+-   [License](#license)
 
 ## Overview
 
 This package is ideal for:
 
-- E-commerce category management
-- Blog taxonomies
-- Content organization
-- Product attributes
-- Dynamic navigation
-- Any hierarchical data structure
+-   E-commerce category management
+-   Blog taxonomies
+-   Content organization
+-   Product attributes
+-   Dynamic navigation
+-   Any hierarchical data structure
 
 ## Key Features
 
 ### Core Functionality
-- **Hierarchical Terms**: Create parent-child relationships between terms
-- **Metadata Support**: Store additional data as JSON with each taxonomy
-- **Term Ordering**: Control the order of terms with sort_order
-- **Polymorphic Relationships**: Associate taxonomies with any model
-- **Multiple Term Types**: Use predefined types (Category, Tag, etc.) or create custom types
-- **Bulk Operations**: Attach, detach, sync, or toggle multiple taxonomies at once
-- **Advanced Querying**: Filter models by taxonomies with query scopes
+
+-   **Hierarchical Terms**: Create parent-child relationships between terms
+-   **Metadata Support**: Store additional data as JSON with each taxonomy
+-   **Term Ordering**: Control the order of terms with sort_order
+-   **Polymorphic Relationships**: Associate taxonomies with any model
+-   **Multiple Term Types**: Use predefined types (Category, Tag, etc.) or create custom types
+-   **Bulk Operations**: Attach, detach, sync, or toggle multiple taxonomies at once
+-   **Advanced Querying**: Filter models by taxonomies with query scopes
 
 ### Nested Set Features
-- **Tree Navigation**: Efficient ancestor and descendant queries
-- **Tree Manipulation**: Move, insert, and reorganize tree nodes
-- **Depth Management**: Track and query by hierarchy depth
-- **Tree Validation**: Maintain tree integrity automatically
-- **Efficient Queries**: Optimized database queries for hierarchical data
+
+-   **Tree Navigation**: Efficient ancestor and descendant queries
+-   **Tree Manipulation**: Move, insert, and reorganize tree nodes
+-   **Depth Management**: Track and query by hierarchy depth
+-   **Tree Validation**: Maintain tree integrity automatically
+-   **Efficient Queries**: Optimized database queries for hierarchical data
 
 ### Performance & Scalability
-- **Caching System**: Improve performance with built-in caching
-- **Database Indexing**: Optimized indexes for fast queries
-- **Lazy Loading**: Efficient relationship loading
-- **Tree Structure**: Get hierarchical or flat tree representations
-- **Pagination Support**: Paginate results for better performance
+
+-   **Caching System**: Improve performance with built-in caching
+-   **Database Indexing**: Optimized indexes for fast queries
+-   **Lazy Loading**: Efficient relationship loading
+-   **Tree Structure**: Get hierarchical or flat tree representations
+-   **Pagination Support**: Paginate results for better performance
 
 ### Developer Experience
-- **Intuitive API**: Clean and expressive syntax
-- **Comprehensive Documentation**: Detailed guides and examples
-- **Type Safety**: Full support for Laravel's type system
-- **Testing Support**: Built-in testing utilities
+
+-   **Intuitive API**: Clean and expressive syntax
+-   **Comprehensive Documentation**: Detailed guides and examples
+-   **Type Safety**: Full support for Laravel's type system
+-   **Testing Support**: Built-in testing utilities
 
 ## Requirements
 
-- PHP 8.2+
-- Laravel 11.0+ or 12.0+
-- Composer 2.0+
+-   PHP 8.2+
+-   Laravel 11.0+ or 12.0+
+-   Composer 2.0+
 
 ## Installation
 
@@ -147,6 +152,7 @@ return [
 ### Configuration Options Explained
 
 #### Table Names
+
 Customize database table names if you need to avoid conflicts or follow specific naming conventions:
 
 ```php
@@ -157,6 +163,7 @@ Customize database table names if you need to avoid conflicts or follow specific
 ```
 
 #### Morph Type
+
 Choose the appropriate morph type based on your model's primary key:
 
 ```php
@@ -171,6 +178,7 @@ Choose the appropriate morph type based on your model's primary key:
 ```
 
 #### Custom Types
+
 Extend or replace the default taxonomy types:
 
 ```php
@@ -184,6 +192,7 @@ Extend or replace the default taxonomy types:
 ```
 
 #### Slug Configuration
+
 Control slug generation behavior:
 
 ```php
@@ -192,7 +201,6 @@ Control slug generation behavior:
     'regenerate_on_update' => true,   // Auto-update slugs when names change
 ],
 ```
-
 
 ## 🚀 Quick Start
 
@@ -271,7 +279,7 @@ $category = Taxonomy::create([
     'name' => 'Books',
     'type' => TaxonomyType::Category->value,
     'description' => 'All kinds of books',
-    'metadata' => [
+    'meta' => [
         'icon' => 'book',
         'color' => '#3498db',
         'featured' => true,
@@ -452,14 +460,14 @@ $nestedTree = Taxonomy::getNestedTree(TaxonomyType::Category);        // Nested 
 
 ## 📊 Metadata Support
 
-Store additional data with each taxonomy using JSON metadata:
+Store additional data with each taxonomy using JSON meta:
 
 ```php
-// Create taxonomy with metadata
+// Create taxonomy with meta
 $category = Taxonomy::create([
     'name' => 'Premium Products',
     'type' => TaxonomyType::Category->value,
-    'metadata' => [
+    'meta' => [
         'icon' => 'star',
         'color' => '#gold',
         'display_order' => 1,
@@ -476,15 +484,15 @@ $category = Taxonomy::create([
     ],
 ]);
 
-// Access metadata
-$icon = $category->metadata['icon'] ?? 'default';
-$seoTitle = $category->metadata['seo']['title'] ?? $category->name;
+// Access meta
+$icon = $category->meta['icon'] ?? 'default';
+$seoTitle = $category->meta['seo']['title'] ?? $category->name;
 
-// Update metadata
+// Update meta
 $category->update([
-    'metadata' => array_merge($category->metadata ?? [], [
+    'meta' => array_merge($category->meta ?? [], [
         'updated_at' => now()->toISOString(),
-        'view_count' => ($category->metadata['view_count'] ?? 0) + 1,
+        'view_count' => ($category->meta['view_count'] ?? 0) + 1,
     ]),
 ]);
 ```
@@ -745,10 +753,11 @@ For comprehensive examples of how to use Laravel Taxonomy in real-world applicat
 5. **[Analytics and Reporting](docs/en/analytics-and-reporting.md)** - Implementing comprehensive analytics, reporting dashboards, and automated insights using taxonomy data.
 
 Each scenario includes:
-- Complete code examples
-- Database setup and migrations
-- Controller implementations
-- Service layer patterns
+
+-   Complete code examples
+-   Database setup and migrations
+-   Controller implementations
+-   Service layer patterns
 
 ## 🚀 Advanced Features
 
@@ -794,7 +803,7 @@ class CachedTaxonomyService
     public function warmCache(): void
     {
         $types = Taxonomy::distinct('type')->pluck('type');
-        
+
         foreach ($types as $type) {
             $this->getCachedTree($type);
         }
@@ -825,7 +834,7 @@ class Product extends Model
 // Efficient loading of taxonomies with models
 $products = Product::with([
     'taxonomies' => function ($query) {
-        $query->select('id', 'name', 'slug', 'type', 'metadata')
+        $query->select('id', 'name', 'slug', 'type', 'meta')
               ->orderBy('type')
               ->orderBy('name');
     }
@@ -876,8 +885,8 @@ class ProductFilterService
         if (!empty($filters['price_range'])) {
             $priceRange = Taxonomy::findBySlug($filters['price_range'], 'price_range');
             if ($priceRange) {
-                $min = $priceRange->metadata['min_price'] ?? 0;
-                $max = $priceRange->metadata['max_price'] ?? PHP_INT_MAX;
+                $min = $priceRange->meta['min_price'] ?? 0;
+                $max = $priceRange->meta['max_price'] ?? PHP_INT_MAX;
                 $query->whereBetween('price', [$min, $max]);
             }
         }
@@ -893,7 +902,7 @@ class ProductFilterService
     public function getFilterOptions(array $currentFilters = []): array
     {
         $baseQuery = $this->filterByTaxonomies($currentFilters);
-        
+
         return [
             'categories' => $this->getAvailableOptions($baseQuery, 'category'),
             'brands' => $this->getAvailableOptions($baseQuery, 'brand'),
@@ -915,8 +924,6 @@ class ProductFilterService
 }
 ```
 
-
-
 ### Data Import/Export
 
 **Import/Export Functionality**:
@@ -927,7 +934,7 @@ class TaxonomyImportExportService
     public function exportToJson(string $type = null): string
     {
         $query = Taxonomy::with('children');
-        
+
         if ($type) {
             $query->where('type', $type);
         }
@@ -974,7 +981,7 @@ class TaxonomyImportExportService
                 'slug' => $taxonomy->slug,
                 'type' => $taxonomy->type,
                 'description' => $taxonomy->description,
-                'metadata' => $taxonomy->metadata,
+                'meta' => $taxonomy->meta,
                 'sort_order' => $taxonomy->sort_order,
             ];
 
@@ -989,7 +996,7 @@ class TaxonomyImportExportService
     private function importTaxonomyItem(array $item, ?int $parentId, bool $replaceExisting): Taxonomy
     {
         $existing = null;
-        
+
         if ($replaceExisting) {
             $existing = Taxonomy::where('slug', $item['slug'])
                 ->where('type', $item['type'])
@@ -997,14 +1004,14 @@ class TaxonomyImportExportService
         }
 
         $taxonomy = $existing ?: new Taxonomy();
-        
+
         $taxonomy->fill([
             'name' => $item['name'],
             'slug' => $item['slug'],
             'type' => $item['type'],
             'description' => $item['description'] ?? null,
             'parent_id' => $parentId,
-            'metadata' => $item['metadata'] ?? [],
+            'meta' => $item['meta'] ?? [],
             'sort_order' => $item['sort_order'] ?? 0,
         ]);
 
@@ -1027,8 +1034,8 @@ class TaxonomyImportExportService
             ->orderBy('lft')
             ->get();
 
-        $csv = "Name,Slug,Type,Parent,Description,Metadata\n";
-        
+        $csv = "Name,Slug,Type,Parent,Description,Meta\n";
+
         foreach ($taxonomies as $taxonomy) {
             $csv .= sprintf(
                 "\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
@@ -1037,7 +1044,7 @@ class TaxonomyImportExportService
                 $taxonomy->type,
                 $taxonomy->parent?->name ?? '',
                 $taxonomy->description ?? '',
-                json_encode($taxonomy->metadata)
+                json_encode($taxonomy->meta)
             );
         }
 
@@ -1086,7 +1093,7 @@ class CategoryMetadata
 $category = Taxonomy::create([
     'name' => 'Electronics',
     'type' => TaxonomyTypes::PRODUCT_CATEGORY,
-    'metadata' => CategoryMetadata::validate([
+    'meta' => CategoryMetadata::validate([
         'icon' => 'laptop',
         'color' => '#007bff',
         'featured' => true,
@@ -1139,7 +1146,7 @@ class TaxonomyService
             'name' => 'required|string|max:255',
             'type' => 'required|string|max:50',
             'parent_id' => 'nullable|exists:taxonomies,id',
-            'metadata' => 'nullable|array',
+            'meta' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -1157,7 +1164,7 @@ class TaxonomyService
     private function validateNoCircularReference(int $parentId, array $data): void
     {
         $parent = Taxonomy::find($parentId);
-        
+
         if (!$parent) {
             throw new InvalidArgumentException('Parent taxonomy not found');
         }
@@ -1206,9 +1213,9 @@ class TaxonomyTestCase extends TestCase
     public function it_can_attach_taxonomies_to_models(): void
     {
         $product = Product::factory()->create();
-        
+
         $product->attachTaxonomy($this->electronics);
-        
+
         $this->assertTrue($product->hasTaxonomy($this->electronics));
         $this->assertCount(1, $product->taxonomies);
     }
@@ -1217,10 +1224,10 @@ class TaxonomyTestCase extends TestCase
     public function it_maintains_nested_set_integrity(): void
     {
         $this->electronics->rebuildNestedSet();
-        
+
         $this->electronics->refresh();
         $this->smartphones->refresh();
-        
+
         $this->assertEquals(1, $this->electronics->lft);
         $this->assertEquals(4, $this->electronics->rgt);
         $this->assertEquals(2, $this->smartphones->lft);
@@ -1277,8 +1284,8 @@ $taxonomy2 = Taxonomy::create([
 
 The package provides the following exceptions:
 
-- `MissingSlugException`: Thrown when a slug is required but not provided
-- `DuplicateSlugException`: Thrown when a slug already exists and a unique slug is required
+-   `MissingSlugException`: Thrown when a slug is required but not provided
+-   `DuplicateSlugException`: Thrown when a slug already exists and a unique slug is required
 
 You can catch these exceptions to provide custom error handling:
 
@@ -1330,9 +1337,9 @@ If you're not seeing updated data after making changes, you might need to clear 
 
 The Laravel Taxonomy package follows good security practices:
 
-- It uses prepared statements for all database queries to prevent SQL injection
-- It validates input data before processing
-- It uses Laravel's built-in protection mechanisms
+-   It uses prepared statements for all database queries to prevent SQL injection
+-   It validates input data before processing
+-   It uses Laravel's built-in protection mechanisms
 
 If you discover any security issues, please email the author at aliziodev@gmail.com instead of using the issue tracker.
 
