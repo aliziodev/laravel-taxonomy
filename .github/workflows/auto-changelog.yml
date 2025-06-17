@@ -38,7 +38,7 @@ jobs:
             - name: Install Node.js dependencies
               run: |
                   npm init -y
-                  npm install --save-dev semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github @semantic-release/commit-analyzer @semantic-release/release-notes-generator
+                  npm install --save-dev semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github @semantic-release/commit-analyzer @semantic-release/release-notes-generator conventional-changelog-conventionalcommits
 
             - name: Install PHP dependencies
               run: |
