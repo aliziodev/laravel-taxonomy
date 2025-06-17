@@ -1,0 +1,61 @@
+name: Auto Changelog and Release
+
+on:
+    push:
+        branches:
+            - main
+            - master
+    workflow_dispatch:
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            issues: write
+            pull-requests: write
+            packages: write
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+                  cache: "npm"
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: 8.3
+                  extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
+                  coverage: none
+
+            - name: Install Node.js dependencies
+              run: |
+                  npm init -y
+                  npm install --save-dev semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github @semantic-release/commit-analyzer @semantic-release/release-notes-generator
+
+            - name: Install PHP dependencies
+              run: |
+                  composer require "laravel/framework:^11.0|^12.0" "orchestra/testbench:^9.0|^10.0" --no-interaction --no-update
+                  composer update --prefer-stable --prefer-dist --no-interaction
+
+            - name: Run tests
+              run: vendor/bin/pest
+
+            - name: Run PHPStan
+              run: vendor/bin/phpstan analyse --memory-limit=2G
+
+            - name: Run Laravel Pint
+              run: vendor/bin/pint --test
+
+            - name: Run Semantic Release
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: npx semantic-release
