@@ -654,11 +654,11 @@ class Taxonomy extends Model
     }
 
     /**
-     * Get siblings of this taxonomy (same parent, same level).
+     * Get siblings of this taxonomy (same parent, same level)
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     * @return \Illuminate\Database\Eloquent\Collection<int, self>
      */
-    public function getSiblings(): Collection
+    public function getSiblings()
     {
         if ($this->parent_id === null) {
             // For root nodes, get all other root nodes of the same type
