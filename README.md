@@ -1355,6 +1355,53 @@ composer test
 vendor/bin/pest
 ```
 
+## 📝 Automatic Changelog
+
+This package uses **automated changelog generation** based on [Conventional Commits](https://www.conventionalcommits.org/) and [Semantic Versioning](https://semver.org/).
+
+### How It Works
+
+- **Commit Analysis**: Every commit message is analyzed to determine the type of change
+- **Automatic Versioning**: Version numbers are automatically determined based on commit types
+- **Changelog Generation**: `CHANGELOG.md` is automatically updated with release notes
+- **GitHub Releases**: Releases are automatically created with detailed release notes
+
+### Commit Message Format
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+**Examples:**
+```bash
+feat: add moveToParent method with performance optimization
+fix: resolve nested set corruption on concurrent operations
+feat!: change taxonomy structure for multi-tenancy support
+```
+
+### Release Types
+
+| Commit Type | Release Type | Example |
+|-------------|--------------|----------|
+| `fix:` | Patch (1.0.1) | Bug fixes |
+| `feat:` | Minor (1.1.0) | New features |
+| `feat!:` or `BREAKING CHANGE:` | Major (2.0.0) | Breaking changes |
+| `docs:`, `style:`, `test:`, `chore:` | No Release | Documentation, formatting |
+
+### Automated Workflows
+
+- **Auto Changelog**: Triggered on every push to main branch
+- **Commitlint**: Validates commit messages on PRs and pushes
+- **Release Creation**: Automatically creates GitHub releases with changelogs
+
+## Contributing
+
+Please see [CONTRIBUTING](CONTRIBUTING.md) for details on our automated changelog system and development workflow.
+
 ## License
 
 The Laravel Taxonomy package is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
