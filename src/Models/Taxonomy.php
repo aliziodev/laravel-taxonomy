@@ -654,6 +654,31 @@ class Taxonomy extends Model
     }
 
     /**
+     * Get siblings of this taxonomy (same parent, same level).
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     */
+    public function getSiblings(): Collection
+    {
+        if ($this->parent_id === null) {
+            // For root nodes, get all other root nodes of the same type
+            return static::where('type', $this->type)
+                ->whereNull('parent_id')
+                ->where('id', '!=', $this->id)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get();
+        }
+
+        // For non-root nodes, get all children of the same parent
+        return static::where('parent_id', $this->parent_id)
+            ->where('id', '!=', $this->id)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
      * Get direct children using nested set.
      *
      * @return \Illuminate\Database\Eloquent\Collection<int, static>
