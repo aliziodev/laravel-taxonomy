@@ -654,7 +654,7 @@ class Taxonomy extends Model
     }
 
     /**
-     * Get siblings of this taxonomy (same parent, same level)
+     * Get siblings of this taxonomy (same parent, same level).
      *
      * @return \Illuminate\Database\Eloquent\Collection<int, self>
      */

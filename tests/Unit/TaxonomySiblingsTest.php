@@ -144,7 +144,7 @@ class TaxonomySiblingsTest extends TestCase
         $siblings = $child2->getSiblings();
 
         $this->assertCount(2, $siblings);
-        $this->assertEquals($child1->id, $siblings->first()->id);
-        $this->assertEquals($child3->id, $siblings->last()->id);
+        $this->assertEquals($child1->id, $siblings->first()?->id);
+        $this->assertEquals($child3->id, $siblings->last()?->id);
     }
 }
