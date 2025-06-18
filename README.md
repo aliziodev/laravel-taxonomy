@@ -1,3 +1,8 @@
+<picture>
+    <source media="(prefers-color-scheme: dark)" srcset="art/header-dark.png">
+    <img alt="Logo for essentials" src="art/header-light.png">
+</picture>
+
 # Laravel Taxonomy
 
 [![Tests](https://github.com/aliziodev/laravel-taxonomy/workflows/Tests/badge.svg)](https://github.com/aliziodev/laravel-taxonomy/actions)
@@ -1361,10 +1366,10 @@ This package uses **automated changelog generation** based on [Conventional Comm
 
 ### How It Works
 
-- **Commit Analysis**: Every commit message is analyzed to determine the type of change
-- **Automatic Versioning**: Version numbers are automatically determined based on commit types
-- **Changelog Generation**: `CHANGELOG.md` is automatically updated with release notes
-- **GitHub Releases**: Releases are automatically created with detailed release notes
+-   **Commit Analysis**: Every commit message is analyzed to determine the type of change
+-   **Automatic Versioning**: Version numbers are automatically determined based on commit types
+-   **Changelog Generation**: `CHANGELOG.md` is automatically updated with release notes
+-   **GitHub Releases**: Releases are automatically created with detailed release notes
 
 ### Commit Message Format
 
@@ -1377,6 +1382,7 @@ This package uses **automated changelog generation** based on [Conventional Comm
 ```
 
 **Examples:**
+
 ```bash
 feat: add moveToParent method with performance optimization
 fix: resolve nested set corruption on concurrent operations
@@ -1385,18 +1391,18 @@ feat!: change taxonomy structure for multi-tenancy support
 
 ### Release Types
 
-| Commit Type | Release Type | Example |
-|-------------|--------------|----------|
-| `fix:` | Patch (1.0.1) | Bug fixes |
-| `feat:` | Minor (1.1.0) | New features |
-| `feat!:` or `BREAKING CHANGE:` | Major (2.0.0) | Breaking changes |
-| `docs:`, `style:`, `test:`, `chore:` | No Release | Documentation, formatting |
+| Commit Type                          | Release Type  | Example                   |
+| ------------------------------------ | ------------- | ------------------------- |
+| `fix:`                               | Patch (1.0.1) | Bug fixes                 |
+| `feat:`                              | Minor (1.1.0) | New features              |
+| `feat!:` or `BREAKING CHANGE:`       | Major (2.0.0) | Breaking changes          |
+| `docs:`, `style:`, `test:`, `chore:` | No Release    | Documentation, formatting |
 
 ### Automated Workflows
 
-- **Auto Changelog**: Triggered on every push to main branch
-- **Commitlint**: Validates commit messages on PRs and pushes
-- **Release Creation**: Automatically creates GitHub releases with changelogs
+-   **Auto Changelog**: Triggered on every push to main branch
+-   **Commitlint**: Validates commit messages on PRs and pushes
+-   **Release Creation**: Automatically creates GitHub releases with changelogs
 
 ## Contributing
 
