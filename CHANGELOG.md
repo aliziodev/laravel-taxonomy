@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.2.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.1.0...v2.2.0) (2025-07-02)
 
+### Bug Fixes
+
+* move testbench to require-dev (follow-up to [#5](https://github.com/aliziodev/laravel-taxonomy/issues/5) by [@howdu](https://github.com/howdu)) ([17b377e](https://github.com/aliziodev/laravel-taxonomy/commit/17b377e7c697c98438ea28112fadbcc1c4ece267))
+
+### Features
+
+* **HasTaxonomy:** add taxonomy scopes for filtering models ([5cc5a78](https://github.com/aliziodev/laravel-taxonomy/commit/5cc5a783710d8453b34f3434d1324d5c04d5f5b9))
+* **Taxonomy:** add getSiblings method to retrieve same-level taxonomies ([4756c1a](https://github.com/aliziodev/laravel-taxonomy/commit/4756c1ac2a3b4dfa65ecbe82118dada7f6fa27a0))
+
+## [2.2.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.1.0...v2.2.0) (2025-07-02)
+
 ### Features
 
 * **HasTaxonomy:** add taxonomy scopes for filtering models ([5cc5a78](https://github.com/aliziodev/laravel-taxonomy/commit/5cc5a783710d8453b34f3434d1324d5c04d5f5b9))
