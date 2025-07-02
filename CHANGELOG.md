@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.2.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.1.0...v2.2.0) (2025-07-02)
+
+### Features
+
+* **HasTaxonomy:** add taxonomy scopes for filtering models ([5cc5a78](https://github.com/aliziodev/laravel-taxonomy/commit/5cc5a783710d8453b34f3434d1324d5c04d5f5b9))
+* **Taxonomy:** add getSiblings method to retrieve same-level taxonomies ([4756c1a](https://github.com/aliziodev/laravel-taxonomy/commit/4756c1ac2a3b4dfa65ecbe82118dada7f6fa27a0))
+
 ## [2.2.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.1.0...v2.2.0) (2025-06-18)
 
 ### Features
