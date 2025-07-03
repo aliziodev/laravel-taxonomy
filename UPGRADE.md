@@ -1,32 +1,32 @@
 # Upgrade Guide
 
-## Upgrading to v3.0.0
+## Upgrading to v2.3.0
 
 ### Breaking Changes
 
 #### Unique Constraint Changes
 
-In version 3.0.0, we've changed the unique constraint on the `slug` field from a global unique constraint to a composite unique constraint that includes both `slug` and `type`.
+In version 2.3.0, we've changed the unique constraint on the `slug` field from a global unique constraint to a composite unique constraint that includes both `slug` and `type`.
 
 **Previous behavior (v2.x):**
 - Slug was globally unique across all taxonomy types
 - You couldn't have the same slug for different types (e.g., category "technology" and tag "technology")
 
-**New behavior (v3.0.0):**
+**New behavior (v2.3.0):**
 - Slug is unique within each taxonomy type
 - You can now have the same slug for different types (e.g., category "technology" and tag "technology")
 - Composite unique constraint: `['slug', 'type']`
 
 ### Migration Steps
 
-If you're upgrading from v2.x to v3.0.0, you need to update your database schema to remove the old unique constraint and apply the new composite constraint.
+If you're upgrading from v2.2.x to v2.3.0, you need to update your database schema to remove the old unique constraint and apply the new composite constraint.
 
 #### Step 1: Create Migration File
 
 Create a new migration file to handle the upgrade:
 
 ```bash
-php artisan make:migration upgrade_taxonomies_unique_constraint_to_v3
+php artisan make:migration upgrade_taxonomies_unique_constraint_to_v2_3
 ```
 
 #### Step 2: Migration Content
@@ -109,7 +109,7 @@ If you have custom validation rules for taxonomy creation, update them to consid
 'slug' => 'required|string|unique:taxonomies,slug'
 ```
 
-**After (v3.0.0):**
+**After (v2.3.0):**
 ```php
 'slug' => [
     'required',
@@ -209,4 +209,4 @@ If you encounter any issues during the upgrade process, please:
 
 ### Changelog
 
-For a complete list of changes in v3.0.0, see [CHANGELOG.md](CHANGELOG.md).
+For a complete list of changes in v2.3.0, see [CHANGELOG.md](CHANGELOG.md).
