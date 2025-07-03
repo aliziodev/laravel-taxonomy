@@ -112,7 +112,7 @@ class Taxonomy extends Model
 
             // If slug is provided, check if it's unique within the same type
             if (! empty($taxonomy->slug) && static::slugExists($taxonomy->slug, $taxonomy->type, null)) {
-                throw new DuplicateSlugException($taxonomy->slug);
+                throw new DuplicateSlugException($taxonomy->slug, $taxonomy->type);
             }
 
             // Set nested set values for new taxonomy
@@ -123,7 +123,7 @@ class Taxonomy extends Model
             // If slug is being changed manually, check if it's unique within the same type
             if ($taxonomy->isDirty('slug') && ! empty($taxonomy->slug)) {
                 if (static::slugExists($taxonomy->slug, $taxonomy->type, $taxonomy->id)) {
-                    throw new DuplicateSlugException($taxonomy->slug);
+                    throw new DuplicateSlugException($taxonomy->slug, $taxonomy->type);
                 }
             }
 
@@ -389,7 +389,7 @@ class Taxonomy extends Model
         } else {
             // If a custom slug is provided, check if it's unique within the same type
             if (isset($attributes['slug']) && static::slugExists($attributes['slug'], $attributes['type'])) {
-                throw new DuplicateSlugException($attributes['slug']);
+                throw new DuplicateSlugException($attributes['slug'], $attributes['type']);
             }
 
             // If not found, ensure the slug is unique before creating
