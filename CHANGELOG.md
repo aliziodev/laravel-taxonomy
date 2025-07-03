@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.4.7](https://github.com/aliziodev/laravel-taxonomy/compare/v2.4.6...v2.4.7) (2025-07-03)
+
+### Bug Fixes
+
+* **ci:** resolve composer dependency management issues in workflows ([3e46e8d](https://github.com/aliziodev/laravel-taxonomy/commit/3e46e8db9f29ec5869d7bcf37c482189d7d9d3c7))
+
 ## [2.4.6](https://github.com/aliziodev/laravel-taxonomy/compare/v2.4.5...v2.4.6) (2025-07-03)
 
 ### Bug Fixes
