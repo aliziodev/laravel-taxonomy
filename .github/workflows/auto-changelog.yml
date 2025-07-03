@@ -42,8 +42,7 @@ jobs:
 
             - name: Install PHP dependencies
               run: |
-                  composer require "laravel/framework:^11.0|^12.0" "orchestra/testbench:^9.0|^10.0" --no-interaction --no-update
-                  composer update --prefer-stable --prefer-dist --no-interaction
+                  composer install --prefer-dist --no-interaction
 
             - name: Run tests
               run: vendor/bin/pest

@@ -42,7 +42,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          composer install --${{ matrix.dependency-version }} --prefer-dist --no-interaction
+          composer update --${{ matrix.dependency-version }} --prefer-dist --no-interaction
       
       - name: List Installed Dependencies
         run: composer show -D
