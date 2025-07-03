@@ -210,11 +210,11 @@ Control slug generation behavior:
 
 #### Important: Composite Unique Constraint
 
-Starting from version 3.0, slugs are unique within their taxonomy type, not globally. This means:
+Starting from version 2.3.0, slugs are unique within their taxonomy type, not globally. This means:
 
-- ✅ You can have `slug: 'featured'` for both `Category` and `Tag` types
-- ✅ Better flexibility for organizing different taxonomy types
-- ⚠️ **Breaking Change**: If upgrading from v2.x, see [UPGRADE.md](UPGRADE.md) for migration instructions
+-   ✅ You can have `slug: 'featured'` for both `Category` and `Tag` types
+-   ✅ Better flexibility for organizing different taxonomy types
+-   ⚠️ **Breaking Change**: If upgrading from v2.2.x, see [UPGRADE.md](UPGRADE.md) for migration instructions
 
 ```php
 // This is now possible:

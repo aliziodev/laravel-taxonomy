@@ -16,82 +16,87 @@
 Laravel Taxonomy adalah paket yang fleksibel dan powerful untuk mengelola taksonomi, kategori, tag, dan struktur hierarkis dalam aplikasi Laravel. Dilengkapi dengan dukungan nested-set untuk performa query optimal pada struktur data hierarkis.
 
 ## 📖 Dokumentasi
-- [🇺🇸 English Documentation](README.md)
-- [🇮🇩 Dokumentasi Bahasa Indonesia](README.id.md)
+
+-   [🇺🇸 English Documentation](README.md)
+-   [🇮🇩 Dokumentasi Bahasa Indonesia](README.id.md)
 
 ## 📋 Daftar Isi
 
-- [Gambaran Umum](#gambaran-umum)
-- [Fitur Utama](#fitur-utama)
-- [Persyaratan](#persyaratan)
-- [Instalasi](#instalasi)
-- [Konfigurasi](#️-konfigurasi)
-- [Memulai Cepat](#-memulai-cepat)
-- [Penggunaan Dasar](#-penggunaan-dasar)
-- [Data Hierarkis & Nested Sets](#-data-hierarkis--nested-sets)
-- [Dukungan Metadata](#-dukungan-metadata)
-- [Operasi Bulk](#-operasi-bulk)
-- [Caching & Performa](#-caching--performa)
-- [Tipe Taksonomi Kustom](#️-tipe-taksonomi-kustom)
-- [Skenario Penggunaan Dunia Nyata](#-skenario-penggunaan-dunia-nyata)
-- [Fitur Lanjutan](#-fitur-lanjutan)
-- [Best Practices](#-best-practices)
-- [Slug Kustom dan Error Handling](#slug-kustom-dan-error-handling)
-- [Troubleshooting](#troubleshooting)
-- [Keamanan](#keamanan)
-- [Testing](#testing)
-- [📝 Changelog Otomatis](#-changelog-otomatis)
-- [Contributing](#contributing)
-- [Lisensi](#lisensi)
+-   [Gambaran Umum](#gambaran-umum)
+-   [Fitur Utama](#fitur-utama)
+-   [Persyaratan](#persyaratan)
+-   [Instalasi](#instalasi)
+-   [Konfigurasi](#️-konfigurasi)
+-   [Memulai Cepat](#-memulai-cepat)
+-   [Penggunaan Dasar](#-penggunaan-dasar)
+-   [Data Hierarkis & Nested Sets](#-data-hierarkis--nested-sets)
+-   [Dukungan Metadata](#-dukungan-metadata)
+-   [Operasi Bulk](#-operasi-bulk)
+-   [Caching & Performa](#-caching--performa)
+-   [Tipe Taksonomi Kustom](#️-tipe-taksonomi-kustom)
+-   [Skenario Penggunaan Dunia Nyata](#-skenario-penggunaan-dunia-nyata)
+-   [Fitur Lanjutan](#-fitur-lanjutan)
+-   [Best Practices](#-best-practices)
+-   [Slug Kustom dan Error Handling](#slug-kustom-dan-error-handling)
+-   [Troubleshooting](#troubleshooting)
+-   [Keamanan](#keamanan)
+-   [Testing](#testing)
+-   [📝 Changelog Otomatis](#-changelog-otomatis)
+-   [Contributing](#contributing)
+-   [Lisensi](#lisensi)
 
 ## Gambaran Umum
 
 Paket ini ideal untuk:
 
-- Manajemen kategori e-commerce
-- Taksonomi blog
-- Organisasi konten
-- Atribut produk
-- Navigasi dinamis
-- Struktur data hierarkis apapun
+-   Manajemen kategori e-commerce
+-   Taksonomi blog
+-   Organisasi konten
+-   Atribut produk
+-   Navigasi dinamis
+-   Struktur data hierarkis apapun
 
 ## Fitur Utama
 
 ### Fungsionalitas Inti
-- **Term Hierarkis**: Membuat hubungan parent-child antar term
-- **Dukungan Metadata**: Menyimpan data tambahan sebagai JSON dengan setiap taksonomi
-- **Pengurutan Term**: Mengontrol urutan term dengan sort_order
-- **Relasi Polimorfik**: Mengasosiasikan taksonomi dengan model apapun
-- **Multiple Tipe Term**: Menggunakan tipe yang sudah didefinisikan (Category, Tag, dll.) atau membuat tipe kustom
-- **Slug Unik Komposit**: Slug unik dalam tipe mereka, memungkinkan slug yang sama di tipe berbeda
-- **Operasi Bulk**: Attach, detach, sync, atau toggle multiple taksonomi sekaligus
-- **Query Lanjutan**: Filter model berdasarkan taksonomi dengan query scopes
+
+-   **Term Hierarkis**: Membuat hubungan parent-child antar term
+-   **Dukungan Metadata**: Menyimpan data tambahan sebagai JSON dengan setiap taksonomi
+-   **Pengurutan Term**: Mengontrol urutan term dengan sort_order
+-   **Relasi Polimorfik**: Mengasosiasikan taksonomi dengan model apapun
+-   **Multiple Tipe Term**: Menggunakan tipe yang sudah didefinisikan (Category, Tag, dll.) atau membuat tipe kustom
+-   **Slug Unik Komposit**: Slug unik dalam tipe mereka, memungkinkan slug yang sama di tipe berbeda
+-   **Operasi Bulk**: Attach, detach, sync, atau toggle multiple taksonomi sekaligus
+-   **Query Lanjutan**: Filter model berdasarkan taksonomi dengan query scopes
 
 ### Fitur Nested Set
-- **Navigasi Tree**: Query ancestor dan descendant yang efisien
-- **Manipulasi Tree**: Memindahkan, menyisipkan, dan mengatur ulang node tree
-- **Manajemen Depth**: Melacak dan query berdasarkan kedalaman hierarki
-- **Validasi Tree**: Mempertahankan integritas tree secara otomatis
-- **Query Efisien**: Query database yang dioptimalkan untuk data hierarkis
+
+-   **Navigasi Tree**: Query ancestor dan descendant yang efisien
+-   **Manipulasi Tree**: Memindahkan, menyisipkan, dan mengatur ulang node tree
+-   **Manajemen Depth**: Melacak dan query berdasarkan kedalaman hierarki
+-   **Validasi Tree**: Mempertahankan integritas tree secara otomatis
+-   **Query Efisien**: Query database yang dioptimalkan untuk data hierarkis
 
 ### Performa & Skalabilitas
-- **Sistem Caching**: Meningkatkan performa dengan caching built-in
-- **Indexing Database**: Index yang dioptimalkan untuk query cepat
-- **Lazy Loading**: Loading relasi yang efisien
-- **Struktur Tree**: Mendapatkan representasi tree hierarkis atau flat
-- **Dukungan Pagination**: Pagination hasil untuk performa yang lebih baik
+
+-   **Sistem Caching**: Meningkatkan performa dengan caching built-in
+-   **Indexing Database**: Index yang dioptimalkan untuk query cepat
+-   **Lazy Loading**: Loading relasi yang efisien
+-   **Struktur Tree**: Mendapatkan representasi tree hierarkis atau flat
+-   **Dukungan Pagination**: Pagination hasil untuk performa yang lebih baik
 
 ### Developer Experience
-- **API Intuitif**: Sintaks yang bersih dan ekspresif
-- **Dokumentasi Komprehensif**: Panduan dan contoh yang detail
-- **Type Safety**: Dukungan penuh untuk sistem type Laravel
-- **Dukungan Testing**: Utilitas testing built-in
+
+-   **API Intuitif**: Sintaks yang bersih dan ekspresif
+-   **Dokumentasi Komprehensif**: Panduan dan contoh yang detail
+-   **Type Safety**: Dukungan penuh untuk sistem type Laravel
+-   **Dukungan Testing**: Utilitas testing built-in
 
 ## Persyaratan
 
-- PHP 8.2+
-- Laravel 11.0+ or 12.0+
-- Composer 2.0+
+-   PHP 8.2+
+-   Laravel 11.0+ or 12.0+
+-   Composer 2.0+
 
 ## Instalasi
 
@@ -155,6 +160,7 @@ return [
 ### Penjelasan Opsi Konfigurasi
 
 #### Nama Tabel
+
 Sesuaikan nama tabel database jika Anda perlu menghindari konflik atau mengikuti konvensi penamaan tertentu:
 
 ```php
@@ -165,6 +171,7 @@ Sesuaikan nama tabel database jika Anda perlu menghindari konflik atau mengikuti
 ```
 
 #### Tipe Morph
+
 Pilih tipe morph yang sesuai berdasarkan primary key model Anda:
 
 ```php
@@ -179,6 +186,7 @@ Pilih tipe morph yang sesuai berdasarkan primary key model Anda:
 ```
 
 #### Tipe Kustom
+
 Perluas atau ganti tipe taksonomi default:
 
 ```php
@@ -192,6 +200,7 @@ Perluas atau ganti tipe taksonomi default:
 ```
 
 #### Konfigurasi Slug
+
 Kontrol perilaku generasi slug:
 
 ```php
@@ -203,11 +212,11 @@ Kontrol perilaku generasi slug:
 
 #### Penting: Batasan Unik Komposit
 
-Mulai dari versi 3.0, slug unik dalam tipe taksonomi mereka, bukan secara global. Ini berarti:
+Mulai dari versi 2.3.0, slug unik dalam tipe taksonomi mereka, bukan secara global. Ini berarti:
 
-- ✅ Anda dapat memiliki `slug: 'featured'` untuk tipe `Category` dan `Tag`
-- ✅ Fleksibilitas yang lebih baik untuk mengorganisir tipe taksonomi yang berbeda
-- ⚠️ **Breaking Change**: Jika upgrade dari v2.x, lihat [UPGRADE.md](UPGRADE.md) untuk instruksi migrasi
+-   ✅ Anda dapat memiliki `slug: 'featured'` untuk tipe `Category` dan `Tag`
+-   ✅ Fleksibilitas yang lebih baik untuk mengorganisir tipe taksonomi yang berbeda
+-   ⚠️ **Breaking Change**: Jika upgrade dari v2.2.x, lihat [UPGRADE.md](UPGRADE.md) untuk instruksi migrasi
 
 ```php
 // Ini sekarang dimungkinkan:
@@ -230,20 +239,20 @@ try {
         'slug' => 'electronics',
         'type' => TaxonomyType::Category
     ]);
-    
+
     $tag = Taxonomy::create([
         'name' => 'Electronics',
-        'slug' => 'electronics', 
+        'slug' => 'electronics',
         'type' => TaxonomyType::Tag
     ]);
-    
+
     // Ini akan gagal - slug duplikat dalam tipe yang sama
     $duplicateCategory = Taxonomy::create([
         'name' => 'Consumer Electronics',
         'slug' => 'electronics',
         'type' => TaxonomyType::Category // Error: Duplicate slug dalam category
     ]);
-    
+
 } catch (\Illuminate\Database\QueryException $e) {
     // Handle constraint violation
     if ($e->getCode() === '23000') {
@@ -251,7 +260,6 @@ try {
     }
 }
 ```
-
 
 ## 🚀 Memulai Cepat
 
@@ -429,7 +437,7 @@ $category = Taxonomy::create([
 ]);
 
 $tag = Taxonomy::create([
-    'name' => 'Featured Items', 
+    'name' => 'Featured Items',
     'slug' => 'featured',
     'type' => TaxonomyType::Tag
 ]);
@@ -449,10 +457,10 @@ try {
 
 #### Manfaat Batasan Unik Komposit
 
-- **Fleksibilitas Lebih Tinggi**: Slug yang sama dapat digunakan di tipe taksonomi berbeda
-- **Organisasi yang Lebih Baik**: Setiap tipe taksonomi memiliki namespace slug sendiri
-- **Skalabilitas**: Mengurangi konflik slug saat aplikasi berkembang
-- **Konsistensi**: Memungkinkan penamaan yang konsisten di berbagai tipe
+-   **Fleksibilitas Lebih Tinggi**: Slug yang sama dapat digunakan di tipe taksonomi berbeda
+-   **Organisasi yang Lebih Baik**: Setiap tipe taksonomi memiliki namespace slug sendiri
+-   **Skalabilitas**: Mengurangi konflik slug saat aplikasi berkembang
+-   **Konsistensi**: Memungkinkan penamaan yang konsisten di berbagai tipe
 
 #### Query dengan Slug Komposit
 
@@ -880,10 +888,11 @@ Untuk contoh komprehensif cara menggunakan Laravel Taxonomy dalam aplikasi real-
 5. **[Analytics dan Reporting](docs/id/analytics-and-reporting.md)** - Mengimplementasikan analytics komprehensif, dashboard reporting, dan insight otomatis menggunakan data taksonomi.
 
 Setiap skenario mencakup:
-- Contoh kode lengkap
-- Setup database dan migrasi
-- Implementasi controller
-- Pola service layer
+
+-   Contoh kode lengkap
+-   Setup database dan migrasi
+-   Implementasi controller
+-   Pola service layer
 
 ## 🚀 Fitur Lanjutan
 
@@ -929,7 +938,7 @@ class CachedTaxonomyService
     public function warmCache(): void
     {
         $types = Taxonomy::distinct('type')->pluck('type');
-        
+
         foreach ($types as $type) {
             $this->getCachedTree($type);
         }
@@ -1028,7 +1037,7 @@ class ProductFilterService
     public function getFilterOptions(array $currentFilters = []): array
     {
         $baseQuery = $this->filterByTaxonomies($currentFilters);
-        
+
         return [
             'categories' => $this->getAvailableOptions($baseQuery, 'category'),
             'brands' => $this->getAvailableOptions($baseQuery, 'brand'),
@@ -1050,8 +1059,6 @@ class ProductFilterService
 }
 ```
 
-
-
 ### Import/Export Data
 
 **Fungsionalitas Import/Export**:
@@ -1062,7 +1069,7 @@ class TaxonomyImportExportService
     public function exportToJson(string $type = null): string
     {
         $query = Taxonomy::with('children');
-        
+
         if ($type) {
             $query->where('type', $type);
         }
@@ -1124,7 +1131,7 @@ class TaxonomyImportExportService
     private function importTaxonomyItem(array $item, ?int $parentId, bool $replaceExisting): Taxonomy
     {
         $existing = null;
-        
+
         if ($replaceExisting) {
             $existing = Taxonomy::where('slug', $item['slug'])
                 ->where('type', $item['type'])
@@ -1132,7 +1139,7 @@ class TaxonomyImportExportService
         }
 
         $taxonomy = $existing ?: new Taxonomy();
-        
+
         $taxonomy->fill([
             'name' => $item['name'],
             'slug' => $item['slug'],
@@ -1163,7 +1170,7 @@ class TaxonomyImportExportService
             ->get();
 
         $csv = "Name,Slug,Type,Parent,Description,Meta\n";
-        
+
         foreach ($taxonomies as $taxonomy) {
             $csv .= sprintf(
                 "\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
@@ -1292,7 +1299,7 @@ class TaxonomyService
     private function validateNoCircularReference(int $parentId, array $data): void
     {
         $parent = Taxonomy::find($parentId);
-        
+
         if (!$parent) {
             throw new InvalidArgumentException('Parent taxonomy not found');
         }
@@ -1341,9 +1348,9 @@ class TaxonomyTestCase extends TestCase
     public function it_can_attach_taxonomies_to_models(): void
     {
         $product = Product::factory()->create();
-        
+
         $product->attachTaxonomy($this->electronics);
-        
+
         $this->assertTrue($product->hasTaxonomy($this->electronics));
         $this->assertCount(1, $product->taxonomies);
     }
@@ -1352,10 +1359,10 @@ class TaxonomyTestCase extends TestCase
     public function it_maintains_nested_set_integrity(): void
     {
         $this->electronics->rebuildNestedSet();
-        
+
         $this->electronics->refresh();
         $this->smartphones->refresh();
-        
+
         $this->assertEquals(1, $this->electronics->lft);
         $this->assertEquals(4, $this->electronics->rgt);
         $this->assertEquals(2, $this->smartphones->lft);
@@ -1412,8 +1419,8 @@ $taxonomy2 = Taxonomy::create([
 
 Paket ini menyediakan exception berikut:
 
-- `MissingSlugException`: Dilempar ketika slug diperlukan tetapi tidak disediakan
-- `DuplicateSlugException`: Dilempar ketika slug sudah ada dan slug unik diperlukan
+-   `MissingSlugException`: Dilempar ketika slug diperlukan tetapi tidak disediakan
+-   `DuplicateSlugException`: Dilempar ketika slug sudah ada dan slug unik diperlukan
 
 Anda dapat menangkap exception ini untuk menyediakan penanganan error kustom:
 
@@ -1465,9 +1472,9 @@ Jika Anda tidak melihat data yang diperbarui setelah melakukan perubahan, Anda m
 
 Paket Laravel Taxonomy mengikuti praktik keamanan yang baik:
 
-- Menggunakan prepared statements untuk semua query database untuk mencegah SQL injection
-- Memvalidasi data input sebelum diproses
-- Menggunakan mekanisme perlindungan bawaan Laravel
+-   Menggunakan prepared statements untuk semua query database untuk mencegah SQL injection
+-   Memvalidasi data input sebelum diproses
+-   Menggunakan mekanisme perlindungan bawaan Laravel
 
 Jika Anda menemukan masalah keamanan, silakan email penulis di aliziodev@gmail.com daripada menggunakan issue tracker.
 
@@ -1489,10 +1496,10 @@ Paket ini menggunakan **generasi changelog otomatis** berdasarkan [Conventional 
 
 ### Cara Kerjanya
 
-- **Analisis Commit**: Setiap pesan commit dianalisis untuk menentukan jenis perubahan
-- **Versioning Otomatis**: Nomor versi ditentukan secara otomatis berdasarkan jenis commit
-- **Generasi Changelog**: `CHANGELOG.md` diperbarui secara otomatis dengan catatan rilis
-- **GitHub Releases**: Rilis dibuat secara otomatis dengan catatan rilis yang detail
+-   **Analisis Commit**: Setiap pesan commit dianalisis untuk menentukan jenis perubahan
+-   **Versioning Otomatis**: Nomor versi ditentukan secara otomatis berdasarkan jenis commit
+-   **Generasi Changelog**: `CHANGELOG.md` diperbarui secara otomatis dengan catatan rilis
+-   **GitHub Releases**: Rilis dibuat secara otomatis dengan catatan rilis yang detail
 
 ### Format Pesan Commit
 
@@ -1514,18 +1521,18 @@ feat!: change taxonomy structure for multi-tenancy support
 
 ### Jenis Rilis
 
-| Jenis Commit                         | Jenis Rilis   | Contoh                    |
-| ------------------------------------ | ------------- | ------------------------- |
-| `fix:`                               | Patch (1.0.1) | Perbaikan bug             |
-| `feat:`                              | Minor (1.1.0) | Fitur baru                |
-| `feat!:` atau `BREAKING CHANGE:`     | Major (2.0.0) | Perubahan yang merusak    |
-| `docs:`, `style:`, `test:`, `chore:` | Tidak Rilis   | Dokumentasi, formatting   |
+| Jenis Commit                         | Jenis Rilis   | Contoh                  |
+| ------------------------------------ | ------------- | ----------------------- |
+| `fix:`                               | Patch (1.0.1) | Perbaikan bug           |
+| `feat:`                              | Minor (1.1.0) | Fitur baru              |
+| `feat!:` atau `BREAKING CHANGE:`     | Major (2.0.0) | Perubahan yang merusak  |
+| `docs:`, `style:`, `test:`, `chore:` | Tidak Rilis   | Dokumentasi, formatting |
 
 ### Workflow Otomatis
 
-- **Auto Changelog**: Dipicu pada setiap push ke branch main
-- **Commitlint**: Memvalidasi pesan commit pada PR dan push
-- **Pembuatan Rilis**: Secara otomatis membuat GitHub releases dengan changelog
+-   **Auto Changelog**: Dipicu pada setiap push ke branch main
+-   **Commitlint**: Memvalidasi pesan commit pada PR dan push
+-   **Pembuatan Rilis**: Secara otomatis membuat GitHub releases dengan changelog
 
 ## Contributing
 
