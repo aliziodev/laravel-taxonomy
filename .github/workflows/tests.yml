@@ -73,7 +73,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          composer install --prefer-stable --prefer-dist --no-interaction
+          composer install --prefer-dist --no-interaction
       
       - name: Execute tests with coverage
         run: |
