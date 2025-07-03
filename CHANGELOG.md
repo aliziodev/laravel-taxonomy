@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.4.6](https://github.com/aliziodev/laravel-taxonomy/compare/v2.4.5...v2.4.6) (2025-07-03)
+
+### Bug Fixes
+
+* **workflows:** remove invalid --prefer-stable flag from composer install ([4b7a17d](https://github.com/aliziodev/laravel-taxonomy/commit/4b7a17daf99943424d954b5ee68299e5d20f8093))
+
 ## [2.4.5](https://github.com/aliziodev/laravel-taxonomy/compare/v2.4.4...v2.4.5) (2025-07-03)
 
 ### Bug Fixes
