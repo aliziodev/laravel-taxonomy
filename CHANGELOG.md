@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.4.4](https://github.com/aliziodev/laravel-taxonomy/compare/v2.4.3...v2.4.4) (2025-07-03)
+
+### Bug Fixes
+
+* **composer:** move again  orchestra/testbench to require-dev ([2fc16b0](https://github.com/aliziodev/laravel-taxonomy/commit/2fc16b0ed82c186c4cc40acea65d4433bc1afaa0))
+* **release:** remove composer.json from semantic-release assets ([8f3b2db](https://github.com/aliziodev/laravel-taxonomy/commit/8f3b2dbb4d53dd304fc79c295eb0d2c62fc98c93))
+
 ## [2.4.3](https://github.com/aliziodev/laravel-taxonomy/compare/v2.4.2...v2.4.3) (2025-07-03)
 
 ### Bug Fixes
