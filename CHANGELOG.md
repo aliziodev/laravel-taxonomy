@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.4.3](https://github.com/aliziodev/laravel-taxonomy/compare/v2.4.2...v2.4.3) (2025-07-03)
+
+### Bug Fixes
+
+* **ci:** install orchestra/testbench as dev dependency in all workflows ([4c52711](https://github.com/aliziodev/laravel-taxonomy/commit/4c527117aa702401aa9f455e173593d01f3d246e))
+
 ## [2.4.2](https://github.com/aliziodev/laravel-taxonomy/compare/v2.4.1...v2.4.2) (2025-07-03)
 
 ### Bug Fixes
