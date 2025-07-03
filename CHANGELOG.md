@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.4.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.3.0...v2.4.0) (2025-07-03)
+
+### Bug Fixes
+
+* **Taxonomy:** include type in DuplicateSlugException for better error context ([6665b4e](https://github.com/aliziodev/laravel-taxonomy/commit/6665b4ed12dc20a8bcb5cbfd645fa8ffdec52a23))
+
+### Features
+
+* **exceptions:** add type context to DuplicateSlugException for better debugging ([defd29b](https://github.com/aliziodev/laravel-taxonomy/commit/defd29b7394a10637bf02167d405b0d61bbb458f))
+
 ## [2.3.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.2.1...v2.3.0) (2025-07-03)
 
 ### ⚠ BREAKING CHANGES
