@@ -79,7 +79,7 @@ jobs:
       
       - name: Execute tests with coverage
         run: |
-          XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-clover=coverage.xml
+          XDEBUG_MODE=coverage vendor/bin/pest --coverage --coverage-clover=coverage.xml
           if [ ! -f coverage.xml ]; then
             echo "Coverage file not generated, creating empty coverage report"
             echo '<?xml version="1.0" encoding="UTF-8"?><coverage generated="0"><project timestamp="0"><metrics files="0" loc="0" ncloc="0" classes="0" methods="0" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="0" coveredstatements="0" elements="0" coveredelements="0"/></project></coverage>' > coverage.xml
