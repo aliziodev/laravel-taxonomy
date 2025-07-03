@@ -1,305 +1,318 @@
 <?php
 
-namespace Tests\Unit;
-
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
 use Aliziodev\LaravelTaxonomy\TaxonomyManager;
 use Aliziodev\LaravelTaxonomy\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-use PHPUnit\Framework\Attributes\Test;
 
-class TaxonomyManagerNestedSetTest extends TestCase
+uses(TestCase::class, RefreshDatabase::class);
+
+function createManagerTestData()
 {
-    use RefreshDatabase;
+    $manager = new TaxonomyManager;
 
-    protected TaxonomyManager $manager;
+    // Create test taxonomies
+    createManagerTestTaxonomies();
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->manager = new TaxonomyManager;
-
-        // Create test taxonomies
-        $this->createTestTaxonomies();
-    }
-
-    protected function createTestTaxonomies(): void
-    {
-        // Create root category
-        $electronics = Taxonomy::create([
-            'name' => 'Electronics',
-            'type' => TaxonomyType::Category->value,
-            'slug' => 'electronics',
-        ]);
-
-        // Create subcategory
-        $computers = Taxonomy::create([
-            'name' => 'Computers',
-            'type' => TaxonomyType::Category->value,
-            'slug' => 'computers',
-            'parent_id' => $electronics->id,
-        ]);
-
-        // Create sub-subcategory
-        $laptops = Taxonomy::create([
-            'name' => 'Laptops',
-            'type' => TaxonomyType::Category->value,
-            'slug' => 'laptops',
-            'parent_id' => $computers->id,
-        ]);
-    }
-
-    #[Test]
-    public function test_get_nested_tree_returns_correct_structure(): void
-    {
-        $tree = $this->manager->getNestedTree(TaxonomyType::Category);
-
-        $this->assertCount(1, $tree); // Only one root: Electronics
-
-        $electronics = $tree->first();
-        $this->assertNotNull($electronics);
-        $this->assertInstanceOf(Taxonomy::class, $electronics);
-        $this->assertEquals('electronics', $electronics->slug);
-        $this->assertNotNull($electronics->children_nested);
-        $this->assertCount(1, $electronics->children_nested);
-
-        $computers = $electronics->children_nested->first();
-        $this->assertNotNull($computers);
-        $this->assertInstanceOf(Taxonomy::class, $computers);
-        $this->assertEquals('computers', $computers->slug);
-        $this->assertNotNull($computers->children_nested);
-        $this->assertCount(1, $computers->children_nested);
-
-        $laptops = $computers->children_nested->first();
-        $this->assertNotNull($laptops);
-        $this->assertInstanceOf(Taxonomy::class, $laptops);
-        $this->assertEquals('laptops', $laptops->slug);
-    }
-
-    #[Test]
-    public function test_get_nested_tree_caches_results(): void
-    {
-        // Clear cache first
-        Cache::flush();
-
-        // First call should hit database
-        $tree1 = $this->manager->getNestedTree(TaxonomyType::Category);
-
-        // Second call should hit cache
-        $tree2 = $this->manager->getNestedTree(TaxonomyType::Category);
-
-        $this->assertEquals($tree1->toArray(), $tree2->toArray());
-
-        // Verify cache key exists
-        $cacheKey = 'taxonomy_nested_tree_' . TaxonomyType::Category->value;
-        $this->assertTrue(Cache::has($cacheKey));
-    }
-
-    #[Test]
-    public function test_rebuild_nested_set_rebuilds_correctly(): void
-    {
-        $electronics = Taxonomy::where('slug', 'electronics')->first();
-        $this->assertNotNull($electronics);
-        $initialDescendants = $electronics->getDescendants()->count();
-
-        // Manually corrupt nested set values
-        Taxonomy::where('slug', 'computers')->update(['lft' => null, 'rgt' => null]);
-
-        // Rebuild
-        $this->manager->rebuildNestedSet(TaxonomyType::Category);
-
-        // Check structure is restored
-        $electronics->refresh();
-        $newDescendants = $electronics->getDescendants()->count();
-
-        $this->assertEquals($initialDescendants, $newDescendants);
-
-        // Check that all taxonomies have valid nested set values
-        $allTaxonomies = Taxonomy::where('type', TaxonomyType::Category->value)->get();
-        foreach ($allTaxonomies as $taxonomy) {
-            $this->assertNotNull($taxonomy->lft);
-            $this->assertNotNull($taxonomy->rgt);
-            $this->assertTrue($taxonomy->lft < $taxonomy->rgt);
-        }
-    }
-
-    #[Test]
-    public function test_rebuild_nested_set_clears_cache(): void
-    {
-        // Populate cache
-        $this->manager->getNestedTree(TaxonomyType::Category);
-
-        $cacheKey = 'taxonomy_nested_tree_' . TaxonomyType::Category->value;
-        $this->assertTrue(Cache::has($cacheKey));
-
-        // Rebuild should clear cache
-        $this->manager->rebuildNestedSet(TaxonomyType::Category);
-
-        $this->assertFalse(Cache::has($cacheKey));
-    }
-
-    #[Test]
-    public function test_move_to_parent_works_correctly(): void
-    {
-        $computers = Taxonomy::where('slug', 'computers')->first();
-        $this->assertNotNull($computers);
-        $laptops = Taxonomy::where('slug', 'laptops')->first();
-        $this->assertNotNull($laptops);
-
-        // Move laptops to be a direct child of electronics (skip computers)
-        $electronics = Taxonomy::where('slug', 'electronics')->first();
-        $this->assertNotNull($electronics);
-        $result = $this->manager->moveToParent($laptops->id, $electronics->id);
-
-        $this->assertTrue($result);
-
-        $laptops->refresh();
-        $this->assertEquals($electronics->id, $laptops->parent_id);
-        $this->assertEquals(1, $laptops->depth);
-    }
-
-    #[Test]
-    public function test_move_to_parent_returns_false_for_invalid_taxonomy(): void
-    {
-        $result = $this->manager->moveToParent(999, 1);
-        $this->assertFalse($result);
-    }
-
-    #[Test]
-    public function test_move_to_parent_clears_cache(): void
-    {
-        // Populate cache
-        $this->manager->getNestedTree(TaxonomyType::Category);
-
-        $cacheKey = 'taxonomy_nested_tree_' . TaxonomyType::Category->value;
-        $this->assertTrue(Cache::has($cacheKey));
-
-        $laptops = Taxonomy::where('slug', 'laptops')->first();
-        $this->assertNotNull($laptops);
-        $electronics = Taxonomy::where('slug', 'electronics')->first();
-        $this->assertNotNull($electronics);
-
-        // Move should clear cache
-        $this->manager->moveToParent($laptops->id, $electronics->id);
-
-        $this->assertFalse(Cache::has($cacheKey));
-    }
-
-    #[Test]
-    public function test_get_descendants_returns_correct_taxonomies(): void
-    {
-        $electronics = Taxonomy::where('slug', 'electronics')->first();
-        $this->assertNotNull($electronics);
-        $descendants = $this->manager->getDescendants($electronics->id);
-
-        $this->assertCount(2, $descendants); // computers and laptops
-
-        $descendantSlugs = $descendants->pluck('slug')->toArray();
-        $this->assertContains('computers', $descendantSlugs);
-        $this->assertContains('laptops', $descendantSlugs);
-    }
-
-    #[Test]
-    public function test_get_descendants_returns_empty_for_invalid_taxonomy(): void
-    {
-        $descendants = $this->manager->getDescendants(999);
-        $this->assertCount(0, $descendants);
-    }
-
-    #[Test]
-    public function test_get_ancestors_returns_correct_taxonomies(): void
-    {
-        $laptops = Taxonomy::where('slug', 'laptops')->first();
-        $this->assertNotNull($laptops);
-        $ancestors = $this->manager->getAncestors($laptops->id);
-
-        $this->assertCount(2, $ancestors); // computers and electronics
-
-        $ancestorSlugs = $ancestors->pluck('slug')->toArray();
-        $this->assertContains('computers', $ancestorSlugs);
-        $this->assertContains('electronics', $ancestorSlugs);
-    }
-
-    #[Test]
-    public function test_get_ancestors_returns_empty_for_invalid_taxonomy(): void
-    {
-        $ancestors = $this->manager->getAncestors(999);
-        $this->assertCount(0, $ancestors);
-    }
-
-    #[Test]
-    public function test_get_ancestors_returns_empty_for_root_taxonomy(): void
-    {
-        $electronics = Taxonomy::where('slug', 'electronics')->first();
-        $this->assertNotNull($electronics);
-        $ancestors = $this->manager->getAncestors($electronics->id);
-
-        $this->assertCount(0, $ancestors);
-    }
-
-    #[Test]
-    public function test_nested_tree_works_with_different_types(): void
-    {
-        // Create tags
-        $techTag = Taxonomy::create([
-            'name' => 'Technology',
-            'type' => TaxonomyType::Tag->value,
-            'slug' => 'technology',
-        ]);
-
-        $webTag = Taxonomy::create([
-            'name' => 'Web Development',
-            'type' => TaxonomyType::Tag->value,
-            'slug' => 'web-development',
-            'parent_id' => $techTag->id,
-        ]);
-
-        // Get trees for different types
-        $categoryTree = $this->manager->getNestedTree(TaxonomyType::Category);
-        $tagTree = $this->manager->getNestedTree(TaxonomyType::Tag);
-
-        // Category tree should have electronics
-        $this->assertCount(1, $categoryTree);
-        $categoryFirst = $categoryTree->first();
-        $this->assertNotNull($categoryFirst);
-        $this->assertInstanceOf(Taxonomy::class, $categoryFirst);
-        $this->assertEquals('electronics', $categoryFirst->slug);
-
-        // Tag tree should have technology
-        $this->assertCount(1, $tagTree);
-        $tagFirst = $tagTree->first();
-        $this->assertNotNull($tagFirst);
-        $this->assertInstanceOf(Taxonomy::class, $tagFirst);
-        $this->assertEquals('technology', $tagFirst->slug);
-        $this->assertNotNull($tagFirst->children_nested);
-        $this->assertCount(1, $tagFirst->children_nested);
-        $webDevTag = $tagFirst->children_nested->first();
-        $this->assertNotNull($webDevTag);
-        $this->assertInstanceOf(Taxonomy::class, $webDevTag);
-        $this->assertEquals('web-development', $webDevTag->slug);
-    }
-
-    #[Test]
-    public function test_clear_cache_for_type_removes_correct_patterns(): void
-    {
-        // Populate different caches
-        $this->manager->getNestedTree(TaxonomyType::Category);
-        $this->manager->tree(TaxonomyType::Category);
-        $this->manager->flatTree(TaxonomyType::Category);
-
-        // Create some cache keys
-        $nestedTreeKey = 'taxonomy_nested_tree_' . TaxonomyType::Category->value;
-        $treeKey = 'taxonomy_tree_' . TaxonomyType::Category->value . '_';
-        $flatTreeKey = 'taxonomy_flat_tree_' . TaxonomyType::Category->value . '_0_0';
-
-        $this->assertTrue(Cache::has($nestedTreeKey));
-
-        // Rebuild should clear caches for this type
-        $this->manager->rebuildNestedSet(TaxonomyType::Category);
-
-        $this->assertFalse(Cache::has($nestedTreeKey));
-    }
+    return compact('manager');
 }
+
+function createManagerTestTaxonomies()
+{
+    // Create root category
+    $electronics = Taxonomy::create([
+        'name' => 'Electronics',
+        'type' => TaxonomyType::Category->value,
+        'slug' => 'electronics',
+    ]);
+
+    // Create subcategory
+    $computers = Taxonomy::create([
+        'name' => 'Computers',
+        'type' => TaxonomyType::Category->value,
+        'slug' => 'computers',
+        'parent_id' => $electronics->id,
+    ]);
+
+    // Create sub-subcategory
+    $laptops = Taxonomy::create([
+        'name' => 'Laptops',
+        'type' => TaxonomyType::Category->value,
+        'slug' => 'laptops',
+        'parent_id' => $computers->id,
+    ]);
+}
+
+it('get nested tree returns correct structure', function () {
+    $data = createManagerTestData();
+    extract($data);
+
+    $tree = $manager->getNestedTree(TaxonomyType::Category);
+
+    expect($tree)->toHaveCount(1); // Only one root: Electronics
+
+    $electronics = $tree->first();
+    expect($electronics)->not->toBeNull();
+    expect($electronics)->toBeInstanceOf(Taxonomy::class);
+    expect($electronics->slug)->toBe('electronics');
+    expect($electronics->children_nested)->not->toBeNull();
+    expect($electronics->children_nested)->toHaveCount(1);
+
+    $computers = $electronics->children_nested->first();
+    expect($computers)->not->toBeNull();
+    expect($computers)->toBeInstanceOf(Taxonomy::class);
+    expect($computers->slug)->toBe('computers');
+    expect($computers->children_nested)->not->toBeNull();
+    expect($computers->children_nested)->toHaveCount(1);
+
+    $laptops = $computers->children_nested->first();
+    expect($laptops)->not->toBeNull();
+    expect($laptops)->toBeInstanceOf(Taxonomy::class);
+    expect($laptops->slug)->toBe('laptops');
+});
+
+it('get nested tree caches results', function () {
+    $data = createManagerTestData();
+    extract($data);
+
+    // Clear cache first
+    Cache::flush();
+
+    // First call should hit database
+    $tree1 = $manager->getNestedTree(TaxonomyType::Category);
+
+    // Second call should hit cache
+    $tree2 = $manager->getNestedTree(TaxonomyType::Category);
+
+    expect($tree1->toArray())->toEqual($tree2->toArray());
+
+    // Verify cache key exists
+    $cacheKey = 'taxonomy_nested_tree_' . TaxonomyType::Category->value;
+    expect(Cache::has($cacheKey))->toBeTrue();
+});
+
+it('rebuild nested set rebuilds correctly', function () {
+    $data = createManagerTestData();
+    extract($data);
+
+    $electronics = Taxonomy::where('slug', 'electronics')->first();
+    expect($electronics)->not->toBeNull();
+    $initialDescendants = $electronics->getDescendants()->count();
+
+    // Manually corrupt nested set values
+    Taxonomy::where('slug', 'computers')->update(['lft' => null, 'rgt' => null]);
+
+    // Rebuild
+    $manager->rebuildNestedSet(TaxonomyType::Category);
+
+    // Check structure is restored
+    $electronics->refresh();
+    $newDescendants = $electronics->getDescendants()->count();
+
+    expect($newDescendants)->toBe($initialDescendants);
+
+    // Check that all taxonomies have valid nested set values
+    $allTaxonomies = Taxonomy::where('type', TaxonomyType::Category->value)->get();
+    foreach ($allTaxonomies as $taxonomy) {
+        expect($taxonomy->lft)->not->toBeNull();
+        expect($taxonomy->rgt)->not->toBeNull();
+        expect($taxonomy->lft)->toBeLessThan($taxonomy->rgt);
+    }
+});
+
+it('rebuild nested set clears cache', function () {
+    $data = createManagerTestData();
+    extract($data);
+
+    // Populate cache
+    $manager->getNestedTree(TaxonomyType::Category);
+
+    $cacheKey = 'taxonomy_nested_tree_' . TaxonomyType::Category->value;
+    expect(Cache::has($cacheKey))->toBeTrue();
+
+    // Rebuild should clear cache
+    $manager->rebuildNestedSet(TaxonomyType::Category);
+
+    expect(Cache::has($cacheKey))->toBeFalse();
+});
+
+it('move to parent works correctly', function () {
+    $data = createManagerTestData();
+    extract($data);
+
+    $computers = Taxonomy::where('slug', 'computers')->first();
+    expect($computers)->not->toBeNull();
+    $laptops = Taxonomy::where('slug', 'laptops')->first();
+    expect($laptops)->not->toBeNull();
+
+    // Move laptops to be a direct child of electronics (skip computers)
+    $electronics = Taxonomy::where('slug', 'electronics')->first();
+    expect($electronics)->not->toBeNull();
+    $result = $manager->moveToParent($laptops->id, $electronics->id);
+
+    expect($result)->toBeTrue();
+
+    $laptops->refresh();
+    expect($laptops->parent_id)->toBe($electronics->id);
+    expect($laptops->depth)->toBe(1);
+
+    // Check nested set values are correct
+    $tree = $manager->getNestedTree(TaxonomyType::Category);
+    expect($tree)->toHaveCount(1);
+
+    $electronics = $tree->first();
+    expect($electronics->children_nested)->toHaveCount(2); // computers and laptops
+});
+
+it('move to parent returns false for invalid taxonomy', function () {
+    $data = createManagerTestData();
+    extract($data);
+
+    $result = $manager->moveToParent(999, 1);
+    expect($result)->toBeFalse();
+});
+
+it('move to parent clears cache', function () {
+    $data = createManagerTestData();
+    extract($data);
+
+    // Populate cache
+    $manager->getNestedTree(TaxonomyType::Category);
+
+    $cacheKey = 'taxonomy_nested_tree_' . TaxonomyType::Category->value;
+    expect(Cache::has($cacheKey))->toBeTrue();
+
+    $laptops = Taxonomy::where('slug', 'laptops')->first();
+    expect($laptops)->not->toBeNull();
+    $electronics = Taxonomy::where('slug', 'electronics')->first();
+    expect($electronics)->not->toBeNull();
+
+    // Move should clear cache
+    $manager->moveToParent($laptops->id, $electronics->id);
+
+    expect(Cache::has($cacheKey))->toBeFalse();
+});
+
+it('get descendants returns correct taxonomies', function () {
+    $data = createManagerTestData();
+    extract($data);
+
+    $electronics = Taxonomy::where('slug', 'electronics')->first();
+    expect($electronics)->not->toBeNull();
+    $descendants = $manager->getDescendants($electronics->id);
+
+    expect($descendants)->toHaveCount(2); // computers and laptops
+
+    $descendantSlugs = $descendants->pluck('slug')->toArray();
+    expect($descendantSlugs)->toContain('computers');
+    expect($descendantSlugs)->toContain('laptops');
+});
+
+it('get descendants returns empty for invalid taxonomy', function () {
+    $data = createManagerTestData();
+    extract($data);
+
+    $descendants = $manager->getDescendants(999);
+    expect($descendants)->toHaveCount(0);
+});
+
+it('get ancestors returns correct taxonomies', function () {
+    $data = createManagerTestData();
+    extract($data);
+
+    $laptops = Taxonomy::where('slug', 'laptops')->first();
+    expect($laptops)->not->toBeNull();
+    $ancestors = $manager->getAncestors($laptops->id);
+
+    expect($ancestors)->toHaveCount(2); // computers and electronics
+
+    $ancestorSlugs = $ancestors->pluck('slug')->toArray();
+    expect($ancestorSlugs)->toContain('computers');
+    expect($ancestorSlugs)->toContain('electronics');
+});
+
+it('get ancestors returns empty for invalid taxonomy', function () {
+    $data = createManagerTestData();
+    extract($data);
+
+    $ancestors = $manager->getAncestors(999);
+    expect($ancestors)->toHaveCount(0);
+});
+
+it('get ancestors returns empty for root taxonomy', function () {
+    $data = createManagerTestData();
+    extract($data);
+
+    $electronics = Taxonomy::where('slug', 'electronics')->first();
+    expect($electronics)->not->toBeNull();
+    $ancestors = $manager->getAncestors($electronics->id);
+
+    expect($ancestors)->toHaveCount(0);
+});
+
+it('nested tree works with different types', function () {
+    $data = createManagerTestData();
+    extract($data);
+
+    // Create tags
+    $techTag = Taxonomy::create([
+        'name' => 'Technology',
+        'type' => TaxonomyType::Tag->value,
+        'slug' => 'technology',
+    ]);
+
+    $webTag = Taxonomy::create([
+        'name' => 'Web Development',
+        'type' => TaxonomyType::Tag->value,
+        'slug' => 'web-development',
+        'parent_id' => $techTag->id,
+    ]);
+
+    // Get trees for different types
+    $categoryTree = $manager->getNestedTree(TaxonomyType::Category);
+    $tagTree = $manager->getNestedTree(TaxonomyType::Tag);
+
+    // Category tree should have electronics
+    expect($categoryTree)->toHaveCount(1);
+    $categoryFirst = $categoryTree->first();
+    expect($categoryFirst)->not->toBeNull();
+    expect($categoryFirst)->toBeInstanceOf(Taxonomy::class);
+    expect($categoryFirst->slug)->toBe('electronics');
+
+    // Tag tree should have technology
+    expect($tagTree)->toHaveCount(1);
+    $tagFirst = $tagTree->first();
+    expect($tagFirst)->not->toBeNull();
+    expect($tagFirst)->toBeInstanceOf(Taxonomy::class);
+    expect($tagFirst->slug)->toBe('technology');
+    expect($tagFirst->children_nested)->not->toBeNull();
+    expect($tagFirst->children_nested)->toHaveCount(1);
+    $webDevTag = $tagFirst->children_nested->first();
+    expect($webDevTag)->not->toBeNull();
+    expect($webDevTag)->toBeInstanceOf(Taxonomy::class);
+    expect($webDevTag->slug)->toBe('web-development');
+});
+
+it('clear cache for type removes correct patterns', function () {
+    $data = createManagerTestData();
+    extract($data);
+
+    // Populate different caches
+    $manager->getNestedTree(TaxonomyType::Category);
+    $manager->tree(TaxonomyType::Category);
+    $manager->flatTree(TaxonomyType::Category);
+
+    // Create some cache keys
+    $nestedTreeKey = 'taxonomy_nested_tree_' . TaxonomyType::Category->value;
+    $treeKey = 'taxonomy_tree_' . TaxonomyType::Category->value . '_';
+    $flatTreeKey = 'taxonomy_flat_tree_' . TaxonomyType::Category->value . '_0_0';
+
+    expect(Cache::has($nestedTreeKey))->toBeTrue();
+
+    // Rebuild should clear caches for this type
+    $manager->rebuildNestedSet(TaxonomyType::Category);
+
+    expect(Cache::has($nestedTreeKey))->toBeFalse();
+});

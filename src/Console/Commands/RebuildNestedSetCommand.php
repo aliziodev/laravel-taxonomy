@@ -55,7 +55,7 @@ class RebuildNestedSetCommand extends Command
         if (! $force && ! $this->confirmRebuild($types)) {
             $this->info('Operation cancelled.');
 
-            return self::SUCCESS;
+            return self::FAILURE;
         }
 
         $this->info('Starting nested set rebuild...');

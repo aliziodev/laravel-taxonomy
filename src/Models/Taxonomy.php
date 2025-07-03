@@ -110,8 +110,8 @@ class Taxonomy extends Model
                 $taxonomy->slug = static::generateUniqueSlug($taxonomy->name, $taxonomy->type);
             }
 
-            // If slug is provided, check if it's unique
-            if (! empty($taxonomy->slug) && static::slugExists($taxonomy->slug, null)) {
+            // If slug is provided, check if it's unique within the same type
+            if (! empty($taxonomy->slug) && static::slugExists($taxonomy->slug, $taxonomy->type, null)) {
                 throw new DuplicateSlugException($taxonomy->slug);
             }
 
@@ -120,9 +120,9 @@ class Taxonomy extends Model
         });
 
         static::updating(function (self $taxonomy) {
-            // If slug is being changed manually, check if it's unique
+            // If slug is being changed manually, check if it's unique within the same type
             if ($taxonomy->isDirty('slug') && ! empty($taxonomy->slug)) {
-                if (static::slugExists($taxonomy->slug, $taxonomy->id)) {
+                if (static::slugExists($taxonomy->slug, $taxonomy->type, $taxonomy->id)) {
                     throw new DuplicateSlugException($taxonomy->slug);
                 }
             }
@@ -376,18 +376,19 @@ class Taxonomy extends Model
         }
 
         // Use the provided slug or generate a base slug (without uniqueness check)
-        $baseSlug = $attributes['slug'] ?? Str::slug($attributes['name']);
+        $slug = $attributes['slug'] ?? Str::slug($attributes['name']);
 
         // First try to find by slug and type
-        $taxonomy = static::where('slug', $baseSlug)
+        $taxonomy = static::where('slug', $slug)
             ->where('type', $attributes['type'])
             ->first();
 
         if ($taxonomy) {
+            // Update existing taxonomy
             $taxonomy->update($attributes);
         } else {
-            // If a custom slug is provided, check if it's unique
-            if (isset($attributes['slug']) && static::slugExists($attributes['slug'])) {
+            // If a custom slug is provided, check if it's unique within the same type
+            if (isset($attributes['slug']) && static::slugExists($attributes['slug'], $attributes['type'])) {
                 throw new DuplicateSlugException($attributes['slug']);
             }
 
@@ -403,16 +404,20 @@ class Taxonomy extends Model
     }
 
     /**
-     * Check if a slug already exists.
+     * Check if a slug exists within a specific type.
      *
      * @param  string  $slug  The slug to check
+     * @param  string|TaxonomyType  $type  The taxonomy type to check within
      * @param  int|null  $excludeId  ID to exclude from the check (useful for updates)
      * @return bool True if the slug exists, false otherwise
      */
-    public static function slugExists(string $slug, ?int $excludeId = null): bool
+    public static function slugExists(string $slug, string|TaxonomyType $type, ?int $excludeId = null): bool
     {
+        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+
         return static::query()
             ->where('slug', $slug)
+            ->where('type', $typeValue)
             ->when($excludeId, function ($query) use ($excludeId) {
                 return $query->where('id', '!=', $excludeId);
             })
@@ -420,21 +425,21 @@ class Taxonomy extends Model
     }
 
     /**
-     * Generate a unique slug for a taxonomy.
+     * Generate a unique slug for a taxonomy within its type scope.
      *
      * @param  string  $name  The name to generate the slug from
-     * @param  string  $type  The taxonomy type
+     * @param  string|TaxonomyType  $type  The taxonomy type
      * @param  int|null  $excludeId  ID to exclude from the uniqueness check (useful for updates)
      * @return string The unique slug
      */
-    protected static function generateUniqueSlug(string $name, string $type, ?int $excludeId = null): string
+    protected static function generateUniqueSlug(string $name, string|TaxonomyType $type, ?int $excludeId = null): string
     {
         $baseSlug = Str::slug($name);
         $slug = $baseSlug;
         $counter = 1;
 
-        // Check if the slug already exists (regardless of type)
-        while (static::slugExists($slug, $excludeId)) {
+        // Check if the slug already exists within the same type
+        while (static::slugExists($slug, $type, $excludeId)) {
             // If it exists, append a counter and try again
             $slug = $baseSlug . '-' . $counter++;
         }

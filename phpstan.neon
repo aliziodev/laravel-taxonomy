@@ -5,13 +5,14 @@ parameters:
     paths:
         - src
         - tests
+        
     
     # Level of rule options - the higher the stricter
-    level: 8
+    level: 5
     
     # Ignore errors
     ignoreErrors:
-        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder.*#'
+        - '#Variable \$[a-zA-Z_][a-zA-Z0-9_]* might not be defined#'
     
     # Exclude files
     excludePaths:

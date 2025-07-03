@@ -63,6 +63,7 @@ This package is ideal for:
 -   **Term Ordering**: Control the order of terms with sort_order
 -   **Polymorphic Relationships**: Associate taxonomies with any model
 -   **Multiple Term Types**: Use predefined types (Category, Tag, etc.) or create custom types
+-   **Composite Unique Slugs**: Slugs are unique within their type, allowing same slug across different types
 -   **Bulk Operations**: Attach, detach, sync, or toggle multiple taxonomies at once
 -   **Advanced Querying**: Filter models by taxonomies with query scopes
 
@@ -207,6 +208,20 @@ Control slug generation behavior:
 ],
 ```
 
+#### Important: Composite Unique Constraint
+
+Starting from version 3.0, slugs are unique within their taxonomy type, not globally. This means:
+
+- ✅ You can have `slug: 'featured'` for both `Category` and `Tag` types
+- ✅ Better flexibility for organizing different taxonomy types
+- ⚠️ **Breaking Change**: If upgrading from v2.x, see [UPGRADE.md](UPGRADE.md) for migration instructions
+
+```php
+// This is now possible:
+Taxonomy::create(['name' => 'Featured', 'slug' => 'featured', 'type' => 'category']);
+Taxonomy::create(['name' => 'Featured', 'slug' => 'featured', 'type' => 'tag']);
+```
+
 ## 🚀 Quick Start
 
 Get up and running with Laravel Taxonomy in minutes:
@@ -339,14 +354,35 @@ $products = Product::withTaxonomyType(TaxonomyType::Category)->get();
 $products = Product::withAnyTaxonomies([$category1, $category2])->get();
 $products = Product::withAllTaxonomies([$tag1, $tag2])->get();
 
-// Filter by taxonomy slug
+// Filter by taxonomy slug (any type)
 $products = Product::withTaxonomySlug('electronics')->get();
+
+// Filter by taxonomy slug with specific type (recommended)
+$products = Product::withTaxonomySlug('electronics', TaxonomyType::Category)->get();
 
 // Filter by hierarchy (includes descendants)
 $products = Product::withTaxonomyHierarchy($parentCategoryId)->get();
 
 // Filter by depth level
 $products = Product::withTaxonomyAtDepth(2, TaxonomyType::Category)->get();
+```
+
+#### Scope Chaining vs Single Scope with Type
+
+With the composite unique constraint, you have two approaches for filtering:
+
+```php
+// Approach 1: Single scope with type parameter (Recommended)
+// Finds products with taxonomy slug='electronics' AND type='category'
+$products = Product::withTaxonomySlug('electronics', TaxonomyType::Category)->get();
+
+// Approach 2: Chaining scopes (More flexible for complex queries)
+// Finds products that have ANY taxonomy with type='category' AND ANY taxonomy with slug='electronics'
+$products = Product::withTaxonomyType(TaxonomyType::Category)
+    ->withTaxonomySlug('electronics')
+    ->get();
+
+// Note: These may return different results if a product has multiple taxonomies
 ```
 
 ### Pagination Support
@@ -1265,24 +1301,51 @@ $taxonomy = Taxonomy::create([
 ]);
 ```
 
-### Slug Uniqueness
+### Slug Uniqueness (Composite Unique)
 
-The package ensures that all slugs are unique across all taxonomy types:
+Starting from v3.0, slug uniqueness is enforced within the same taxonomy type (composite unique constraint):
 
 ```php
-// This will throw DuplicateSlugException if the slug already exists
+// This will work - different types can have same slug
 $taxonomy1 = Taxonomy::create([
-    'name' => 'First Category',
-    'slug' => 'unique-slug',
+    'name' => 'Featured Category',
+    'slug' => 'featured',
     'type' => TaxonomyType::Category->value,
 ]);
 
-// This will throw DuplicateSlugException because the slug already exists
 $taxonomy2 = Taxonomy::create([
-    'name' => 'Second Category',
-    'slug' => 'unique-slug', // Duplicate slug
-    'type' => TaxonomyType::Tag->value, // Even with different type
+    'name' => 'Featured Tag',
+    'slug' => 'featured', // Same slug, different type - OK!
+    'type' => TaxonomyType::Tag->value,
 ]);
+
+// This will throw DuplicateSlugException - same type, same slug
+$taxonomy3 = Taxonomy::create([
+    'name' => 'Another Featured Category',
+    'slug' => 'featured', // Duplicate within same type
+    'type' => TaxonomyType::Category->value,
+]);
+```
+
+### Duplicate Slug Detection
+
+```php
+use Aliziodev\LaravelTaxonomy\Exceptions\DuplicateSlugException;
+
+try {
+    Taxonomy::create([
+        'name' => 'Another Featured Category',
+        'slug' => 'featured', // Duplicate within same type
+        'type' => TaxonomyType::Category->value,
+    ]);
+} catch (DuplicateSlugException $e) {
+    // Handle duplicate slug error within the same type
+    return response()->json([
+        'error' => 'A taxonomy with this slug already exists in this type.',
+        'slug' => $e->getSlug(),
+        'type' => $e->getType(), // Available in v3.0+
+    ], 422);
+}
 ```
 
 ### Exception Handling

@@ -426,7 +426,7 @@ trait HasTaxonomy
     public function scopeWithTaxonomyAtDepth(Builder $query, int $depth, string|TaxonomyType|null $type = null): Builder
     {
         return $query->whereHas('taxonomies', function ($q) use ($depth, $type) {
-            $q->atDepth($depth);
+            $q->where('taxonomies.depth', $depth);
 
             if ($type) {
                 $q->where('taxonomies.type', $type instanceof TaxonomyType ? $type->value : $type);

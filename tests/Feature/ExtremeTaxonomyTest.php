@@ -1,491 +1,476 @@
 <?php
 
-namespace Aliziodev\LaravelTaxonomy\Tests\Feature;
-
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
 use Aliziodev\LaravelTaxonomy\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use PHPUnit\Framework\Attributes\Test;
 
-class ExtremeTaxonomyTest extends TestCase
+uses(TestCase::class, RefreshDatabase::class);
+
+/*
+ * Test extreme tree structure with deep nesting (10-20 levels)
+ * Ensures no stack overflow or recursion errors occur.
+ */
+it('can handle extreme deep nesting structure', function () {
+
+    // Create structure with 20 levels deep
+    $levels = 20;
+    $currentParent = null;
+    $taxonomies = [];
+
+    // Create taxonomy chain with 20 levels
+    for ($i = 1; $i <= $levels; ++$i) {
+        $taxonomy = Taxonomy::create([
+            'name' => "Level {$i} Category",
+            'type' => TaxonomyType::Category->value,
+            'slug' => "level-{$i}-category",
+            'parent_id' => $currentParent?->id,
+        ]);
+
+        $taxonomies[] = $taxonomy;
+        $currentParent = $taxonomy;
+    }
+
+    // Rebuild nested set to set nested set values
+    Taxonomy::rebuildNestedSet(TaxonomyType::Category->value);
+
+    // Refresh models to get lft/rgt values
+    $taxonomies = array_map(fn ($t) => $t->fresh(), $taxonomies);
+    $deepestNode = end($taxonomies);
+    $rootNode = $taxonomies[0];
+    expect($deepestNode)->not->toBeNull();
+    expect($rootNode)->not->toBeNull();
+
+    // Test getAncestors() - deepest node should have 19 ancestors
+    $ancestors = $deepestNode->getAncestors();
+    expect($ancestors)->toHaveCount(19);
+    $firstAncestor = $ancestors->first();
+    expect($firstAncestor)->not->toBeNull();
+    expect($firstAncestor->id)->toBe($rootNode->id);
+
+    // Test getDescendants() - root should have 19 descendants
+    $descendants = $rootNode->getDescendants();
+    expect($descendants)->toHaveCount(19);
+    $lastDescendant = $descendants->last();
+    expect($lastDescendant)->not->toBeNull();
+    expect($lastDescendant->id)->toBe($deepestNode->id);
+
+    // Test move operation on deep structure
+    $middleNode = $taxonomies[10]; // Level 11
+    $newParent = $taxonomies[5];   // Level 6
+    expect($middleNode)->not->toBeNull();
+    expect($newParent)->not->toBeNull();
+
+    // Move middle node to higher parent
+    $middleNode->moveToParent($newParent->id);
+
+    // Verify structure is still valid after move
+    $refreshedMiddleNode = $middleNode->fresh();
+    expect($refreshedMiddleNode)->not->toBeNull();
+    expect($refreshedMiddleNode->parent_id)->toBe($newParent->id);
+
+    // Test rebuild() on complex structure
+    $startTime = microtime(true);
+    Taxonomy::rebuildNestedSet(TaxonomyType::Category->value);
+    $rebuildTime = microtime(true) - $startTime;
+
+    // Ensure rebuild doesn't take too long (< 5 seconds for 20 levels)
+    expect($rebuildTime)->toBeLessThan(5.0, 'Rebuild took too long: ' . $rebuildTime . ' seconds');
+
+    // Verify structure is still consistent after rebuild
+    $rebuiltRootNode = Taxonomy::where('id', $rootNode->id)->first();
+    expect($rebuiltRootNode)->not->toBeNull();
+    expect($rebuiltRootNode->lft)->toBe(1);
+});
+
+/*
+ * Test with multiple branches at each level.
+ */
+it('can handle extreme wide and deep structure', function () {
+
+    // Create structure with 3 levels, each level has 2 children (reduced to prevent hang)
+    createWideDeepStructure(3, 2);
+
+    // Count total nodes created: Level 1: 2, Level 2: 4, Level 3: 8 = 14 nodes
+    // Recursive structure generates 2^1 + 2^2 + 2^3 = 2 + 4 + 8 = 14 nodes
+    $totalNodes = Taxonomy::count();
+    expect($totalNodes)->toBeGreaterThan(10);
+    expect($totalNodes)->toBeLessThan(20, 'Too many nodes created, test may hang');
+
+    // Test performance getNestedTree() on large structure
+    $startTime = microtime(true);
+    $tree = Taxonomy::getNestedTree();
+    $getTreeTime = microtime(true) - $startTime;
+
+    expect($getTreeTime)->toBeLessThan(2.0, 'getNestedTree() took too long: ' . $getTreeTime . ' seconds');
+    expect($tree->count())->toBeGreaterThan(0);
+});
+
+/**
+ * Helper function to create wide and deep structure.
+ */
+function createWideDeepStructure(int $maxDepth, int $branchingFactor, ?int $parentId = null, int $currentDepth = 1): void
 {
-    use RefreshDatabase;
-
-    /**
-     * Test struktur tree ekstrem dengan deep nesting (10-20 level)
-     * Memastikan tidak ada stack overflow atau recursion error.
-     */
-    #[Test]
-    public function it_can_handle_extreme_deep_nesting_structure(): void
-    {
-        // Buat struktur dengan 20 level deep
-        $levels = 20;
-        $currentParent = null;
-        $taxonomies = [];
-
-        // Buat chain taxonomy dengan 20 level
-        for ($i = 1; $i <= $levels; ++$i) {
-            $taxonomy = Taxonomy::create([
-                'name' => "Level {$i} Category",
-                'type' => TaxonomyType::Category->value,
-                'slug' => "level-{$i}-category",
-                'parent_id' => $currentParent?->id,
-            ]);
-
-            $taxonomies[] = $taxonomy;
-            $currentParent = $taxonomy;
-        }
-
-        // Rebuild nested set untuk set nested set values
-        Taxonomy::rebuildNestedSet(TaxonomyType::Category->value);
-
-        // Refresh models untuk mendapatkan lft/rgt values
-        $taxonomies = array_map(fn ($t) => $t->fresh(), $taxonomies);
-        $deepestNode = end($taxonomies);
-        $rootNode = $taxonomies[0];
-        $this->assertNotNull($deepestNode);
-        $this->assertNotNull($rootNode);
-
-        // Test getAncestors() - deepest node harus punya 19 ancestors
-        $ancestors = $deepestNode->getAncestors();
-        $this->assertCount(19, $ancestors);
-        $firstAncestor = $ancestors->first();
-        $this->assertNotNull($firstAncestor);
-        $this->assertEquals($rootNode->id, $firstAncestor->id);
-
-        // Test getDescendants() - root harus punya 19 descendants
-        $descendants = $rootNode->getDescendants();
-        $this->assertCount(19, $descendants);
-        $lastDescendant = $descendants->last();
-        $this->assertNotNull($lastDescendant);
-        $this->assertEquals($deepestNode->id, $lastDescendant->id);
-
-        // Test move operation pada deep structure
-        $middleNode = $taxonomies[10]; // Level 11
-        $newParent = $taxonomies[5];   // Level 6
-        $this->assertNotNull($middleNode);
-        $this->assertNotNull($newParent);
-
-        // Move middle node ke parent yang lebih tinggi
-        $middleNode->moveToParent($newParent->id);
-
-        // Verify struktur masih valid setelah move
-        $refreshedMiddleNode = $middleNode->fresh();
-        $this->assertNotNull($refreshedMiddleNode);
-        $this->assertEquals($newParent->id, $refreshedMiddleNode->parent_id);
-
-        // Test rebuild() pada struktur kompleks
-        $startTime = microtime(true);
-        Taxonomy::rebuildNestedSet(TaxonomyType::Category->value);
-        $rebuildTime = microtime(true) - $startTime;
-
-        // Pastikan rebuild tidak terlalu lama (< 5 detik untuk 20 level)
-        $this->assertLessThan(5.0, $rebuildTime, 'Rebuild took too long: ' . $rebuildTime . ' seconds');
-
-        // Verify struktur masih konsisten setelah rebuild
-        $this->assertDatabaseHas('taxonomies', [
-            'id' => $rootNode->id,
-            'lft' => 1,
-        ]);
+    if ($currentDepth > $maxDepth) {
+        return;
     }
 
-    /**
-     * Test dengan multiple branches pada setiap level.
-     */
-    #[Test]
-    public function it_can_handle_extreme_wide_and_deep_structure(): void
-    {
-        // Buat struktur dengan 3 level, setiap level punya 2 children (reduced to prevent hang)
-        $this->createWideDeepStructure(3, 2);
+    for ($i = 1; $i <= $branchingFactor; ++$i) {
+        $taxonomy = Taxonomy::create([
+            'name' => "Level {$currentDepth} Branch {$i}",
+            'type' => TaxonomyType::Category->value,
+            'slug' => "level-{$currentDepth}-branch-{$i}-" . uniqid(),
+            'parent_id' => $parentId,
+        ]);
 
-        // Hitung total nodes yang dibuat: Level 1: 2, Level 2: 4, Level 3: 8 = 14 nodes
-        // Struktur rekursif menghasilkan 2^1 + 2^2 + 2^3 = 2 + 4 + 8 = 14 nodes
-        $totalNodes = Taxonomy::count();
-        $this->assertGreaterThan(10, $totalNodes);
-        $this->assertLessThan(20, $totalNodes, 'Too many nodes created, test may hang');
-
-        // Test performance getNestedTree() pada struktur besar
-        $startTime = microtime(true);
-        $tree = Taxonomy::getNestedTree();
-        $getTreeTime = microtime(true) - $startTime;
-
-        $this->assertLessThan(2.0, $getTreeTime, 'getNestedTree() took too long: ' . $getTreeTime . ' seconds');
-        $this->assertGreaterThan(0, $tree->count());
+        // Recursively create children
+        createWideDeepStructure($maxDepth, $branchingFactor, $taxonomy->id, $currentDepth + 1);
     }
+}
 
-    /**
-     * Helper untuk membuat struktur wide dan deep.
-     */
-    private function createWideDeepStructure(int $maxDepth, int $branchingFactor, ?int $parentId = null, int $currentDepth = 1): void
-    {
-        if ($currentDepth > $maxDepth) {
-            return;
-        }
+/*
+ * Test detection and repair of invalid structure
+ * Simulate broken structure by manually changing lft/rgt values.
+ */
+it('can detect and repair invalid structure', function () {
+    // Create normal structure first
+    $root = Taxonomy::create([
+        'name' => 'Root',
+        'type' => TaxonomyType::Category->value,
+        'slug' => 'root',
+    ]);
 
-        for ($i = 1; $i <= $branchingFactor; ++$i) {
-            $taxonomy = Taxonomy::create([
-                'name' => "Level {$currentDepth} Branch {$i}",
-                'type' => TaxonomyType::Category->value,
-                'slug' => "level-{$currentDepth}-branch-{$i}-" . uniqid(),
-                'parent_id' => $parentId,
-            ]);
+    $child1 = Taxonomy::create([
+        'name' => 'Child 1',
+        'type' => TaxonomyType::Category->value,
+        'slug' => 'child-1',
+        'parent_id' => $root->id,
+    ]);
 
-            // Recursively create children
-            $this->createWideDeepStructure($maxDepth, $branchingFactor, $taxonomy->id, $currentDepth + 1);
-        }
-    }
+    $child2 = Taxonomy::create([
+        'name' => 'Child 2',
+        'type' => TaxonomyType::Category->value,
+        'slug' => 'child-2',
+        'parent_id' => $root->id,
+    ]);
 
-    /**
-     * Test deteksi dan perbaikan struktur invalid
-     * Simulasikan struktur rusak dengan mengubah lft/rgt manual.
-     */
-    #[Test]
-    public function it_can_detect_and_repair_invalid_structure(): void
-    {
-        // Buat struktur normal terlebih dahulu
-        $root = Taxonomy::create([
-            'name' => 'Root',
-            'type' => TaxonomyType::Category->value,
-            'slug' => 'root',
-        ]);
+    $grandchild = Taxonomy::create([
+        'name' => 'Grandchild',
+        'type' => TaxonomyType::Category->value,
+        'slug' => 'grandchild',
+        'parent_id' => $child1->id,
+    ]);
 
-        $child1 = Taxonomy::create([
-            'name' => 'Child 1',
-            'type' => TaxonomyType::Category->value,
-            'slug' => 'child-1',
-            'parent_id' => $root->id,
-        ]);
+    // Save correct structure for comparison
+    $originalStructure = Taxonomy::orderBy('lft')->get(['id', 'name', 'lft', 'rgt', 'parent_id'])->toArray();
 
-        $child2 = Taxonomy::create([
-            'name' => 'Child 2',
-            'type' => TaxonomyType::Category->value,
-            'slug' => 'child-2',
-            'parent_id' => $root->id,
-        ]);
+    // Break structure by manually changing lft/rgt values
+    DB::table('taxonomies')->where('id', $child1->id)->update(['lft' => 10, 'rgt' => 15]);
+    DB::table('taxonomies')->where('id', $child2->id)->update(['lft' => 5, 'rgt' => 6]);
+    DB::table('taxonomies')->where('id', $grandchild->id)->update(['lft' => 20, 'rgt' => 21]);
 
-        $grandchild = Taxonomy::create([
-            'name' => 'Grandchild',
-            'type' => TaxonomyType::Category->value,
-            'slug' => 'grandchild',
-            'parent_id' => $child1->id,
-        ]);
+    // Verify structure is indeed broken
+    $damagedChild1 = Taxonomy::find($child1->id);
+    expect($damagedChild1)->not->toBeNull();
+    expect($damagedChild1->lft)->toBe(10);
+    expect($damagedChild1->rgt)->toBe(15);
 
-        // Simpan struktur yang benar untuk perbandingan
-        $originalStructure = Taxonomy::orderBy('lft')->get(['id', 'name', 'lft', 'rgt', 'parent_id'])->toArray();
+    // Test rebuild() fixes the structure
+    Taxonomy::rebuildNestedSet(TaxonomyType::Category->value);
 
-        // Rusak struktur dengan mengubah lft/rgt secara manual
-        DB::table('taxonomies')->where('id', $child1->id)->update(['lft' => 10, 'rgt' => 15]);
-        DB::table('taxonomies')->where('id', $child2->id)->update(['lft' => 5, 'rgt' => 6]);
-        DB::table('taxonomies')->where('id', $grandchild->id)->update(['lft' => 20, 'rgt' => 21]);
+    // Verify structure has been repaired
+    $repairedStructure = Taxonomy::orderBy('lft')->get(['id', 'name', 'lft', 'rgt', 'parent_id'])->toArray();
 
-        // Verify struktur memang rusak
-        $damagedChild1 = Taxonomy::find($child1->id);
-        $this->assertNotNull($damagedChild1);
-        $this->assertEquals(10, $damagedChild1->lft);
-        $this->assertEquals(15, $damagedChild1->rgt);
+    // Ensure parent-child relationship is still correct
+    $repairedChild1 = Taxonomy::find($child1->id);
+    $repairedGrandchild = Taxonomy::find($grandchild->id);
 
-        // Test rebuild() memperbaiki struktur
-        Taxonomy::rebuildNestedSet(TaxonomyType::Category->value);
+    expect($repairedChild1)->not->toBeNull();
+    expect($repairedGrandchild)->not->toBeNull();
+    expect($repairedChild1->parent_id)->toBe($root->id);
+    expect($repairedGrandchild->parent_id)->toBe($child1->id);
 
-        // Verify struktur sudah diperbaiki
-        $repairedStructure = Taxonomy::orderBy('lft')->get(['id', 'name', 'lft', 'rgt', 'parent_id'])->toArray();
+    // Ensure lft/rgt values are valid (lft < rgt, and nested set rules)
+    foreach (Taxonomy::all() as $taxonomy) {
+        expect($taxonomy->lft)->toBeLessThan($taxonomy->rgt);
 
-        // Pastikan parent-child relationship masih benar
-        $repairedChild1 = Taxonomy::find($child1->id);
-        $repairedGrandchild = Taxonomy::find($grandchild->id);
-
-        $this->assertNotNull($repairedChild1);
-        $this->assertNotNull($repairedGrandchild);
-        $this->assertEquals($root->id, $repairedChild1->parent_id);
-        $this->assertEquals($child1->id, $repairedGrandchild->parent_id);
-
-        // Pastikan lft/rgt values valid (lft < rgt, dan nested set rules)
-        foreach (Taxonomy::all() as $taxonomy) {
-            $this->assertLessThan($taxonomy->rgt, $taxonomy->lft);
-
-            if ($taxonomy->parent_id) {
-                $parent = Taxonomy::find($taxonomy->parent_id);
-                $this->assertNotNull($parent);
-                $this->assertGreaterThan($parent->lft, $taxonomy->lft);
-                $this->assertLessThan($parent->rgt, $taxonomy->rgt);
-            }
+        if ($taxonomy->parent_id) {
+            $parent = Taxonomy::find($taxonomy->parent_id);
+            expect($parent)->not->toBeNull();
+            expect($taxonomy->lft)->toBeGreaterThan($parent->lft);
+            expect($taxonomy->rgt)->toBeLessThan($parent->rgt);
         }
     }
+});
 
-    /**
-     * Test soft delete taxonomy dan dampaknya pada children
-     * (Jika menggunakan SoftDeletes trait).
-     */
-    #[Test]
-    public function it_can_handle_soft_delete_taxonomy_with_children(): void
-    {
-        // Skip test jika model tidak menggunakan SoftDeletes
-        if (! in_array('Illuminate\Database\Eloquent\SoftDeletes', trait_uses_recursive(Taxonomy::class))) {
-            $this->markTestSkipped('Taxonomy model does not use SoftDeletes trait');
-        }
+/*
+ * Test soft delete taxonomy and its impact on children
+ * (If using SoftDeletes trait).
+ */
+it('can handle soft delete taxonomy with children', function () {
+    // Skip test if model does not use SoftDeletes
+    if (! in_array('Illuminate\Database\Eloquent\SoftDeletes', trait_uses_recursive(Taxonomy::class))) {
+        expect(true)->toBeTrue('Taxonomy model does not use SoftDeletes trait');
 
-        // Buat struktur parent-child
-        $parent = Taxonomy::create([
-            'name' => 'Parent Category',
-            'type' => TaxonomyType::Category->value,
-            'slug' => 'parent-category',
-        ]);
-
-        $child1 = Taxonomy::create([
-            'name' => 'Child 1',
-            'type' => TaxonomyType::Category->value,
-            'slug' => 'child-1',
-            'parent_id' => $parent->id,
-        ]);
-
-        $child2 = Taxonomy::create([
-            'name' => 'Child 2',
-            'type' => TaxonomyType::Category->value,
-            'slug' => 'child-2',
-            'parent_id' => $parent->id,
-        ]);
-
-        // Clear cache sebelum test
-        Cache::flush();
-
-        // Soft delete parent
-        $parent->delete();
-
-        // Test apakah parent ter-soft delete
-        $this->assertTrue($parent->trashed());
-
-        // Test apakah children juga ter-soft delete (tergantung implementasi)
-        // Ini bisa berbeda tergantung business logic yang diinginkan
-        $child1Fresh = Taxonomy::withTrashed()->find($child1->id);
-        $child2Fresh = Taxonomy::withTrashed()->find($child2->id);
-
-        // Test cache dibersihkan setelah soft delete
-        $cachedTree = Cache::get('taxonomy_tree');
-        $this->assertNull($cachedTree, 'Cache should be cleared after soft delete');
-
-        // Test restore functionality
-        $parent->restore();
-        $freshParent = $parent->fresh();
-        $this->assertNotNull($freshParent);
-        $this->assertFalse($freshParent->trashed());
+        return;
     }
 
-    /**
-     * Test race condition saat concurrent moveToParent operations.
-     */
-    #[Test]
-    public function it_can_handle_race_condition_concurrent_move_operations(): void
-    {
-        // Buat struktur test
-        $root = Taxonomy::create([
-            'name' => 'Root',
-            'type' => TaxonomyType::Category->value,
-            'slug' => 'root',
-        ]);
+    // Buat struktur parent-child
+    $parent = Taxonomy::create([
+        'name' => 'Parent Category',
+        'type' => TaxonomyType::Category->value,
+        'slug' => 'parent-category',
+    ]);
 
-        $parent1 = Taxonomy::create([
-            'name' => 'Parent 1',
-            'type' => TaxonomyType::Category->value,
-            'slug' => 'parent-1',
-            'parent_id' => $root->id,
-        ]);
+    $child1 = Taxonomy::create([
+        'name' => 'Child 1',
+        'type' => TaxonomyType::Category->value,
+        'slug' => 'child-1',
+        'parent_id' => $parent->id,
+    ]);
 
-        $parent2 = Taxonomy::create([
-            'name' => 'Parent 2',
-            'type' => TaxonomyType::Category->value,
-            'slug' => 'parent-2',
-            'parent_id' => $root->id,
-        ]);
+    $child2 = Taxonomy::create([
+        'name' => 'Child 2',
+        'type' => TaxonomyType::Category->value,
+        'slug' => 'child-2',
+        'parent_id' => $parent->id,
+    ]);
 
-        $movingNode = Taxonomy::create([
-            'name' => 'Moving Node',
-            'type' => TaxonomyType::Category->value,
-            'slug' => 'moving-node',
-            'parent_id' => $parent1->id,
-        ]);
+    // Clear cache before test
+    Cache::flush();
 
-        // Simulasi concurrent operations menggunakan database transactions
-        $results = [];
-        $exceptions = [];
+    // Soft delete parent
+    $parent->delete();
 
-        // Jalankan multiple move operations secara "concurrent"
-        for ($i = 0; $i < 5; ++$i) {
-            try {
-                DB::transaction(function () use ($movingNode, $parent1, $parent2, &$results) {
-                    // Alternate between moving to parent1 and parent2
-                    $targetParent = (count($results) % 2 === 0) ? $parent2 : $parent1;
+    // Test if parent is soft deleted
+    expect($parent->trashed())->toBeTrue();
 
-                    $freshMovingNode = $movingNode->fresh();
-                    $this->assertNotNull($freshMovingNode);
-                    $freshMovingNode->moveToParent($targetParent->id);
-                    $results[] = $targetParent->id;
-                });
-            } catch (\Exception $e) {
-                $exceptions[] = $e->getMessage();
-            }
+    // Test if children are also soft deleted (depends on implementation)
+    // This may vary depending on desired business logic
+    $child1Fresh = Taxonomy::withTrashed()->find($child1->id);
+    $child2Fresh = Taxonomy::withTrashed()->find($child2->id);
+
+    // Test cache is cleared after soft delete
+    $cachedTree = Cache::get('taxonomy_tree');
+    expect($cachedTree)->toBeNull('Cache should be cleared after soft delete');
+
+    // Test restore functionality
+    $parent->restore();
+    $freshParent = $parent->fresh();
+    expect($freshParent)->not->toBeNull();
+    expect($freshParent->trashed())->toBeFalse();
+});
+
+/*
+ * Test race condition during concurrent moveToParent operations.
+ */
+it('can handle race condition concurrent move operations', function () {
+    // Create test structure
+    $root = Taxonomy::create([
+        'name' => 'Root',
+        'type' => TaxonomyType::Category->value,
+        'slug' => 'root',
+    ]);
+
+    $parent1 = Taxonomy::create([
+        'name' => 'Parent 1',
+        'type' => TaxonomyType::Category->value,
+        'slug' => 'parent-1',
+        'parent_id' => $root->id,
+    ]);
+
+    $parent2 = Taxonomy::create([
+        'name' => 'Parent 2',
+        'type' => TaxonomyType::Category->value,
+        'slug' => 'parent-2',
+        'parent_id' => $root->id,
+    ]);
+
+    $movingNode = Taxonomy::create([
+        'name' => 'Moving Node',
+        'type' => TaxonomyType::Category->value,
+        'slug' => 'moving-node',
+        'parent_id' => $parent1->id,
+    ]);
+
+    // Simulate concurrent operations using database transactions
+    $results = [];
+    $exceptions = [];
+
+    // Run multiple move operations "concurrently"
+    for ($i = 0; $i < 5; ++$i) {
+        try {
+            DB::transaction(function () use ($movingNode, $parent1, $parent2, &$results) {
+                // Alternate between moving to parent1 and parent2
+                $targetParent = (count($results) % 2 === 0) ? $parent2 : $parent1;
+
+                $freshMovingNode = $movingNode->fresh();
+                expect($freshMovingNode)->not->toBeNull();
+                $freshMovingNode->moveToParent($targetParent->id);
+                $results[] = $targetParent->id;
+            });
+        } catch (\Exception $e) {
+            $exceptions[] = $e->getMessage();
         }
-
-        // Verify final state is consistent
-        $finalNode = $movingNode->fresh();
-        $this->assertNotNull($finalNode);
-        $this->assertNotNull($finalNode->parent_id);
-        $this->assertTrue(in_array($finalNode->parent_id, [$parent1->id, $parent2->id]));
-
-        // Verify nested set structure is still valid
-        $this->assertValidNestedSetStructure();
     }
 
-    /**
-     * Performance testing dengan 10,000 taxonomies.
-     */
-    #[Test]
-    public function it_can_handle_performance_with_large_dataset(): void
-    {
-        // Skip jika environment tidak mendukung test berat
-        if (config('app.skip_performance_tests', false)) {
-            $this->markTestSkipped('Performance tests skipped');
-        }
+    // Verify final state is consistent
+    $finalNode = $movingNode->fresh();
+    expect($finalNode)->not->toBeNull();
+    expect($finalNode->parent_id)->not->toBeNull();
+    expect(in_array($finalNode->parent_id, [$parent1->id, $parent2->id]))->toBeTrue();
 
-        $targetCount = 100; // Further reduced to prevent hang
+    // Verify nested set structure is still valid
+    assertValidNestedSetStructure();
+});
 
-        // Test 1: Bulk creation performance
-        $startTime = microtime(true);
+/*
+ * Performance testing with 10,000 taxonomies.
+ */
+it('can handle performance with large dataset', function () {
+    // Skip if environment does not support heavy tests
+    if (config('app.skip_performance_tests', false)) {
+        expect(true)->toBeTrue('Performance tests skipped');
 
-        $taxonomies = [];
-        for ($i = 1; $i <= $targetCount; ++$i) {
-            $taxonomies[] = [
-                'name' => "Category {$i}",
-                'type' => TaxonomyType::Category->value,
-                'slug' => "category-{$i}",
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
+        return;
+    }
 
-            // Batch insert setiap 100 records
-            if ($i % 100 === 0) {
-                DB::table('taxonomies')->insert($taxonomies);
-                $taxonomies = [];
-            }
-        }
+    $targetCount = 100; // Further reduced to prevent hang
 
-        if (! empty($taxonomies)) {
+    // Test 1: Bulk creation performance
+    $startTime = microtime(true);
+
+    $taxonomies = [];
+    for ($i = 1; $i <= $targetCount; ++$i) {
+        $taxonomies[] = [
+            'name' => "Category {$i}",
+            'type' => TaxonomyType::Category->value,
+            'slug' => "category-{$i}",
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+
+        // Batch insert every 100 records
+        if ($i % 100 === 0) {
             DB::table('taxonomies')->insert($taxonomies);
+            $taxonomies = [];
         }
-
-        $creationTime = microtime(true) - $startTime;
-        $this->assertLessThan(5.0, $creationTime, "Creation of {$targetCount} taxonomies took too long: {$creationTime} seconds");
-
-        // Test 2: rebuild() performance
-        $startTime = microtime(true);
-        Taxonomy::rebuildNestedSet(TaxonomyType::Category->value);
-        $rebuildTime = microtime(true) - $startTime;
-
-        $this->assertLessThan(10.0, $rebuildTime, "Rebuild with {$targetCount} taxonomies took too long: {$rebuildTime} seconds");
-
-        // Test 3: getNestedTree() performance
-        $startTime = microtime(true);
-        $tree = Taxonomy::getNestedTree();
-        $getTreeTime = microtime(true) - $startTime;
-
-        $this->assertLessThan(3.0, $getTreeTime, "getNestedTree() with {$targetCount} taxonomies took too long: {$getTreeTime} seconds");
-        $this->assertGreaterThan(0, $tree->count());
-
-        // Test 4: moveToParent() performance pada dataset besar
-        $firstTaxonomy = Taxonomy::first();
-        $lastTaxonomy = Taxonomy::orderBy('id', 'desc')->first();
-
-        $this->assertNotNull($firstTaxonomy);
-        $this->assertNotNull($lastTaxonomy);
-
-        $startTime = microtime(true);
-        $lastTaxonomy->moveToParent($firstTaxonomy->id);
-        $moveTime = microtime(true) - $startTime;
-
-        $this->assertLessThan(2.0, $moveTime, "moveToParent() on large dataset took too long: {$moveTime} seconds");
-
-        // Verify move was successful
-        $freshLastTaxonomy = $lastTaxonomy->fresh();
-        $this->assertNotNull($freshLastTaxonomy);
-        $this->assertEquals($firstTaxonomy->id, $freshLastTaxonomy->parent_id);
-
-        // Output performance metrics
-        // Verify performance test results
-        $this->assertLessThan(60.0, $creationTime, "Creation time should be under 60 seconds for {$targetCount} taxonomies");
-        $this->assertLessThan(45.0, $rebuildTime, "Rebuild time should be under 45 seconds for {$targetCount} taxonomies");
-        $this->assertLessThan(10.0, $getTreeTime, "GetNestedTree time should be under 10 seconds for {$targetCount} taxonomies");
-        $this->assertLessThan(5.0, $moveTime, "MoveToParent time should be under 5 seconds for {$targetCount} taxonomies");
     }
 
-    /**
-     * Test memory usage pada operasi besar.
-     */
-    #[Test]
-    public function it_can_handle_memory_usage_large_operations(): void
-    {
-        $initialMemory = memory_get_usage(true);
-
-        // Buat 50 taxonomies (reduced to prevent hang)
-        for ($i = 1; $i <= 50; ++$i) {
-            Taxonomy::create([
-                'name' => "Memory Test {$i}",
-                'type' => TaxonomyType::Category->value,
-                'slug' => "memory-test-{$i}",
-            ]);
-        }
-
-        $afterCreationMemory = memory_get_usage(true);
-
-        // Jalankan operasi yang memory-intensive
-        $tree = Taxonomy::getNestedTree();
-        $firstTaxonomy = Taxonomy::first();
-        $this->assertNotNull($firstTaxonomy);
-        $descendants = $firstTaxonomy->getDescendants();
-
-        $finalMemory = memory_get_usage(true);
-
-        $creationMemoryIncrease = $afterCreationMemory - $initialMemory;
-        $operationMemoryIncrease = $finalMemory - $afterCreationMemory;
-
-        // Memory increase shouldn't be excessive (< 10MB untuk 50 records)
-        $this->assertLessThan(10 * 1024 * 1024, $creationMemoryIncrease, 'Memory usage too high during creation');
-        $this->assertLessThan(5 * 1024 * 1024, $operationMemoryIncrease, 'Memory usage too high during operations');
-
-        // Verify memory usage is within acceptable limits
-        $maxMemoryIncrease = 512 * 1024 * 1024; // 512MB
-        $this->assertLessThan($maxMemoryIncrease, $creationMemoryIncrease, 'Creation memory increase should be under 512MB');
-        $this->assertLessThan($maxMemoryIncrease / 2, $operationMemoryIncrease, 'Operation memory increase should be under 256MB');
-
-        // Memory bisa sama karena garbage collection, jadi kita test bahwa tidak ada memory leak besar
-        $this->assertGreaterThanOrEqual($initialMemory, $afterCreationMemory, 'Memory should not decrease after creation');
-        $this->assertGreaterThanOrEqual($afterCreationMemory, $finalMemory, 'Memory should not decrease after operations');
-
-        // Memory usage tracking completed without major leaks
-        $memoryEfficient = ($creationMemoryIncrease < 50 * 1024 * 1024) && ($operationMemoryIncrease < 25 * 1024 * 1024);
-        $this->assertTrue($memoryEfficient, 'Memory usage should be efficient for the operations performed');
+    if (! empty($taxonomies)) {
+        DB::table('taxonomies')->insert($taxonomies);
     }
 
-    /**
-     * Helper untuk validasi nested set structure.
-     */
-    private function assertValidNestedSetStructure(): void
-    {
-        $taxonomies = Taxonomy::orderBy('lft')->get();
+    $creationTime = microtime(true) - $startTime;
+    expect($creationTime)->toBeLessThan(5.0, "Creation of {$targetCount} taxonomies took too long: {$creationTime} seconds");
 
-        foreach ($taxonomies as $taxonomy) {
-            $this->assertNotNull($taxonomy);
-            // lft harus lebih kecil dari rgt
-            $this->assertLessThan($taxonomy->rgt, $taxonomy->lft, "Invalid lft/rgt for taxonomy {$taxonomy->id}");
+    // Test 2: rebuild() performance
+    $startTime = microtime(true);
+    Taxonomy::rebuildNestedSet(TaxonomyType::Category->value);
+    $rebuildTime = microtime(true) - $startTime;
 
-            // Jika punya parent, harus berada dalam range parent
-            if ($taxonomy->parent_id) {
-                $parent = Taxonomy::find($taxonomy->parent_id);
-                $this->assertNotNull($parent);
-                $this->assertGreaterThan($parent->lft, $taxonomy->lft, "Child lft not greater than parent lft for taxonomy {$taxonomy->id}");
-                $this->assertLessThan($parent->rgt, $taxonomy->rgt, "Child rgt not less than parent rgt for taxonomy {$taxonomy->id}");
-            }
+    expect($rebuildTime)->toBeLessThan(10.0, "Rebuild with {$targetCount} taxonomies took too long: {$rebuildTime} seconds");
+
+    // Test 3: getNestedTree() performance
+    $startTime = microtime(true);
+    $tree = Taxonomy::getNestedTree();
+    $getTreeTime = microtime(true) - $startTime;
+
+    expect($getTreeTime)->toBeLessThan(3.0, "getNestedTree() with {$targetCount} taxonomies took too long: {$getTreeTime} seconds");
+    expect($tree->count())->toBeGreaterThan(0);
+
+    // Test 4: moveToParent() performance on large dataset
+    $firstTaxonomy = Taxonomy::first();
+    $lastTaxonomy = Taxonomy::orderBy('id', 'desc')->first();
+
+    expect($firstTaxonomy)->not->toBeNull();
+    expect($lastTaxonomy)->not->toBeNull();
+
+    $startTime = microtime(true);
+    $lastTaxonomy->moveToParent($firstTaxonomy->id);
+    $moveTime = microtime(true) - $startTime;
+
+    expect($moveTime)->toBeLessThan(2.0, "moveToParent() on large dataset took too long: {$moveTime} seconds");
+
+    // Verify move was successful
+    $freshLastTaxonomy = $lastTaxonomy->fresh();
+    expect($freshLastTaxonomy)->not->toBeNull();
+    expect($freshLastTaxonomy->parent_id)->toBe($firstTaxonomy->id);
+
+    // Output performance metrics
+    // Verify performance test results
+    expect($creationTime)->toBeLessThan(60.0, "Creation time should be under 60 seconds for {$targetCount} taxonomies");
+    expect($rebuildTime)->toBeLessThan(45.0, "Rebuild time should be under 45 seconds for {$targetCount} taxonomies");
+    expect($getTreeTime)->toBeLessThan(10.0, "GetNestedTree time should be under 10 seconds for {$targetCount} taxonomies");
+    expect($moveTime)->toBeLessThan(5.0, "MoveToParent time should be under 5 seconds for {$targetCount} taxonomies");
+});
+
+/*
+ * Test memory usage on large operations.
+ */
+it('can handle memory usage large operations', function () {
+    $initialMemory = memory_get_usage(true);
+
+    // Create 50 taxonomies (reduced to prevent hang)
+    for ($i = 1; $i <= 50; ++$i) {
+        Taxonomy::create([
+            'name' => "Memory Test {$i}",
+            'type' => TaxonomyType::Category->value,
+            'slug' => "memory-test-{$i}",
+        ]);
+    }
+
+    $afterCreationMemory = memory_get_usage(true);
+
+    // Run memory-intensive operations
+    $tree = Taxonomy::getNestedTree();
+    $firstTaxonomy = Taxonomy::first();
+    expect($firstTaxonomy)->not->toBeNull();
+    $descendants = $firstTaxonomy->getDescendants();
+
+    $finalMemory = memory_get_usage(true);
+
+    $creationMemoryIncrease = $afterCreationMemory - $initialMemory;
+    $operationMemoryIncrease = $finalMemory - $afterCreationMemory;
+
+    // Memory increase shouldn't be excessive (< 10MB for 50 records)
+    expect($creationMemoryIncrease)->toBeLessThan(10 * 1024 * 1024, 'Memory usage too high during creation');
+    expect($operationMemoryIncrease)->toBeLessThan(5 * 1024 * 1024, 'Memory usage too high during operations');
+
+    // Verify memory usage is within acceptable limits
+    $maxMemoryIncrease = 512 * 1024 * 1024; // 512MB
+    expect($creationMemoryIncrease)->toBeLessThan($maxMemoryIncrease, 'Creation memory increase should be under 512MB');
+    expect($operationMemoryIncrease)->toBeLessThan($maxMemoryIncrease / 2, 'Operation memory increase should be under 256MB');
+
+    // Memory can be the same due to garbage collection, so we test that there are no major memory leaks
+    expect($afterCreationMemory)->toBeGreaterThanOrEqual($initialMemory, 'Memory should not decrease after creation');
+    expect($finalMemory)->toBeGreaterThanOrEqual($afterCreationMemory, 'Memory should not decrease after operations');
+
+    // Memory usage tracking completed without major leaks
+    $memoryEfficient = ($creationMemoryIncrease < 50 * 1024 * 1024) && ($operationMemoryIncrease < 25 * 1024 * 1024);
+    expect($memoryEfficient)->toBeTrue('Memory usage should be efficient for the operations performed');
+});
+
+/**
+ * Helper function to validate nested set structure.
+ */
+function assertValidNestedSetStructure(): void
+{
+    $taxonomies = Taxonomy::orderBy('lft')->get();
+
+    foreach ($taxonomies as $taxonomy) {
+        expect($taxonomy)->not->toBeNull();
+        // lft must be less than rgt
+        expect($taxonomy->lft)->toBeLessThan($taxonomy->rgt, "Invalid lft/rgt for taxonomy {$taxonomy->id}");
+
+        // If has parent, must be within parent range
+        if ($taxonomy->parent_id) {
+            $parent = Taxonomy::find($taxonomy->parent_id);
+            expect($parent)->not->toBeNull();
+            expect($taxonomy->lft)->toBeGreaterThan($parent->lft, "Child lft not greater than parent lft for taxonomy {$taxonomy->id}");
+            expect($taxonomy->rgt)->toBeLessThan($parent->rgt, "Child rgt not less than parent rgt for taxonomy {$taxonomy->id}");
         }
     }
 }

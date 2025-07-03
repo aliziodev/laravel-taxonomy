@@ -1,3 +1,8 @@
+<picture>
+    <source media="(prefers-color-scheme: dark)" srcset="art/header-dark.png">
+    <img alt="Logo for essentials" src="art/header-light.png">
+</picture>
+
 # Laravel Taxonomy
 
 [![Tests](https://github.com/aliziodev/laravel-taxonomy/workflows/Tests/badge.svg)](https://github.com/aliziodev/laravel-taxonomy/actions)
@@ -35,6 +40,8 @@ Laravel Taxonomy adalah paket yang fleksibel dan powerful untuk mengelola takson
 - [Troubleshooting](#troubleshooting)
 - [Keamanan](#keamanan)
 - [Testing](#testing)
+- [📝 Changelog Otomatis](#-changelog-otomatis)
+- [Contributing](#contributing)
 - [Lisensi](#lisensi)
 
 ## Gambaran Umum
@@ -56,6 +63,7 @@ Paket ini ideal untuk:
 - **Pengurutan Term**: Mengontrol urutan term dengan sort_order
 - **Relasi Polimorfik**: Mengasosiasikan taksonomi dengan model apapun
 - **Multiple Tipe Term**: Menggunakan tipe yang sudah didefinisikan (Category, Tag, dll.) atau membuat tipe kustom
+- **Slug Unik Komposit**: Slug unik dalam tipe mereka, memungkinkan slug yang sama di tipe berbeda
 - **Operasi Bulk**: Attach, detach, sync, atau toggle multiple taksonomi sekaligus
 - **Query Lanjutan**: Filter model berdasarkan taksonomi dengan query scopes
 
@@ -193,6 +201,57 @@ Kontrol perilaku generasi slug:
 ],
 ```
 
+#### Penting: Batasan Unik Komposit
+
+Mulai dari versi 3.0, slug unik dalam tipe taksonomi mereka, bukan secara global. Ini berarti:
+
+- ✅ Anda dapat memiliki `slug: 'featured'` untuk tipe `Category` dan `Tag`
+- ✅ Fleksibilitas yang lebih baik untuk mengorganisir tipe taksonomi yang berbeda
+- ⚠️ **Breaking Change**: Jika upgrade dari v2.x, lihat [UPGRADE.md](UPGRADE.md) untuk instruksi migrasi
+
+```php
+// Ini sekarang dimungkinkan:
+Taxonomy::create(['name' => 'Featured', 'slug' => 'featured', 'type' => 'category']);
+Taxonomy::create(['name' => 'Featured', 'slug' => 'featured', 'type' => 'tag']);
+
+// Tetapi ini akan gagal (slug duplikat dalam tipe yang sama):
+// Taxonomy::create(['name' => 'Another Featured', 'slug' => 'featured', 'type' => 'category']); // Error!
+```
+
+#### Error Handling dan Validasi
+
+Ketika bekerja dengan slug unik komposit, penting untuk memahami bahwa keunikan diberlakukan dalam tipe taksonomi yang sama:
+
+```php
+try {
+    // Ini akan berhasil - slug yang sama, tipe berbeda
+    $category = Taxonomy::create([
+        'name' => 'Electronics',
+        'slug' => 'electronics',
+        'type' => TaxonomyType::Category
+    ]);
+    
+    $tag = Taxonomy::create([
+        'name' => 'Electronics',
+        'slug' => 'electronics', 
+        'type' => TaxonomyType::Tag
+    ]);
+    
+    // Ini akan gagal - slug duplikat dalam tipe yang sama
+    $duplicateCategory = Taxonomy::create([
+        'name' => 'Consumer Electronics',
+        'slug' => 'electronics',
+        'type' => TaxonomyType::Category // Error: Duplicate slug dalam category
+    ]);
+    
+} catch (\Illuminate\Database\QueryException $e) {
+    // Handle constraint violation
+    if ($e->getCode() === '23000') {
+        throw new \Exception('Slug sudah digunakan dalam tipe taksonomi ini.');
+    }
+}
+```
+
 
 ## 🚀 Memulai Cepat
 
@@ -326,14 +385,90 @@ $products = Product::withTaxonomyType(TaxonomyType::Category)->get();
 $products = Product::withAnyTaxonomies([$category1, $category2])->get();
 $products = Product::withAllTaxonomies([$tag1, $tag2])->get();
 
-// Filter berdasarkan slug taksonomi
+// Filter berdasarkan slug taksonomi (tipe apapun)
 $products = Product::withTaxonomySlug('electronics')->get();
+
+// Filter berdasarkan slug taksonomi dengan tipe tertentu (direkomendasikan)
+$products = Product::withTaxonomySlug('electronics', TaxonomyType::Category)->get();
 
 // Filter berdasarkan hierarki (termasuk turunan)
 $products = Product::withTaxonomyHierarchy($parentCategoryId)->get();
 
 // Filter berdasarkan level kedalaman
 $products = Product::withTaxonomyAtDepth(2, TaxonomyType::Category)->get();
+```
+
+#### Chaining Scope vs Single Scope dengan Type
+
+Dengan batasan unik komposit, Anda memiliki dua pendekatan untuk filtering:
+
+```php
+// Pendekatan 1: Single scope dengan parameter type (Direkomendasikan)
+// Mencari produk dengan taxonomy slug='electronics' DAN type='category'
+$products = Product::withTaxonomySlug('electronics', TaxonomyType::Category)->get();
+
+// Pendekatan 2: Chaining scopes (Lebih fleksibel untuk query kompleks)
+// Mencari produk yang memiliki SEMBARANG taxonomy dengan type='category' DAN SEMBARANG taxonomy dengan slug='electronics'
+$products = Product::withTaxonomyType(TaxonomyType::Category)
+    ->withTaxonomySlug('electronics')
+    ->get();
+
+// Catatan: Ini mungkin mengembalikan hasil yang berbeda jika produk memiliki multiple taxonomies
+```
+
+### Keunikan Slug (Unik Komposit)
+
+Mulai dari versi 3.0, package ini menggunakan batasan unik komposit untuk slug, yang berarti slug hanya perlu unik dalam tipe taksonomi yang sama:
+
+```php
+// Sekarang dimungkinkan - slug yang sama untuk tipe berbeda
+$category = Taxonomy::create([
+    'name' => 'Featured Products',
+    'slug' => 'featured',
+    'type' => TaxonomyType::Category
+]);
+
+$tag = Taxonomy::create([
+    'name' => 'Featured Items', 
+    'slug' => 'featured',
+    'type' => TaxonomyType::Tag
+]);
+
+// Tetapi ini akan gagal - slug duplikat dalam tipe yang sama
+try {
+    $duplicateCategory = Taxonomy::create([
+        'name' => 'Another Featured',
+        'slug' => 'featured',
+        'type' => TaxonomyType::Category // Error: Duplicate!
+    ]);
+} catch (\Illuminate\Database\QueryException $e) {
+    // Handle constraint violation
+    echo 'Slug sudah digunakan dalam tipe taksonomi ini.';
+}
+```
+
+#### Manfaat Batasan Unik Komposit
+
+- **Fleksibilitas Lebih Tinggi**: Slug yang sama dapat digunakan di tipe taksonomi berbeda
+- **Organisasi yang Lebih Baik**: Setiap tipe taksonomi memiliki namespace slug sendiri
+- **Skalabilitas**: Mengurangi konflik slug saat aplikasi berkembang
+- **Konsistensi**: Memungkinkan penamaan yang konsisten di berbagai tipe
+
+#### Query dengan Slug Komposit
+
+Ketika melakukan query berdasarkan slug, disarankan untuk menyertakan tipe:
+
+```php
+// Direkomendasikan - spesifik tipe
+$electronics = Taxonomy::where('slug', 'electronics')
+    ->where('type', TaxonomyType::Category)
+    ->first();
+
+// Atau menggunakan scope
+$products = Product::withTaxonomySlug('electronics', TaxonomyType::Category)->get();
+
+// Hati-hati - tanpa tipe bisa mengembalikan hasil yang tidak diinginkan
+$ambiguous = Taxonomy::where('slug', 'electronics')->get(); // Bisa mengembalikan multiple results
 ```
 
 ### Dukungan Pagination
@@ -1347,6 +1482,54 @@ composer test
 
 vendor/bin/pest
 ```
+
+## 📝 Changelog Otomatis
+
+Paket ini menggunakan **generasi changelog otomatis** berdasarkan [Conventional Commits](https://www.conventionalcommits.org/) dan [Semantic Versioning](https://semver.org/).
+
+### Cara Kerjanya
+
+- **Analisis Commit**: Setiap pesan commit dianalisis untuk menentukan jenis perubahan
+- **Versioning Otomatis**: Nomor versi ditentukan secara otomatis berdasarkan jenis commit
+- **Generasi Changelog**: `CHANGELOG.md` diperbarui secara otomatis dengan catatan rilis
+- **GitHub Releases**: Rilis dibuat secara otomatis dengan catatan rilis yang detail
+
+### Format Pesan Commit
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+**Contoh:**
+
+```bash
+feat: add moveToParent method with performance optimization
+fix: resolve nested set corruption on concurrent operations
+feat!: change taxonomy structure for multi-tenancy support
+```
+
+### Jenis Rilis
+
+| Jenis Commit                         | Jenis Rilis   | Contoh                    |
+| ------------------------------------ | ------------- | ------------------------- |
+| `fix:`                               | Patch (1.0.1) | Perbaikan bug             |
+| `feat:`                              | Minor (1.1.0) | Fitur baru                |
+| `feat!:` atau `BREAKING CHANGE:`     | Major (2.0.0) | Perubahan yang merusak    |
+| `docs:`, `style:`, `test:`, `chore:` | Tidak Rilis   | Dokumentasi, formatting   |
+
+### Workflow Otomatis
+
+- **Auto Changelog**: Dipicu pada setiap push ke branch main
+- **Commitlint**: Memvalidasi pesan commit pada PR dan push
+- **Pembuatan Rilis**: Secara otomatis membuat GitHub releases dengan changelog
+
+## Contributing
+
+Silakan lihat [CONTRIBUTING](CONTRIBUTING.md) untuk detail tentang sistem changelog otomatis dan workflow pengembangan kami.
 
 ## Lisensi
 

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create($tableNames['taxonomies'], function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('slug')->unique();
+            $table->string('slug');
             $table->string('type')->index();
             $table->text('description')->nullable();
             $table->foreignId('parent_id')->nullable()->constrained('taxonomies');
@@ -25,6 +25,11 @@ return new class extends Migration
             $table->json('meta')->nullable();
             $table->timestamps();
             $table->softDeletes();
+
+            // Composite unique constraint slug & type
+            $table->unique(['slug', 'type']);
+            // Composite index for type, lft, & rgt
+            $table->index(['type', 'lft', 'rgt']);
         });
 
         Schema::create($tableNames['taxonomables'], function (Blueprint $table) use ($morphType) {
