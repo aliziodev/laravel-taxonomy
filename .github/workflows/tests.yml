@@ -42,9 +42,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
-          composer require --dev "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
-          composer update --${{ matrix.dependency-version }} --prefer-dist --no-interaction
+          composer install --${{ matrix.dependency-version }} --prefer-dist --no-interaction
       
       - name: List Installed Dependencies
         run: composer show -D
@@ -75,9 +73,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:^11.0|^12.0" --no-interaction --no-update
-          composer require --dev "orchestra/testbench:^9.0|^10.0" --no-interaction --no-update
-          composer update --prefer-stable --prefer-dist --no-interaction
+          composer install --prefer-stable --prefer-dist --no-interaction
       
       - name: Execute tests with coverage
         run: |
