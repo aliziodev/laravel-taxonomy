@@ -40,8 +40,11 @@ trait HasTaxonomy
      */
     public function taxonomies(string $name = 'taxonomable'): MorphToMany
     {
+        /** @var class-string<\Aliziodev\LaravelTaxonomy\Models\Taxonomy> $related */
+        $related = config('taxonomy.model', Taxonomy::class);
+
         return $this->morphToMany(
-            Taxonomy::class,
+            $related,
             $name,
             config('taxonomy.table_names.taxonomables', 'taxonomables'),
             $name . '_id',
