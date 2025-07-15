@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.4.8](https://github.com/aliziodev/laravel-taxonomy/compare/v2.4.7...v2.4.8) (2025-07-15)
+
+### Bug Fixes
+
+* **taxonomies:** relation return model from config ([#7](https://github.com/aliziodev/laravel-taxonomy/issues/7)) ([5c9b85e](https://github.com/aliziodev/laravel-taxonomy/commit/5c9b85e01f486276d14b0664b76dfa1e34911aa9))
+
 ## [2.4.7](https://github.com/aliziodev/laravel-taxonomy/compare/v2.4.6...v2.4.7) (2025-07-03)
 
 ### Bug Fixes
