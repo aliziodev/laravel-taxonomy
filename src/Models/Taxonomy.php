@@ -821,7 +821,7 @@ class Taxonomy extends Model
             } else {
                 // Child level - add to parent's children collection
                 $parent = end($stack);
-                if ($parent && ! $parent->children_nested) {
+                if ($parent && empty($parent->children_nested)) {
                     /** @var \Illuminate\Database\Eloquent\Collection<int, static> $childrenNested */
                     $childrenNested = new Collection;
                     $parent->setAttribute('children_nested', $childrenNested);

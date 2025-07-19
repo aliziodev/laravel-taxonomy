@@ -3,6 +3,7 @@
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
 use Aliziodev\LaravelTaxonomy\Tests\TestCase;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -327,4 +328,10 @@ it('works with different taxonomy types', function () {
 
     expect($techTag->isAncestorOf($electronics))->toBeFalse();
     expect($electronics->isAncestorOf($techTag))->toBeFalse();
+});
+
+it('works when models are strict', function () {
+    Model::shouldBeStrict();
+    $tree = Taxonomy::getNestedTree(TaxonomyType::Category);
+    expect($tree)->toHaveCount(2);
 });
