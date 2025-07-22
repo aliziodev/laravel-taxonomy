@@ -8,7 +8,6 @@ use Aliziodev\LaravelTaxonomy\Tests\TestCase;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
-use ReflectionClass;
 
 uses(TestCase::class, RefreshDatabase::class);
 

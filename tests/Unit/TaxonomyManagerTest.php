@@ -5,7 +5,6 @@ use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
 use Aliziodev\LaravelTaxonomy\TaxonomyManager;
 use Aliziodev\LaravelTaxonomy\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use ReflectionClass;
 
 uses(TestCase::class, RefreshDatabase::class);
 
