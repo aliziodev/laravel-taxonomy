@@ -42,3 +42,25 @@ it('command has proper structure', function () {
     expect($signatureProperty->getValue($command))->toBe('taxonomy:install');
     expect($descriptionProperty->getValue($command))->toBe('Install the Laravel Taxonomy package');
 });
+
+it('handle method executes successfully', function () {
+    $exitCode = Artisan::call('taxonomy:install');
+
+    expect($exitCode)->toBe(Command::SUCCESS);
+});
+
+it('handle method has correct signature', function () {
+    $command = new InstallCommand;
+
+    // Verify the method signature through reflection
+    $reflection = new \ReflectionMethod($command, 'handle');
+    expect($reflection->isPublic())->toBeTrue();
+    expect($reflection->getNumberOfParameters())->toBe(0);
+
+    // Verify return type through reflection
+    $returnType = $reflection->getReturnType();
+    expect($returnType)->toBeNull(); // Laravel commands typically don't declare return types
+
+    // Verify method is defined in the class
+    expect($reflection->getDeclaringClass()->getName())->toBe(InstallCommand::class);
+});
