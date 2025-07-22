@@ -26,6 +26,16 @@ class RebuildNestedSetCommand extends Command
     protected $description = 'Rebuild nested set values (lft, rgt, depth) for taxonomy hierarchies';
 
     /**
+     * Get the taxonomy model class from config.
+     *
+     * @return class-string<\Aliziodev\LaravelTaxonomy\Models\Taxonomy>
+     */
+    protected function getModelClass(): string
+    {
+        return config('taxonomy.model', Taxonomy::class);
+    }
+
+    /**
      * Execute the console command.
      */
     public function handle(): int
@@ -80,7 +90,8 @@ class RebuildNestedSetCommand extends Command
     {
         $this->line("Rebuilding type: {$type}");
 
-        $count = Taxonomy::where('type', $type)->count();
+        $modelClass = $this->getModelClass();
+        $count = $modelClass::where('type', $type)->count();
         if ($count === 0) {
             $this->line("  No taxonomies found for type: {$type}");
 
@@ -90,7 +101,8 @@ class RebuildNestedSetCommand extends Command
         $startTime = microtime(true);
 
         // Use the model's rebuild method
-        Taxonomy::rebuildNestedSet($type);
+        $modelClass = $this->getModelClass();
+        $modelClass::rebuildNestedSet($type);
 
         $duration = round(microtime(true) - $startTime, 2);
         $this->line("  Rebuilt {$count} taxonomies in {$duration} seconds");
@@ -121,7 +133,9 @@ class RebuildNestedSetCommand extends Command
      */
     protected function getExistingTypes(): array
     {
-        return Taxonomy::select('type')
+        $modelClass = $this->getModelClass();
+
+        return $modelClass::select('type')
             ->distinct()
             ->pluck('type')
             ->toArray();
@@ -135,7 +149,8 @@ class RebuildNestedSetCommand extends Command
     protected function confirmRebuild(array $types): bool
     {
         $typesList = implode(', ', $types);
-        $count = Taxonomy::whereIn('type', $types)->count();
+        $modelClass = $this->getModelClass();
+        $count = $modelClass::whereIn('type', $types)->count();
 
         $this->warn("This will rebuild nested set values for {$count} taxonomies.");
         $this->warn("Types: {$typesList}");
