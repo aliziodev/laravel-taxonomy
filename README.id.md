@@ -5,11 +5,11 @@
 
 # Laravel Taxonomy
 
+[![codecov](https://codecov.io/gh/aliziodev/laravel-taxonomy/branch/master/graph/badge.svg)](https://codecov.io/gh/aliziodev/laravel-taxonomy)
 [![Tests](https://github.com/aliziodev/laravel-taxonomy/workflows/Tests/badge.svg)](https://github.com/aliziodev/laravel-taxonomy/actions)
 [![Code Quality](https://github.com/aliziodev/laravel-taxonomy/workflows/Code%20Quality/badge.svg)](https://github.com/aliziodev/laravel-taxonomy/actions)
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/aliziodev/laravel-taxonomy.svg)](https://packagist.org/packages/aliziodev/laravel-taxonomy)
 [![Total Downloads](https://img.shields.io/packagist/dt/aliziodev/laravel-taxonomy.svg)](https://packagist.org/packages/aliziodev/laravel-taxonomy)
-[![License](https://img.shields.io/packagist/l/aliziodev/laravel-taxonomy.svg)](https://packagist.org/packages/aliziodev/laravel-taxonomy)
 [![PHP Version](https://img.shields.io/packagist/php-v/aliziodev/laravel-taxonomy.svg)](https://packagist.org/packages/aliziodev/laravel-taxonomy)
 [![Laravel Version](https://img.shields.io/badge/Laravel-11.0%2B-orange.svg)](https://laravel.com/)
 
