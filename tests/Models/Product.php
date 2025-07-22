@@ -12,7 +12,7 @@ class Product extends Model
 {
     use HasTaxonomy;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'description'];
 
     protected $table = 'products';
 }

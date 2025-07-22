@@ -47,10 +47,8 @@ jobs:
       - name: List Installed Dependencies
         run: composer show -D
       
-      - name: Execute tests
-        run: php vendor/bin/pest --no-coverage
-        env:
-          PEST_NO_COVERAGE: true
+      - name: Execute tests with coverage
+        run: php vendor/bin/pest --coverage-clover=coverage.xml
       
       - name: Execute PHPStan
         run: vendor/bin/phpstan analyse --memory-limit=2G
@@ -84,9 +82,9 @@ jobs:
           fi
       
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.xml
           flags: unittests
           name: codecov-umbrella
-          fail_ci_if_error: false

@@ -437,7 +437,7 @@ it('can handle move operation efficiency', function () {
     measurePerformance('multiple_move_operations', function () use ($nodes) {
         foreach ($nodes as $node) {
             $randomParent = Taxonomy::where('id', '!=', $node->id)->inRandomOrder()->first();
-            if ($randomParent) {
+            if ($randomParent && ! $node->wouldCreateCircularReference($randomParent->id)) {
                 $node->moveToParent($randomParent->id);
             }
         }

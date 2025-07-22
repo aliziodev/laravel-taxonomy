@@ -46,7 +46,9 @@ class TaxonomyProvider extends ServiceProvider
 
         // Register the Taxonomy model binding
         $this->app->bind(Taxonomy::class, function ($app) {
-            return new Taxonomy;
+            $modelClass = config('taxonomy.model', Taxonomy::class);
+
+            return new $modelClass;
         });
     }
 

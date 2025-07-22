@@ -121,6 +121,7 @@ it('can get descendants', function () {
         'parent_id' => $child1->id,
     ]);
 
+    $parent->load('children.children'); // Eager load nested children
     $descendants = $parent->descendants();
 
     expect($descendants)->toHaveCount(3);
@@ -415,6 +416,101 @@ it('throws exception when custom slug already exists in same type', function () 
             'type' => TaxonomyType::Category->value, // Same type, same slug
         ]);
     })->toThrow(DuplicateSlugException::class);
+});
+
+it('can get direct children using nested set', function () {
+    $parent = Taxonomy::create([
+        'name' => 'Parent Category',
+        'type' => TaxonomyType::Category->value,
+    ]);
+
+    $child1 = Taxonomy::create([
+        'name' => 'Child 1',
+        'type' => TaxonomyType::Category->value,
+        'parent_id' => $parent->id,
+    ]);
+
+    $child2 = Taxonomy::create([
+        'name' => 'Child 2',
+        'type' => TaxonomyType::Category->value,
+        'parent_id' => $parent->id,
+    ]);
+
+    // Create a grandchild to ensure only direct children are returned
+    $grandchild = Taxonomy::create([
+        'name' => 'Grandchild',
+        'type' => TaxonomyType::Category->value,
+        'parent_id' => $child1->id,
+    ]);
+
+    $children = $parent->getChildren();
+
+    expect($children)->toHaveCount(2);
+    expect($children->pluck('id')->toArray())->toContain($child1->id, $child2->id);
+    expect($children->pluck('id')->toArray())->not->toContain($grandchild->id);
+});
+
+it('can check if taxonomy is ancestor of another', function () {
+    $grandparent = Taxonomy::create([
+        'name' => 'Grandparent',
+        'type' => TaxonomyType::Category->value,
+    ]);
+
+    $parent = Taxonomy::create([
+        'name' => 'Parent',
+        'type' => TaxonomyType::Category->value,
+        'parent_id' => $grandparent->id,
+    ]);
+
+    $child = Taxonomy::create([
+        'name' => 'Child',
+        'type' => TaxonomyType::Category->value,
+        'parent_id' => $parent->id,
+    ]);
+
+    // Different type taxonomy
+    $differentType = Taxonomy::create([
+        'name' => 'Different Type',
+        'type' => TaxonomyType::Tag->value,
+    ]);
+
+    // Rebuild nested set to ensure proper lft/rgt values
+    Taxonomy::rebuildNestedSet(TaxonomyType::Category->value);
+    Taxonomy::rebuildNestedSet(TaxonomyType::Tag->value);
+
+    // Refresh models to get updated lft/rgt values
+    $grandparent->refresh();
+    $parent->refresh();
+    $child->refresh();
+    $differentType->refresh();
+
+    expect($grandparent->isAncestorOf($parent))->toBeTrue();
+    expect($grandparent->isAncestorOf($child))->toBeTrue();
+    expect($parent->isAncestorOf($child))->toBeTrue();
+    expect($child->isAncestorOf($parent))->toBeFalse();
+    expect($parent->isAncestorOf($grandparent))->toBeFalse();
+    expect($grandparent->isAncestorOf($differentType))->toBeFalse(); // Different type
+});
+
+it('returns false for isAncestorOf when nested set values are null', function () {
+    $taxonomy1 = Taxonomy::create([
+        'name' => 'Taxonomy 1',
+        'type' => TaxonomyType::Category->value,
+    ]);
+
+    $taxonomy2 = Taxonomy::create([
+        'name' => 'Taxonomy 2',
+        'type' => TaxonomyType::Category->value,
+    ]);
+
+    // Manually set nested set values to null
+    $taxonomy1->update(['lft' => null, 'rgt' => null]);
+    $taxonomy2->update(['lft' => null, 'rgt' => null]);
+
+    $taxonomy1->refresh();
+    $taxonomy2->refresh();
+
+    expect($taxonomy1->isAncestorOf($taxonomy2))->toBeFalse();
 });
 
 it('allows same custom slug for different types', function () {

@@ -16,6 +16,7 @@ beforeEach(function () {
         $table->id();
         $table->string('name');
         $table->timestamps();
+        $table->softDeletes();
     });
 });
 
@@ -423,4 +424,92 @@ it('can combine taxonomy type and slug scopes', function () {
         ->get();
 
     expect($products)->toHaveCount(0);
+});
+
+it('detaches taxonomies when model is force deleted', function () {
+    $model = Product::create(['name' => 'Test Product']);
+
+    $category = Taxonomy::create([
+        'name' => 'Test Category',
+        'type' => TaxonomyType::Category->value,
+    ]);
+
+    $tag = Taxonomy::create([
+        'name' => 'Test Tag',
+        'type' => TaxonomyType::Tag->value,
+    ]);
+
+    // Attach taxonomies to the model
+    $model->attachTaxonomies([$category->id, $tag->id]);
+
+    // Verify taxonomies are attached
+    expect($model->taxonomies()->count())->toBe(2);
+    expect($model->hasTaxonomies([$category, $tag]))->toBeTrue();
+
+    // Force delete the model
+    $model->forceDelete();
+
+    // Verify taxonomies are detached from the deleted model
+    // Check the pivot table directly since the model is deleted
+    $pivotCount = \Illuminate\Support\Facades\DB::table('taxonomables')
+        ->where('taxonomable_type', Product::class)
+        ->where('taxonomable_id', $model->id)
+        ->count();
+
+    expect($pivotCount)->toBe(0);
+});
+
+it('detaches taxonomies when model is soft deleted with force delete', function () {
+    // Create a model that supports soft deletes
+    $testModelClass = new class extends \Illuminate\Database\Eloquent\Model
+    {
+        use \Aliziodev\LaravelTaxonomy\Traits\HasTaxonomy;
+        use \Illuminate\Database\Eloquent\SoftDeletes;
+
+        protected $table = 'test_models';
+        protected $fillable = ['name'];
+        protected $primaryKey = 'id';
+        public $incrementing = true;
+        protected $keyType = 'int';
+    };
+
+    // Create the model instance
+    $testModel = $testModelClass::create(['name' => 'Test Model']);
+
+    // Ensure the model has a valid ID
+    expect($testModel->getKey())->not->toBeNull();
+    expect($testModel->getKey())->toBeGreaterThan(0);
+
+    $category = Taxonomy::create([
+        'name' => 'Test Category',
+        'type' => TaxonomyType::Category->value,
+    ]);
+
+    // Attach taxonomy to the model
+    $testModel->attachTaxonomies($category);
+
+    // Verify taxonomy is attached
+    expect($testModel->taxonomies()->count())->toBe(1);
+
+    // Soft delete first
+    $testModel->delete();
+
+    // Verify taxonomy is still attached after soft delete
+    $pivotCount = \Illuminate\Support\Facades\DB::table('taxonomables')
+        ->where('taxonomable_type', get_class($testModel))
+        ->where('taxonomable_id', $testModel->getKey())
+        ->count();
+
+    expect($pivotCount)->toBe(1);
+
+    // Force delete the soft deleted model
+    $testModel->forceDelete();
+
+    // Verify taxonomy is detached after force delete
+    $pivotCountAfterForceDelete = \Illuminate\Support\Facades\DB::table('taxonomables')
+        ->where('taxonomable_type', get_class($testModel))
+        ->where('taxonomable_id', $testModel->getKey())
+        ->count();
+
+    expect($pivotCountAfterForceDelete)->toBe(0);
 });

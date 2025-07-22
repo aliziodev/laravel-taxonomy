@@ -193,6 +193,11 @@ class Taxonomy extends Model
         /** @var \Illuminate\Database\Eloquent\Collection<int, self> $descendants */
         $descendants = new Collection;
 
+        // Load children relationship if not already loaded
+        if (! $this->relationLoaded('children')) {
+            $this->load('children');
+        }
+
         foreach ($this->children as $child) {
             /* @var self $child */
             $descendants->push($child);
@@ -521,7 +526,7 @@ class Taxonomy extends Model
     /**
      * Check if moving to the given parent would create a circular reference.
      */
-    protected function wouldCreateCircularReference(int $parentId): bool
+    public function wouldCreateCircularReference(int $parentId): bool
     {
         // If trying to move to itself
         if ($parentId === $this->id) {
@@ -821,7 +826,7 @@ class Taxonomy extends Model
             } else {
                 // Child level - add to parent's children collection
                 $parent = end($stack);
-                if ($parent && ! $parent->children_nested) {
+                if ($parent && empty($parent->children_nested)) {
                     /** @var \Illuminate\Database\Eloquent\Collection<int, static> $childrenNested */
                     $childrenNested = new Collection;
                     $parent->setAttribute('children_nested', $childrenNested);
