@@ -3,6 +3,7 @@
 namespace Aliziodev\LaravelTaxonomy\Tests;
 
 use Aliziodev\LaravelTaxonomy\TaxonomyProvider;
+use Illuminate\Database\Eloquent\Model;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
@@ -13,6 +14,9 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Disable lazy loading violations for testing
+        Model::preventLazyLoading(false);
 
         // Run migrations
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
@@ -33,6 +37,7 @@ abstract class TestCase extends BaseTestCase
         $this->app['db']->connection()->getSchemaBuilder()->create('products', function ($table) {
             $table->id();
             $table->string('name');
+            $table->text('description')->nullable();
             $table->timestamps();
         });
     }
