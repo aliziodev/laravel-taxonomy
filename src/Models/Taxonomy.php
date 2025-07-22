@@ -193,6 +193,11 @@ class Taxonomy extends Model
         /** @var \Illuminate\Database\Eloquent\Collection<int, self> $descendants */
         $descendants = new Collection;
 
+        // Load children relationship if not already loaded
+        if (! $this->relationLoaded('children')) {
+            $this->load('children');
+        }
+
         foreach ($this->children as $child) {
             /* @var self $child */
             $descendants->push($child);
