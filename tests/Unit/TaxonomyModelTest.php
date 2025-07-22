@@ -121,6 +121,7 @@ it('can get descendants', function () {
         'parent_id' => $child1->id,
     ]);
 
+    $parent->load('children.children'); // Eager load nested children
     $descendants = $parent->descendants();
 
     expect($descendants)->toHaveCount(3);
