@@ -526,7 +526,7 @@ class Taxonomy extends Model
     /**
      * Check if moving to the given parent would create a circular reference.
      */
-    protected function wouldCreateCircularReference(int $parentId): bool
+    public function wouldCreateCircularReference(int $parentId): bool
     {
         // If trying to move to itself
         if ($parentId === $this->id) {
