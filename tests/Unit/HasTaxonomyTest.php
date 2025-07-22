@@ -475,7 +475,7 @@ it('detaches taxonomies when model is soft deleted with force delete', function 
 
     // Create the model instance
     $testModel = $testModelClass::create(['name' => 'Test Model']);
-    
+
     // Ensure the model has a valid ID
     expect($testModel->getKey())->not->toBeNull();
     expect($testModel->getKey())->toBeGreaterThan(0);

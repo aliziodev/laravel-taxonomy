@@ -99,7 +99,7 @@ it('can be used in match expressions', function () {
             default => 'other_matched'
         };
     };
-    
+
     expect($getMatchResult(TaxonomyType::Category))->toBe('category_matched');
     expect($getMatchResult(TaxonomyType::Tag))->toBe('tag_matched');
     expect($getMatchResult(TaxonomyType::Color))->toBe('color_matched');
