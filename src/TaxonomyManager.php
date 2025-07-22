@@ -17,6 +17,16 @@ use Illuminate\Support\Facades\Cache;
 class TaxonomyManager
 {
     /**
+     * Get the taxonomy model class from config.
+     *
+     * @return class-string<\Aliziodev\LaravelTaxonomy\Models\Taxonomy>
+     */
+    protected function getModelClass(): string
+    {
+        return config('taxonomy.model', Taxonomy::class);
+    }
+
+    /**
      * Create a new taxonomy.
      *
      * @param  array<string, mixed>  $attributes  The attributes for the new taxonomy
@@ -24,7 +34,9 @@ class TaxonomyManager
      */
     public function create(array $attributes): Taxonomy
     {
-        return Taxonomy::create($attributes);
+        $modelClass = $this->getModelClass();
+
+        return $modelClass::create($attributes);
     }
 
     /**
@@ -34,7 +46,9 @@ class TaxonomyManager
      */
     public function createOrUpdate(array $attributes): Taxonomy
     {
-        return Taxonomy::createOrUpdate($attributes);
+        $modelClass = $this->getModelClass();
+
+        return $modelClass::createOrUpdate($attributes);
     }
 
     /**
@@ -42,7 +56,9 @@ class TaxonomyManager
      */
     public function findBySlug(string $slug, string|TaxonomyType|null $type = null): ?Taxonomy
     {
-        return Taxonomy::findBySlug($slug, $type);
+        $modelClass = $this->getModelClass();
+
+        return $modelClass::findBySlug($slug, $type);
     }
 
     /**
@@ -61,7 +77,9 @@ class TaxonomyManager
         $cacheKey = "taxonomy_tree_{$typeValue}_{$parentId}";
 
         return Cache::remember($cacheKey, now()->addHours(24), function () use ($type, $parentId) {
-            return Taxonomy::tree($type, $parentId);
+            $modelClass = $this->getModelClass();
+
+            return $modelClass::tree($type, $parentId);
         });
     }
 
@@ -82,7 +100,9 @@ class TaxonomyManager
         $cacheKey = "taxonomy_flat_tree_{$typeValue}_{$parentId}_{$depth}";
 
         return Cache::remember($cacheKey, now()->addHours(24), function () use ($type, $parentId, $depth) {
-            return Taxonomy::flatTree($type, $parentId, $depth);
+            $modelClass = $this->getModelClass();
+
+            return $modelClass::flatTree($type, $parentId, $depth);
         });
     }
 
@@ -110,7 +130,9 @@ class TaxonomyManager
         $cacheKey = "taxonomy_nested_tree_{$typeValue}";
 
         return Cache::remember($cacheKey, now()->addHours(24), function () use ($type) {
-            return Taxonomy::getNestedTree($type);
+            $modelClass = $this->getModelClass();
+
+            return $modelClass::getNestedTree($type);
         });
     }
 
@@ -120,7 +142,8 @@ class TaxonomyManager
     public function rebuildNestedSet(string|TaxonomyType $type): void
     {
         $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
-        Taxonomy::rebuildNestedSet($typeValue);
+        $modelClass = $this->getModelClass();
+        $modelClass::rebuildNestedSet($typeValue);
 
         // Clear related caches
         $this->clearCacheForTypeInternal($typeValue);
@@ -131,13 +154,14 @@ class TaxonomyManager
      */
     public function moveToParent(int $taxonomyId, ?int $parentId): bool
     {
-        $taxonomy = Taxonomy::find($taxonomyId);
+        $modelClass = $this->getModelClass();
+        $taxonomy = $modelClass::find($taxonomyId);
         if (! $taxonomy) {
             return false;
         }
 
         // Validate parent exists if parentId is provided
-        if ($parentId !== null && ! Taxonomy::find($parentId)) {
+        if ($parentId !== null && ! $modelClass::find($parentId)) {
             return false;
         }
 
@@ -156,7 +180,8 @@ class TaxonomyManager
      */
     public function getDescendants(int $taxonomyId): Collection
     {
-        $taxonomy = Taxonomy::find($taxonomyId);
+        $modelClass = $this->getModelClass();
+        $taxonomy = $modelClass::find($taxonomyId);
         if (! $taxonomy) {
             return new Collection;
         }
@@ -171,7 +196,8 @@ class TaxonomyManager
      */
     public function getAncestors(int $taxonomyId): Collection
     {
-        $taxonomy = Taxonomy::find($taxonomyId);
+        $modelClass = $this->getModelClass();
+        $taxonomy = $modelClass::find($taxonomyId);
         if (! $taxonomy) {
             return new Collection;
         }
@@ -212,7 +238,9 @@ class TaxonomyManager
      */
     public function exists(string $slug, string|TaxonomyType|null $type = null): bool
     {
-        return Taxonomy::where('slug', $slug)
+        $modelClass = $this->getModelClass();
+
+        return $modelClass::where('slug', $slug)
             ->when($type, function ($query) use ($type) {
                 $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
 
@@ -226,7 +254,9 @@ class TaxonomyManager
      */
     public function find(int $id): ?Taxonomy
     {
-        return Taxonomy::find($id);
+        $modelClass = $this->getModelClass();
+
+        return $modelClass::find($id);
     }
 
     /**
@@ -239,7 +269,8 @@ class TaxonomyManager
      */
     public function findMany(array $ids, ?int $perPage = null, int $page = 1): Collection|LengthAwarePaginator
     {
-        $query = Taxonomy::whereIn('id', $ids);
+        $modelClass = $this->getModelClass();
+        $query = $modelClass::whereIn('id', $ids);
 
         if ($perPage) {
             return $query->paginate($perPage, ['*'], 'page', $page);
@@ -258,7 +289,8 @@ class TaxonomyManager
      */
     public function findByType(string|TaxonomyType $type, ?int $perPage = null, int $page = 1): Collection|LengthAwarePaginator
     {
-        $query = Taxonomy::type($type)->ordered();
+        $modelClass = $this->getModelClass();
+        $query = $modelClass::type($type)->ordered();
 
         if ($perPage) {
             return $query->paginate($perPage, ['*'], 'page', $page);
@@ -277,7 +309,8 @@ class TaxonomyManager
      */
     public function findByParent(?int $parentId = null, ?int $perPage = null, int $page = 1): Collection|LengthAwarePaginator
     {
-        $query = Taxonomy::where('parent_id', $parentId)->ordered();
+        $modelClass = $this->getModelClass();
+        $query = $modelClass::where('parent_id', $parentId)->ordered();
 
         if ($perPage) {
             return $query->paginate($perPage, ['*'], 'page', $page);
@@ -297,7 +330,8 @@ class TaxonomyManager
      */
     public function search(string $term, string|TaxonomyType|null $type = null, ?int $perPage = null, int $page = 1): Collection|LengthAwarePaginator
     {
-        $query = Taxonomy::query()
+        $modelClass = $this->getModelClass();
+        $query = $modelClass::query()
             ->where(function ($query) use ($term) {
                 $query->where('name', 'like', "%{$term}%")
                     ->orWhere('description', 'like', "%{$term}%");

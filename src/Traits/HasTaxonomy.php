@@ -402,7 +402,9 @@ trait HasTaxonomy
      */
     public function scopeWithTaxonomyHierarchy(Builder $query, int $taxonomyId, bool $includeDescendants = true): Builder
     {
-        $taxonomy = Taxonomy::find($taxonomyId);
+        /** @var class-string<\Aliziodev\LaravelTaxonomy\Models\Taxonomy> $modelClass */
+        $modelClass = config('taxonomy.model', Taxonomy::class);
+        $taxonomy = $modelClass::find($taxonomyId);
 
         if (! $taxonomy) {
             return $query->whereRaw('1 = 0'); // Return empty result
@@ -442,7 +444,9 @@ trait HasTaxonomy
      */
     public function hasAncestorTaxonomy(int $taxonomyId): bool
     {
-        $taxonomy = Taxonomy::find($taxonomyId);
+        /** @var class-string<\Aliziodev\LaravelTaxonomy\Models\Taxonomy> $modelClass */
+        $modelClass = config('taxonomy.model', Taxonomy::class);
+        $taxonomy = $modelClass::find($taxonomyId);
 
         if (! $taxonomy) {
             return false;
@@ -459,7 +463,9 @@ trait HasTaxonomy
      */
     public function hasDescendantTaxonomy(int $taxonomyId): bool
     {
-        $taxonomy = Taxonomy::find($taxonomyId);
+        /** @var class-string<\Aliziodev\LaravelTaxonomy\Models\Taxonomy> $modelClass */
+        $modelClass = config('taxonomy.model', Taxonomy::class);
+        $taxonomy = $modelClass::find($taxonomyId);
 
         if (! $taxonomy) {
             return false;
