@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.5.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.4.8...v2.5.0) (2025-07-22)
+
+### Features
+
+* refactor to configurable model and merged PR [#8](https://github.com/aliziodev/laravel-taxonomy/issues/8) ([#9](https://github.com/aliziodev/laravel-taxonomy/issues/9)) ([409cbe7](https://github.com/aliziodev/laravel-taxonomy/commit/409cbe74d104dc4d3078f4c70fe41b0d27e43447))
+
 ## [2.4.8](https://github.com/aliziodev/laravel-taxonomy/compare/v2.4.7...v2.4.8) (2025-07-15)
 
 ### Bug Fixes
