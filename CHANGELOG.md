@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.6.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.5.0...v2.6.0) (2025-09-02)
+
+### Features
+
+* **taxonomy:** add type-specific operations and query scopes ([20cf611](https://github.com/aliziodev/laravel-taxonomy/commit/20cf611584206bf33747266448e7acb432e10d5a))
+* **taxonomy:** add type-specific taxonomy relationship methods ([ee31d44](https://github.com/aliziodev/laravel-taxonomy/commit/ee31d4471f1febbccf7248fde35d7c24a24a4177))
+
 ## [2.5.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.4.8...v2.5.0) (2025-07-22)
 
 ### Features
