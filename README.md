@@ -331,15 +331,29 @@ $product->detachTaxonomies($taxonomyIds);
 $product->syncTaxonomies($taxonomyIds);
 $product->toggleTaxonomies($taxonomyIds);
 
+// Type-specific operations (NEW)
+$product->attachTaxonomiesOfType(TaxonomyType::Category, $categoryIds);
+$product->detachTaxonomiesOfType(TaxonomyType::Category, $categoryIds);
+$product->syncTaxonomiesOfType(TaxonomyType::Category, $categoryIds);
+$product->toggleTaxonomiesOfType(TaxonomyType::Tag, $tagIds);
+
 // Check relationships
 $hasCategory = $product->hasTaxonomies($categoryIds);
 $hasAllTags = $product->hasAllTaxonomies($tagIds);
 $hasType = $product->hasTaxonomyType(TaxonomyType::Category);
 
+// Type-specific relationship checks (NEW)
+$hasCategories = $product->hasTaxonomiesOfType(TaxonomyType::Category, $categoryIds);
+$hasAllCategories = $product->hasAllTaxonomiesOfType(TaxonomyType::Category, $categoryIds);
+
 // Get related taxonomies
 $allTaxonomies = $product->taxonomies;
 $categories = $product->taxonomiesOfType(TaxonomyType::Category);
 $hierarchical = $product->getHierarchicalTaxonomies(TaxonomyType::Category);
+
+// Utility methods (NEW)
+$categoryCount = $product->getTaxonomyCountByType(TaxonomyType::Category);
+$firstCategory = $product->getFirstTaxonomyOfType(TaxonomyType::Category);
 ```
 
 ### Query Scopes for Filtering
@@ -354,6 +368,11 @@ $products = Product::withTaxonomyType(TaxonomyType::Category)->get();
 $products = Product::withAnyTaxonomies([$category1, $category2])->get();
 $products = Product::withAllTaxonomies([$tag1, $tag2])->get();
 
+// Type-specific filtering (NEW)
+$products = Product::withAnyTaxonomiesOfType(TaxonomyType::Category, [$category1, $category2])->get();
+$products = Product::withAllTaxonomiesOfType(TaxonomyType::Tag, [$tag1, $tag2])->get();
+$products = Product::withoutTaxonomiesOfType(TaxonomyType::Category, [$category1])->get();
+
 // Filter by taxonomy slug (any type)
 $products = Product::withTaxonomySlug('electronics')->get();
 
@@ -365,6 +384,10 @@ $products = Product::withTaxonomyHierarchy($parentCategoryId)->get();
 
 // Filter by depth level
 $products = Product::withTaxonomyAtDepth(2, TaxonomyType::Category)->get();
+
+// Order by taxonomy type (NEW)
+$products = Product::orderByTaxonomyType(TaxonomyType::Category)->get();
+$products = Product::orderByTaxonomyType(TaxonomyType::Category, 'desc')->get();
 ```
 
 #### Scope Chaining vs Single Scope with Type
@@ -1374,6 +1397,129 @@ try {
     return back()->withErrors(['slug' => 'This slug already exists. Please choose another.']);
 }
 ```
+
+## 🎯 Type-Specific Operations
+
+The package provides specialized methods for working with taxonomies of specific types, offering more precise control over your taxonomy relationships.
+
+### Type-Specific Attachment Methods
+
+```php
+use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
+
+// Attach only categories to a product
+$product->attachTaxonomiesOfType(TaxonomyType::Category, [$category1->id, $category2->id]);
+
+// Attach only tags to a product
+$product->attachTaxonomiesOfType(TaxonomyType::Tag, ['featured', 'bestseller']);
+
+// Detach specific categories
+$product->detachTaxonomiesOfType(TaxonomyType::Category, [$category1->id]);
+
+// Detach all categories (keep other types)
+$product->detachTaxonomiesOfType(TaxonomyType::Category);
+
+// Sync categories (replace all categories with new ones)
+$product->syncTaxonomiesOfType(TaxonomyType::Category, [$newCategory1->id, $newCategory2->id]);
+
+// Toggle specific tags
+$product->toggleTaxonomiesOfType(TaxonomyType::Tag, [$tag1->id, $tag2->id]);
+```
+
+### Type-Specific Relationship Checks
+
+```php
+// Check if product has any of the specified categories
+$hasAnyCategory = $product->hasTaxonomiesOfType(TaxonomyType::Category, [$category1->id, $category2->id]);
+
+// Check if product has all specified tags
+$hasAllTags = $product->hasAllTaxonomiesOfType(TaxonomyType::Tag, [$tag1->id, $tag2->id]);
+
+// Get count of taxonomies by type
+$categoryCount = $product->getTaxonomyCountByType(TaxonomyType::Category);
+$tagCount = $product->getTaxonomyCountByType(TaxonomyType::Tag);
+
+// Get first taxonomy of specific type
+$firstCategory = $product->getFirstTaxonomyOfType(TaxonomyType::Category);
+$firstTag = $product->getFirstTaxonomyOfType(TaxonomyType::Tag);
+```
+
+### Type-Specific Query Scopes
+
+```php
+// Find products with any of the specified categories
+$products = Product::withAnyTaxonomiesOfType(TaxonomyType::Category, [$category1->id, $category2->id])->get();
+
+// Find products with all specified tags
+$products = Product::withAllTaxonomiesOfType(TaxonomyType::Tag, [$tag1->id, $tag2->id])->get();
+
+// Find products without specific categories
+$products = Product::withoutTaxonomiesOfType(TaxonomyType::Category, [$category1->id])->get();
+
+// Order products by taxonomy type (products with categories first)
+$products = Product::orderByTaxonomyType(TaxonomyType::Category)->get();
+$products = Product::orderByTaxonomyType(TaxonomyType::Category, 'desc')->get();
+```
+
+### Practical Examples
+
+#### E-commerce Product Management
+
+```php
+// Set up product categories and tags separately
+$product = Product::create(['name' => 'Smartphone']);
+
+// Attach categories
+$product->attachTaxonomiesOfType(TaxonomyType::Category, [
+    $electronics->id,
+    $smartphones->id,
+    $mobile->id
+]);
+
+// Attach tags
+$product->attachTaxonomiesOfType(TaxonomyType::Tag, [
+    $featured->id,
+    $bestseller->id,
+    $newArrival->id
+]);
+
+// Update only categories without affecting tags
+$product->syncTaxonomiesOfType(TaxonomyType::Category, [
+    $electronics->id,
+    $smartphones->id,
+    $android->id  // Replace mobile with android
+]);
+
+// Check product classification
+if ($product->hasTaxonomiesOfType(TaxonomyType::Category, [$smartphones->id])) {
+    // Apply smartphone-specific logic
+}
+
+// Get category count for display
+$categoryCount = $product->getTaxonomyCountByType(TaxonomyType::Category);
+echo "This product is in {$categoryCount} categories";
+```
+
+#### Content Management
+
+```php
+// Find articles in specific categories with certain tags
+$articles = Article::withAllTaxonomiesOfType(TaxonomyType::Category, [$technology->id])
+    ->withAnyTaxonomiesOfType(TaxonomyType::Tag, [$tutorial->id, $guide->id])
+    ->orderByTaxonomyType(TaxonomyType::Category)
+    ->get();
+
+// Remove outdated tags while keeping categories
+$article->detachTaxonomiesOfType(TaxonomyType::Tag, [$outdated->id, $deprecated->id]);
+```
+
+### Benefits of Type-Specific Operations
+
+1. **Precision**: Work with specific taxonomy types without affecting others
+2. **Performance**: More efficient queries when dealing with specific types
+3. **Maintainability**: Clearer code intent and easier debugging
+4. **Flexibility**: Mix and match different taxonomy types as needed
+5. **Safety**: Prevent accidental modification of unrelated taxonomy types
 
 ## Troubleshooting
 
