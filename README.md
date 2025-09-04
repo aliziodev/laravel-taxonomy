@@ -1,17 +1,37 @@
-<picture>
-    <source media="(prefers-color-scheme: dark)" srcset="art/header-dark.png">
-    <img alt="Logo for essentials" src="art/header-light.png">
-</picture>
+<p align="center"><img src="art/new-header.svg" width="400" alt="Laravel Taxonomy"></p>
 
-# Laravel Taxonomy
+<hr>
 
-[![codecov](https://codecov.io/gh/aliziodev/laravel-taxonomy/branch/master/graph/badge.svg)](https://codecov.io/gh/aliziodev/laravel-taxonomy)
-[![Tests](https://github.com/aliziodev/laravel-taxonomy/workflows/Tests/badge.svg)](https://github.com/aliziodev/laravel-taxonomy/actions)
-[![Code Quality](https://github.com/aliziodev/laravel-taxonomy/workflows/Code%20Quality/badge.svg)](https://github.com/aliziodev/laravel-taxonomy/actions)
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/aliziodev/laravel-taxonomy.svg)](https://packagist.org/packages/aliziodev/laravel-taxonomy)
-[![Total Downloads](https://img.shields.io/packagist/dt/aliziodev/laravel-taxonomy.svg)](https://packagist.org/packages/aliziodev/laravel-taxonomy)
-[![PHP Version](https://img.shields.io/packagist/php-v/aliziodev/laravel-taxonomy.svg)](https://packagist.org/packages/aliziodev/laravel-taxonomy)
-[![Laravel Version](https://img.shields.io/badge/Laravel-11.0%2B-orange.svg)](https://laravel.com/)
+<p align="center">
+  <!-- Baris 1 -->
+  <a href="https://codecov.io/gh/aliziodev/laravel-taxonomy">
+    <img src="https://codecov.io/gh/aliziodev/laravel-taxonomy/branch/master/graph/badge.svg" alt="codecov">
+  </a>
+  <a href="https://github.com/aliziodev/laravel-taxonomy/actions">
+    <img src="https://github.com/aliziodev/laravel-taxonomy/workflows/Tests/badge.svg" alt="Tests">
+  </a>
+  <a href="https://github.com/aliziodev/laravel-taxonomy/actions">
+    <img src="https://github.com/aliziodev/laravel-taxonomy/workflows/Code%20Quality/badge.svg" alt="Code Quality">
+  </a>
+</br>
+  <!-- Baris 2 -->
+  <a href="https://packagist.org/packages/aliziodev/laravel-taxonomy">
+    <img src="https://img.shields.io/packagist/v/aliziodev/laravel-taxonomy.svg" alt="Latest Version on Packagist">
+  </a>
+  <a href="https://packagist.org/packages/aliziodev/laravel-taxonomy">
+    <img src="https://img.shields.io/packagist/dt/aliziodev/laravel-taxonomy.svg" alt="Total Downloads">
+  </a>
+  <a href="https://packagist.org/packages/aliziodev/laravel-taxonomy">
+    <img src="https://img.shields.io/packagist/php-v/aliziodev/laravel-taxonomy.svg" alt="PHP Version">
+  </a>
+  <a href="https://laravel.com/">
+    <img src="https://img.shields.io/badge/Laravel-11.0%2B-orange.svg" alt="Laravel Version">
+  </a>
+  <a href="https://deepwiki.com/aliziodev/laravel-taxonomy">
+    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
+  </a>
+</p>
+
 
 Laravel Taxonomy is a flexible and powerful package for managing taxonomies, categories, tags, and hierarchical structures in Laravel applications. Features nested-set support for optimal query performance on hierarchical data structures.
 
