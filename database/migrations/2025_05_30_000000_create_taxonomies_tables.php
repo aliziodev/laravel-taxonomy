@@ -9,15 +9,20 @@ return new class extends Migration
     public function up(): void
     {
         $tableNames = config('taxonomy.table_names');
+        $tableNames = array_merge([
+            'taxonomies' => 'taxonomies',
+            'taxonomables' => 'taxonomables',
+        ], (array) config('taxonomy.table_names', []));
+
         $morphType = config('taxonomy.morph_type', 'uuid');
 
-        Schema::create($tableNames['taxonomies'], function (Blueprint $table) {
+        Schema::create($tableNames['taxonomies'], function (Blueprint $table) use ($tableNames) {
             $table->id();
             $table->string('name');
             $table->string('slug');
             $table->string('type')->index();
             $table->text('description')->nullable();
-            $table->foreignId('parent_id')->nullable()->constrained('taxonomies');
+            $table->foreignId('parent_id')->nullable()->constrained($tableNames['taxonomies']);
             $table->integer('sort_order')->default(0);
             $table->unsignedInteger('lft')->nullable()->index();
             $table->unsignedInteger('rgt')->nullable()->index();
@@ -32,9 +37,9 @@ return new class extends Migration
             $table->index(['type', 'lft', 'rgt']);
         });
 
-        Schema::create($tableNames['taxonomables'], function (Blueprint $table) use ($morphType) {
+        Schema::create($tableNames['taxonomables'], function (Blueprint $table) use ($morphType, $tableNames) {
             $table->id();
-            $table->foreignId('taxonomy_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('taxonomy_id')->constrained($tableNames['taxonomies'])->cascadeOnDelete();
 
             $name = 'taxonomable';
             switch ($morphType) {
@@ -55,6 +60,10 @@ return new class extends Migration
     public function down(): void
     {
         $tableNames = config('taxonomy.table_names');
+        $tableNames = array_merge([
+            'taxonomies' => 'taxonomies',
+            'taxonomables' => 'taxonomables',
+        ], (array) config('taxonomy.table_names', []));
 
         Schema::dropIfExists($tableNames['taxonomables']);
         Schema::dropIfExists($tableNames['taxonomies']);
