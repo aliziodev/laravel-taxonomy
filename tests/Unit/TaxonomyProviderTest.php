@@ -66,32 +66,48 @@ it('respects configured migration paths when autoload is enabled', function () {
     $customPath = base_path('database/migrations/tenants');
     config(['taxonomy.migrations.autoload' => true]);
     config(['taxonomy.migrations.paths' => [$customPath]]);
+    
+    // Bind a fake migrator to avoid real migration dependencies
+    $fakeMigrator = new class {
+        private array $paths = [];
+        public function path(string $path): void { $this->paths[] = $path; }
+        public function paths(): array { return $this->paths; }
+    };
+    App::instance('migrator', $fakeMigrator);
+    App::instance(\Illuminate\Database\Migrations\Migrator::class, $fakeMigrator);
 
-    // Re-run provider boot to apply current config
+    // Re-run provider boot to apply current config and register migration paths
     $provider = new TaxonomyProvider(App::getFacadeRoot());
     $provider->boot();
 
-    $migrator = App::make(\Illuminate\Database\Migrations\Migrator::class);
+    // Resolve migrator so provider's afterResolving callback applies paths
+    $migrator = App::make('migrator');
     $paths = $migrator->paths();
 
     expect($paths)->toContain($customPath);
 });
 
 it('does not register custom migration paths when autoload is disabled', function () {
-    // Capture current migrator paths
-    $migrator = App::make(\Illuminate\Database\Migrations\Migrator::class);
-    $beforePaths = $migrator->paths();
-
     $customPath = base_path('database/migrations/tenants');
     config(['taxonomy.migrations.autoload' => false]);
     config(['taxonomy.migrations.paths' => [$customPath]]);
+
+    // Bind a fresh fake migrator to avoid real migration dependencies
+    $fakeMigrator = new class {
+        private array $paths = [];
+        public function path(string $path): void { $this->paths[] = $path; }
+        public function paths(): array { return $this->paths; }
+    };
+    App::instance('migrator', $fakeMigrator);
+    App::instance(\Illuminate\Database\Migrations\Migrator::class, $fakeMigrator);
 
     // Re-run provider boot; with autoload disabled it should not add the custom path
     $provider = new TaxonomyProvider(App::getFacadeRoot());
     $provider->boot();
 
-    $afterPaths = $migrator->paths();
+    $afterPaths = App::make('migrator')->paths();
 
     expect($afterPaths)->not->toContain($customPath);
-    expect(count($afterPaths))->toBe(count($beforePaths));
+    expect($afterPaths)->toBeArray();
+    expect(count($afterPaths))->toBe(0);
 });
