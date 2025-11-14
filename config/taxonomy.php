@@ -117,4 +117,26 @@ return [
         'generate' => true,
         'regenerate_on_update' => true,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Migration Loading
+    |--------------------------------------------------------------------------
+    |
+    | Control whether the package automatically registers its migrations.
+    | In multi-tenant setups, you may want to disable autoloading and run
+    | migrations explicitly per tenant connection.
+    |
+    | Options:
+    | - 'autoload' (boolean): When true, the package registers its migration
+    |   paths so they run with the standard `php artisan migrate` command.
+    |   Set to false to disable autoloading.
+    | - 'paths' (array<string>): Optional custom paths to load if autoload is
+    |   enabled. If empty, the package's default migration path is used.
+    |
+    */
+    'migrations' => [
+        'autoload' => env('TAXONOMY_AUTOLOAD_MIGRATIONS', true),
+        'paths' => [],
+    ],
 ];

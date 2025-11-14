@@ -70,8 +70,13 @@ class TaxonomyProvider extends ServiceProvider
             __DIR__ . '/../database/migrations' => database_path('migrations'),
         ], 'taxonomy-migrations');
 
-        // Load migrations
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+        // Load migrations conditionally based on config
+        $autoload = (bool) config('taxonomy.migrations.autoload', true);
+        $paths = (array) config('taxonomy.migrations.paths', []);
+        if ($autoload) {
+            $pathsToLoad = ! empty($paths) ? $paths : [__DIR__ . '/../database/migrations'];
+            $this->loadMigrationsFrom($pathsToLoad);
+        }
 
         // Register commands
         if ($this->app->runningInConsole()) {
