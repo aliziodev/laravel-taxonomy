@@ -66,12 +66,21 @@ it('respects configured migration paths when autoload is enabled', function () {
     $customPath = base_path('database/migrations/tenants');
     config(['taxonomy.migrations.autoload' => true]);
     config(['taxonomy.migrations.paths' => [$customPath]]);
-    
+
     // Bind a fake migrator to avoid real migration dependencies
-    $fakeMigrator = new class {
+    $fakeMigrator = new class
+    {
         private array $paths = [];
-        public function path(string $path): void { $this->paths[] = $path; }
-        public function paths(): array { return $this->paths; }
+
+        public function path(string $path): void
+        {
+            $this->paths[] = $path;
+        }
+
+        public function paths(): array
+        {
+            return $this->paths;
+        }
     };
     App::instance('migrator', $fakeMigrator);
     App::instance(\Illuminate\Database\Migrations\Migrator::class, $fakeMigrator);
@@ -93,10 +102,19 @@ it('does not register custom migration paths when autoload is disabled', functio
     config(['taxonomy.migrations.paths' => [$customPath]]);
 
     // Bind a fresh fake migrator to avoid real migration dependencies
-    $fakeMigrator = new class {
+    $fakeMigrator = new class
+    {
         private array $paths = [];
-        public function path(string $path): void { $this->paths[] = $path; }
-        public function paths(): array { return $this->paths; }
+
+        public function path(string $path): void
+        {
+            $this->paths[] = $path;
+        }
+
+        public function paths(): array
+        {
+            return $this->paths;
+        }
     };
     App::instance('migrator', $fakeMigrator);
     App::instance(\Illuminate\Database\Migrations\Migrator::class, $fakeMigrator);
