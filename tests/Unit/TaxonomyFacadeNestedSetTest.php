@@ -318,3 +318,74 @@ it('facade methods handle null type', function () {
     expect($rootNames)->toContain('Electronics');
     expect($rootNames)->toContain('Parent Tag');
 });
+
+it('nested tree cache clears on create, update, and delete via events', function () {
+    createNestedSetTestData();
+
+    // Prime cache for categories
+    Taxonomy::getNestedTree(TaxonomyType::Category);
+    expect(Cache::has('taxonomy_nested_tree_category'))->toBeTrue();
+
+    // Create new category node should clear cache
+    $electronics = TaxonomyModel::where('slug', 'electronics')->first();
+    expect($electronics)->not->toBeNull();
+
+    TaxonomyModel::create([
+        'name' => 'Accessories',
+        'slug' => 'accessories',
+        'type' => TaxonomyType::Category->value,
+        'parent_id' => $electronics->id,
+    ]);
+    expect(Cache::has('taxonomy_nested_tree_category'))->toBeFalse();
+
+    // Re-prime and then update an existing node should clear cache
+    Taxonomy::getNestedTree(TaxonomyType::Category);
+    expect(Cache::has('taxonomy_nested_tree_category'))->toBeTrue();
+    $electronics->update(['name' => 'Electronics & Gadgets']);
+    expect(Cache::has('taxonomy_nested_tree_category'))->toBeFalse();
+
+    // Re-prime and then delete a node should clear cache
+    Taxonomy::getNestedTree(TaxonomyType::Category);
+    expect(Cache::has('taxonomy_nested_tree_category'))->toBeTrue();
+    $toDelete = TaxonomyModel::where('slug', 'accessories')->first();
+    expect($toDelete)->not->toBeNull();
+    $toDelete->delete();
+    expect(Cache::has('taxonomy_nested_tree_category'))->toBeFalse();
+});
+
+it('facade tree and flatTree include newly created records after cache primed', function () {
+    createNestedSetTestData();
+
+    // Prime caches
+    $treeBefore = Taxonomy::tree(TaxonomyType::Category);
+    $flatBefore = Taxonomy::flatTree(TaxonomyType::Category);
+
+    $root = $treeBefore->first();
+    expect($root)->not->toBeNull();
+    expect($root->children)->toHaveCount(1);
+    expect($flatBefore)->toHaveCount(4); // electronics, smartphones, android, samsung
+
+    // Create new node
+    $android = TaxonomyModel::where('slug', 'android')->first();
+    expect($android)->not->toBeNull();
+    TaxonomyModel::create([
+        'name' => 'Pixel',
+        'slug' => 'pixel',
+        'type' => TaxonomyType::Category->value,
+        'parent_id' => $android->id,
+    ]);
+
+    // Subsequent calls should include new record
+    $treeAfter = Taxonomy::tree(TaxonomyType::Category);
+    $flatAfter = Taxonomy::flatTree(TaxonomyType::Category);
+
+    $rootAfter = $treeAfter->first();
+    expect($rootAfter->children)->toHaveCount(1); // smartphones
+    $smartphones = $rootAfter->children->first();
+    expect($smartphones->children)->toHaveCount(1); // android
+    $androidAfter = $smartphones->children->first();
+    expect($androidAfter->children)->toHaveCount(2); // samsung and pixel
+
+    expect($flatAfter->pluck('slug')->toArray())->toContain('pixel');
+    expect($flatAfter)->toHaveCount(5);
+});

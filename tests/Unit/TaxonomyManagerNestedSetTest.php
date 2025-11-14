@@ -316,3 +316,53 @@ it('clear cache for type removes correct patterns', function () {
 
     expect(Cache::has($nestedTreeKey))->toBeFalse();
 });
+
+it('tree reflects newly created taxonomy after cache primed', function () {
+    $data = createManagerTestData();
+    extract($data);
+
+    // Prime cache
+    $primed = $manager->tree(TaxonomyType::Category);
+    expect($primed)->toHaveCount(1);
+    $root = $primed->first();
+    expect($root->children)->toHaveCount(1); // computers
+
+    // Create new child under electronics
+    $electronics = Taxonomy::where('slug', 'electronics')->first();
+    expect($electronics)->not->toBeNull();
+
+    Taxonomy::create([
+        'name' => 'Phones',
+        'type' => TaxonomyType::Category->value,
+        'slug' => 'phones',
+        'parent_id' => $electronics->id,
+    ]);
+
+    // New call should include the new child
+    $after = $manager->tree(TaxonomyType::Category);
+    $rootAfter = $after->first();
+    expect($rootAfter->children)->toHaveCount(2); // computers and phones
+});
+
+it('flatTree reflects newly created taxonomy after cache primed', function () {
+    $data = createManagerTestData();
+    extract($data);
+
+    // Prime cache
+    $flatPrimed = $manager->flatTree(TaxonomyType::Category);
+    expect($flatPrimed)->toHaveCount(3); // electronics, computers, laptops
+
+    // Create new child
+    $computers = Taxonomy::where('slug', 'computers')->first();
+    expect($computers)->not->toBeNull();
+    Taxonomy::create([
+        'name' => 'Desktops',
+        'type' => TaxonomyType::Category->value,
+        'slug' => 'desktops',
+        'parent_id' => $computers->id,
+    ]);
+
+    $flatAfter = $manager->flatTree(TaxonomyType::Category);
+    expect($flatAfter->pluck('slug')->toArray())->toContain('desktops');
+    expect($flatAfter)->toHaveCount(4);
+});

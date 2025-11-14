@@ -3,9 +3,11 @@
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Exceptions\DuplicateSlugException;
 use Aliziodev\LaravelTaxonomy\Exceptions\MissingSlugException;
+use Aliziodev\LaravelTaxonomy\Facades\Taxonomy as TaxonomyFacade;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
 use Aliziodev\LaravelTaxonomy\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 
 uses(TestCase::class, RefreshDatabase::class);
 
@@ -532,6 +534,89 @@ it('allows same custom slug for different types', function () {
     expect($taxonomy2->slug)->toBe('existing-slug');
     expect($taxonomy1->type)->toBe(TaxonomyType::Category->value);
     expect($taxonomy2->type)->toBe(TaxonomyType::Tag->value);
+});
+
+it('clears nested tree cache on create event', function () {
+    // Prime cache
+    TaxonomyFacade::getNestedTree(TaxonomyType::Category);
+    expect(Cache::has('taxonomy_nested_tree_' . TaxonomyType::Category->value))->toBeTrue();
+
+    // Create new taxonomy of same type
+    Taxonomy::create([
+        'name' => 'New Cat',
+        'type' => TaxonomyType::Category->value,
+    ]);
+
+    // Cache should be cleared by model event
+    expect(Cache::has('taxonomy_nested_tree_' . TaxonomyType::Category->value))->toBeFalse();
+});
+
+it('clears nested tree cache on update event', function () {
+    // Create taxonomy and prime cache
+    $taxonomy = Taxonomy::create([
+        'name' => 'Updatable Cat',
+        'type' => TaxonomyType::Category->value,
+    ]);
+
+    TaxonomyFacade::getNestedTree(TaxonomyType::Category);
+    expect(Cache::has('taxonomy_nested_tree_' . TaxonomyType::Category->value))->toBeTrue();
+
+    // Update triggers clear
+    $taxonomy->update(['name' => 'Renamed Cat']);
+
+    expect(Cache::has('taxonomy_nested_tree_' . TaxonomyType::Category->value))->toBeFalse();
+});
+
+it('clears nested tree cache on delete event', function () {
+    // Create taxonomy and prime cache
+    $taxonomy = Taxonomy::create([
+        'name' => 'Deletable Cat',
+        'type' => TaxonomyType::Category->value,
+    ]);
+
+    TaxonomyFacade::getNestedTree(TaxonomyType::Category);
+    expect(Cache::has('taxonomy_nested_tree_' . TaxonomyType::Category->value))->toBeTrue();
+
+    // Delete triggers clear
+    $taxonomy->delete();
+
+    expect(Cache::has('taxonomy_nested_tree_' . TaxonomyType::Category->value))->toBeFalse();
+});
+
+it('tree and flatTree reflect new records after creation despite cached results', function () {
+    // Setup initial hierarchy
+    $parent = Taxonomy::create([
+        'name' => 'Parent Category',
+        'type' => TaxonomyType::Category->value,
+    ]);
+
+    $child1 = Taxonomy::create([
+        'name' => 'Child 1',
+        'type' => TaxonomyType::Category->value,
+        'parent_id' => $parent->id,
+    ]);
+
+    // Prime manager caches via facade
+    $treeBefore = TaxonomyFacade::tree(TaxonomyType::Category);
+    $flatBefore = TaxonomyFacade::flatTree(TaxonomyType::Category);
+    expect($treeBefore)->toHaveCount(1);
+    $root = $treeBefore->first();
+    expect($root->children)->toHaveCount(1);
+    expect($flatBefore->pluck('name')->toArray())->toContain('Child 1');
+
+    // Create new child (should bump cache version and clear nested key)
+    Taxonomy::create([
+        'name' => 'Child 2',
+        'type' => TaxonomyType::Category->value,
+        'parent_id' => $parent->id,
+    ]);
+
+    // Subsequent calls should include new record
+    $treeAfter = TaxonomyFacade::tree(TaxonomyType::Category);
+    $flatAfter = TaxonomyFacade::flatTree(TaxonomyType::Category);
+    $rootAfter = $treeAfter->first();
+    expect($rootAfter->children)->toHaveCount(2);
+    expect($flatAfter->pluck('name')->toArray())->toContain('Child 2');
 });
 
 it('throws exception when updating with duplicate slug', function () {
