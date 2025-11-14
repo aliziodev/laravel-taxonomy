@@ -25,7 +25,8 @@ it('can create taxonomy manager instances', function () {
 
     expect($manager1)->toBeInstanceOf(TaxonomyManager::class);
     expect($manager2)->toBeInstanceOf(TaxonomyManager::class);
-    // These are different instances since TaxonomyManager class is not bound as singleton
+    // These should be different instances since the class binding is not a singleton
+    expect($manager1 === $manager2)->toBeFalse();
 });
 
 it('registers taxonomy model binding', function () {
@@ -128,4 +129,14 @@ it('does not register custom migration paths when autoload is disabled', functio
     expect($afterPaths)->not->toContain($customPath);
     expect($afterPaths)->toBeArray();
     expect(count($afterPaths))->toBe(0);
+});
+
+it('registers console commands when running in console', function () {
+    // Ensure provider boot runs in this test context
+    $provider = new TaxonomyProvider(App::getFacadeRoot());
+    $provider->boot();
+
+    $commands = array_keys(\Illuminate\Support\Facades\Artisan::all());
+    expect($commands)->toContain('taxonomy:install');
+    expect($commands)->toContain('taxonomy:rebuild-nested-set');
 });
