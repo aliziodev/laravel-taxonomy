@@ -3,11 +3,10 @@
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
 use Aliziodev\LaravelTaxonomy\TaxonomyManager;
 use Aliziodev\LaravelTaxonomy\TaxonomyProvider;
-use Aliziodev\LaravelTaxonomy\Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Aliziodev\LaravelTaxonomy\Tests\Support\NoDbTestCase as TestCase;
 use Illuminate\Support\Facades\App;
 
-uses(TestCase::class, RefreshDatabase::class);
+uses(TestCase::class);
 
 it('registers taxonomy manager singleton via alias', function () {
     // Test that TaxonomyManager is registered as singleton via 'taxonomy' alias
@@ -60,4 +59,39 @@ it('registers services correctly', function () {
     // Test that taxonomy service returns TaxonomyManager instance
     $taxonomyService = App::make('taxonomy');
     expect($taxonomyService instanceof TaxonomyManager)->toBeTrue();
+});
+
+it('respects configured migration paths when autoload is enabled', function () {
+    // Enable autoload and set a custom path to ensure provider uses it
+    $customPath = base_path('database/migrations/tenants');
+    config(['taxonomy.migrations.autoload' => true]);
+    config(['taxonomy.migrations.paths' => [$customPath]]);
+
+    // Re-run provider boot to apply current config
+    $provider = new TaxonomyProvider(App::getFacadeRoot());
+    $provider->boot();
+
+    $migrator = App::make(\Illuminate\Database\Migrations\Migrator::class);
+    $paths = $migrator->paths();
+
+    expect($paths)->toContain($customPath);
+});
+
+it('does not register custom migration paths when autoload is disabled', function () {
+    // Capture current migrator paths
+    $migrator = App::make(\Illuminate\Database\Migrations\Migrator::class);
+    $beforePaths = $migrator->paths();
+
+    $customPath = base_path('database/migrations/tenants');
+    config(['taxonomy.migrations.autoload' => false]);
+    config(['taxonomy.migrations.paths' => [$customPath]]);
+
+    // Re-run provider boot; with autoload disabled it should not add the custom path
+    $provider = new TaxonomyProvider(App::getFacadeRoot());
+    $provider->boot();
+
+    $afterPaths = $migrator->paths();
+
+    expect($afterPaths)->not->toContain($customPath);
+    expect(count($afterPaths))->toBe(count($beforePaths));
 });
