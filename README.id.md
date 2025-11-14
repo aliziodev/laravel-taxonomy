@@ -157,6 +157,34 @@ return [
 ];
 ```
 
+### Autoload Migrasi (Multi-tenant)
+
+Secara default, paket ini mendaftarkan file migrasi sehingga akan dijalankan otomatis saat Anda menjalankan `php artisan migrate`. Pada aplikasi multi-penyewa, perilaku ini bisa tidak diinginkan karena akan berjalan di koneksi basis data default.
+
+Anda dapat menonaktifkan autoload migrasi melalui konfigurasi:
+
+```php
+// config/taxonomy.php
+'migrations' => [
+    'autoload' => false,            // Nonaktifkan autoload migrasi paket
+    'paths' => [                    // Opsional: path kustom jika tetap ingin autoload
+        // database_path('migrations/penyewa'),
+    ],
+],
+```
+
+Dengan autoload dimatikan, jalankan migrasi secara eksplisit per penyewa atau koneksi Anda, misalnya:
+
+```bash
+php artisan migrate --path=database/migrations/penyewa --database=tenant
+```
+
+Anda juga dapat mempublish migrasi paket dan mengatur orkestrasi migrasi sesuai kebutuhan:
+
+```bash
+php artisan vendor:publish --provider="Aliziodev\LaravelTaxonomy\TaxonomyProvider" --tag="taxonomy-migrations"
+```
+
 ### Penjelasan Opsi Konfigurasi
 
 #### Nama Tabel

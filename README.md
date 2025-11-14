@@ -156,6 +156,40 @@ return [
 ];
 ```
 
+### Migration Autoload (Multi-tenant)
+
+By default, the package registers its migration paths so they run automatically when you execute `php artisan migrate`. In multi-tenant applications, this can be undesired because migrations may run on the default connection.
+
+You can disable migration autoloading via configuration:
+
+```php
+// config/taxonomy.php
+'migrations' => [
+    'autoload' => false,            // Disable autoloading of package migrations
+    'paths' => [                    // Optional: custom paths if you still want autoloading
+        // database_path('migrations/tenants'),
+    ],
+],
+```
+
+Or with an environment variable:
+
+```dotenv
+TAXONOMY_AUTOLOAD_MIGRATIONS=false
+```
+
+With autoload disabled, run migrations explicitly per tenant or connection, for example:
+
+```bash
+php artisan migrate --path=database/migrations/tenants --database=tenant
+```
+
+You can also publish the package migrations and orchestrate them as needed:
+
+```bash
+php artisan vendor:publish --provider="Aliziodev\LaravelTaxonomy\TaxonomyProvider" --tag="taxonomy-migrations"
+```
+
 ### Configuration Options Explained
 
 #### Table Names
