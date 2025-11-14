@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.7.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.6.1...v2.7.0) (2025-11-14)
+
+### Features
+
+* **migrations:** add configurable migration loading for taxonomy ([69d8cdc](https://github.com/aliziodev/laravel-taxonomy/commit/69d8cdc6c5bfa63c2a411bfe692ff64d626d5672))
+
+### Performance Improvements
+
+* **TaxonomyManager:** improve cache invalidation strategy ([54ccbe6](https://github.com/aliziodev/laravel-taxonomy/commit/54ccbe66c66438ae92b23c5e062132a5a465169e))
+
 ## [2.6.1](https://github.com/aliziodev/laravel-taxonomy/compare/v2.6.0...v2.6.1) (2025-10-10)
 
 ### Bug Fixes
