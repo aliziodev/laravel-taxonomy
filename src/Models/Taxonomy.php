@@ -5,6 +5,7 @@ namespace Aliziodev\LaravelTaxonomy\Models;
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Exceptions\DuplicateSlugException;
 use Aliziodev\LaravelTaxonomy\Exceptions\MissingSlugException;
+use Aliziodev\LaravelTaxonomy\TaxonomyManager;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -138,6 +139,9 @@ class Taxonomy extends Model
             if ($taxonomy->wasChanged('parent_id')) {
                 static::rebuildNestedSet($taxonomy->type);
             }
+
+            // Clear caches for this type on any update
+            app(TaxonomyManager::class)->clearCacheForType($taxonomy->type);
         });
 
         static::deleting(function (self $taxonomy) {
@@ -150,6 +154,16 @@ class Taxonomy extends Model
                 // Remove gap in nested set
                 $taxonomy->removeFromNestedSet();
             }
+        });
+
+        static::created(function (self $taxonomy) {
+            // Clear caches for this type after creation
+            app(TaxonomyManager::class)->clearCacheForType($taxonomy->type);
+        });
+
+        static::deleted(function (self $taxonomy) {
+            // Clear caches for this type after deletion
+            app(TaxonomyManager::class)->clearCacheForType($taxonomy->type);
         });
     }
 

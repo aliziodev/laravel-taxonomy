@@ -74,7 +74,10 @@ class TaxonomyManager
     public function tree(string|TaxonomyType|null $type = null, ?int $parentId = null): Collection
     {
         $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
-        $cacheKey = "taxonomy_tree_{$typeValue}_{$parentId}";
+        $normalizedType = $typeValue ?? 'all';
+        $versionKey = $this->getCacheVersionKey($normalizedType);
+        $version = (int) Cache::get($versionKey, 1);
+        $cacheKey = "taxonomy_tree_{$normalizedType}_{$parentId}_v{$version}";
 
         return Cache::remember($cacheKey, now()->addHours(24), function () use ($type, $parentId) {
             $modelClass = $this->getModelClass();
@@ -97,7 +100,10 @@ class TaxonomyManager
     public function flatTree(string|TaxonomyType|null $type = null, ?int $parentId = null, int $depth = 0): Collection
     {
         $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
-        $cacheKey = "taxonomy_flat_tree_{$typeValue}_{$parentId}_{$depth}";
+        $normalizedType = $typeValue ?? 'all';
+        $versionKey = $this->getCacheVersionKey($normalizedType);
+        $version = (int) Cache::get($versionKey, 1);
+        $cacheKey = "taxonomy_flat_tree_{$normalizedType}_{$parentId}_{$depth}_v{$version}";
 
         return Cache::remember($cacheKey, now()->addHours(24), function () use ($type, $parentId, $depth) {
             $modelClass = $this->getModelClass();
@@ -219,17 +225,33 @@ class TaxonomyManager
      */
     protected function clearCacheForTypeInternal(string $type): void
     {
-        $patterns = [
-            "taxonomy_tree_{$type}_*",
-            "taxonomy_flat_tree_{$type}_*",
-            "taxonomy_nested_tree_{$type}",
-        ];
+        $this->bumpCacheVersion($this->getCacheVersionKey($type));
+        $this->bumpCacheVersion($this->getCacheVersionKey('all'));
 
-        // For exact cache keys, use forget directly
         Cache::forget("taxonomy_nested_tree_{$type}");
+    }
 
-        foreach ($patterns as $pattern) {
-            Cache::forget($pattern);
+    /**
+     * Get cache version key for a type or global.
+     */
+    protected function getCacheVersionKey(string $normalizedType): string
+    {
+        return $normalizedType === 'all'
+            ? 'taxonomy_cache_version_all'
+            : "taxonomy_cache_version_{$normalizedType}";
+    }
+
+    /**
+     * Increment cache version stored forever to invalidate prior entries.
+     */
+    protected function bumpCacheVersion(string $versionKey): void
+    {
+        $current = Cache::get($versionKey);
+        if ($current === null) {
+            Cache::forever($versionKey, 1);
+        } else {
+            $next = is_numeric($current) ? ((int) $current + 1) : 1;
+            Cache::forever($versionKey, $next);
         }
     }
 
