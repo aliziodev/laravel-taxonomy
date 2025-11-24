@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.8.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.7.0...v2.8.0) (2025-11-24)
+
+### Bug Fixes
+
+* **database:** modify unique constraint to exclude soft-deleted records ([3097332](https://github.com/aliziodev/laravel-taxonomy/commit/309733276992c85358f40edf353b24d849321952))
+
+### Features
+
+* **model:** handle slug conflicts and cache clearing on restore ([d0035cc](https://github.com/aliziodev/laravel-taxonomy/commit/d0035cc310d7ed11ac535b2b300e22e505d063bf))
+* **taxonomy:** add slug handling options for soft-deleted records ([0e22f5d](https://github.com/aliziodev/laravel-taxonomy/commit/0e22f5de760dc352038dacd3d3cdb4e711a73274))
+
 ## [2.7.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.6.1...v2.7.0) (2025-11-14)
 
 ### Features
