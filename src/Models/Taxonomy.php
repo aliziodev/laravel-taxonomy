@@ -165,6 +165,25 @@ class Taxonomy extends Model
             // Clear caches for this type after deletion
             app(TaxonomyManager::class)->clearCacheForType($taxonomy->type);
         });
+
+        static::restoring(function (self $taxonomy) {
+            // Resolve slug conflicts on restore if enabled
+            if (config('taxonomy.slugs.regenerate_on_restore', true)) {
+                if (static::slugExists($taxonomy->slug, $taxonomy->type, $taxonomy->id)) {
+                    $taxonomy->slug = static::generateUniqueSlug($taxonomy->name, $taxonomy->type, $taxonomy->id);
+                }
+            } else {
+                // If not regenerating and conflict exists, throw explicit exception
+                if (static::slugExists($taxonomy->slug, $taxonomy->type, $taxonomy->id)) {
+                    throw new DuplicateSlugException($taxonomy->slug, $taxonomy->type);
+                }
+            }
+        });
+
+        static::restored(function (self $taxonomy) {
+            // Clear caches for this type after restore
+            app(TaxonomyManager::class)->clearCacheForType($taxonomy->type);
+        });
     }
 
     /**
@@ -434,7 +453,14 @@ class Taxonomy extends Model
     {
         $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
 
-        return static::query()
+        $query = static::query();
+        if (config('taxonomy.slugs.consider_trashed', false)) {
+            $query = $query->withTrashed();
+        } else {
+            $query = $query->withoutTrashed();
+        }
+
+        return $query
             ->where('slug', $slug)
             ->where('type', $typeValue)
             ->when($excludeId, function ($query) use ($excludeId) {
