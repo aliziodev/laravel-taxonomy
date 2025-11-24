@@ -31,8 +31,8 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            // Composite unique constraint slug & type
-            $table->unique(['slug', 'type']);
+            // Unique slugs per type for active records only (ignore soft-deleted)
+            $table->unique(['slug', 'type', 'deleted_at']);
             // Composite index for type, lft, & rgt
             $table->index(['type', 'lft', 'rgt']);
         });
