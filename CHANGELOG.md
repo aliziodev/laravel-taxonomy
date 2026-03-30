@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.9.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.8.0...v2.9.0) (2026-03-30)
+
+### Features
+
+* implement core taxonomy package with nested set support and comprehensive test suite ([df9503a](https://github.com/aliziodev/laravel-taxonomy/commit/df9503a4cdaf67d0b5787fe4a13ccf5efd624963))
+* implement core taxonomy system including models, traits, commands, and comprehensive test suite ([e1e7295](https://github.com/aliziodev/laravel-taxonomy/commit/e1e72959467d601413571e07ab88e5ffd075b3ff))
+
 ## [2.8.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.7.0...v2.8.0) (2025-11-24)
 
 ### Bug Fixes
