@@ -87,39 +87,29 @@ it('throws DuplicateSlugException when createOrUpdate with custom slug that exis
 });
 
 it('covers DuplicateSlugException path in createOrUpdate method', function () {
-    // This test covers the specific path in createOrUpdate where DuplicateSlugException is thrown
-    // The exception is thrown when:
-    // 1. A custom slug is provided in attributes
-    // 2. No existing taxonomy is found with that slug and type combination
-    // 3. But slugExists() returns true for that slug and type
+    // This happens when a slug exists but the initial lookup doesn't find it.
+    // The most natural way this occurs is if the existing taxonomy is soft-deleted,
+    // the initial query doesn't find it (not using withTrashed),
+    // but the system is configured to consider trashed slugs as unavailable.
 
-    // Create a taxonomy with a specific slug
-    Taxonomy::create([
-        'name' => 'Existing Category',
+    config(['taxonomy.slugs.consider_trashed' => true]);
+
+    $trashedTaxonomy = Taxonomy::create([
+        'name' => 'Deleted Category',
         'slug' => 'test-slug',
         'type' => TaxonomyType::Category->value,
     ]);
+    $trashedTaxonomy->delete(); // Soft delete it
 
-    // Now we need to create a scenario where:
-    // - createOrUpdate looks for slug 'test-slug' with type 'category' but doesn't find it
-    // - But slugExists('test-slug', 'category') returns true
-    // This can happen if we manipulate the lookup somehow
-
-    // Let's test by creating taxonomy with different case or similar scenario
-    // Actually, let's test the real scenario by using a mock or different approach
-
-    // The most realistic way to trigger this is when the slug exists but the
-    // where clause in createOrUpdate doesn't find it due to some edge case
-
-    // For now, let's create a test that demonstrates the behavior exists
-    // even if it's hard to trigger naturally
-
-    expect(true)->toBeTrue(); // Placeholder - this path is hard to test naturally
-
-    // The DuplicateSlugException path in createOrUpdate (lines 396-398) is covered
-    // when isset($attributes['slug']) && static::slugExists($attributes['slug'], $attributes['type'])
-    // This happens when a custom slug is provided that already exists but wasn't found
-    // in the initial lookup, which is an edge case scenario.
+    // Now try to createOrUpdate with the same custom slug
+    // Initial lookup will fail (because it's trashed), but slugExists will return true
+    expect(function () {
+        Taxonomy::createOrUpdate([
+            'name' => 'New Category',
+            'slug' => 'test-slug',
+            'type' => TaxonomyType::Category->value,
+        ]);
+    })->toThrow(DuplicateSlugException::class);
 });
 
 it('allows createOrUpdate with existing slug in different type', function () {

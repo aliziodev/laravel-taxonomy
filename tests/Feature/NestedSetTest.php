@@ -335,3 +335,55 @@ it('works when models are strict', function () {
     $tree = Taxonomy::getNestedTree(TaxonomyType::Category);
     expect($tree)->toHaveCount(2);
 });
+
+it('handles fallback to root when parent has null nested set values', function () {
+    $parent = Taxonomy::create([
+        'name' => 'Bad Parent',
+        'type' => TaxonomyType::Category->value,
+    ]);
+
+    // Manually set lft/rgt/depth to null to simulate broken state
+    $parent->lft = null;
+    $parent->rgt = null;
+    $parent->depth = null;
+    $parent->saveQuietly();
+
+    $child = Taxonomy::create([
+        'name' => 'Fallback Child',
+        'type' => TaxonomyType::Category->value,
+        'parent_id' => $parent->id,
+    ]);
+
+    // Should have fallen back to makeRoot()
+    expect($child->depth)->toBe(0);
+    expect($child->lft)->not->toBeNull();
+});
+
+it('prevents infinite loops when checking for circular references', function () {
+    $node1 = Taxonomy::create(['name' => 'Node 1', 'type' => TaxonomyType::Category->value]);
+    $node2 = Taxonomy::create(['name' => 'Node 2', 'type' => TaxonomyType::Category->value, 'parent_id' => $node1->id]);
+    $node3 = Taxonomy::create(['name' => 'Node 3', 'type' => TaxonomyType::Category->value, 'parent_id' => $node2->id]);
+
+    // Manually create a circular reference bypassing the normal checks
+    $node1->parent_id = $node3->id;
+    $node1->saveQuietly();
+
+    // Now if we check wouldCreateCircularReference, it should traverse:
+    // target parent = node2
+    // node2's parent is node1
+    // node1's parent is node3
+    // node3's parent is node2 ... loop detected!
+    $result = $node3->wouldCreateCircularReference($node2->id);
+
+    expect($result)->toBeTrue();
+});
+
+it('returns empty collection for descendants when lft or rgt is null', function () {
+    $node = Taxonomy::create(['name' => 'Null Node', 'type' => TaxonomyType::Category->value]);
+
+    $node->lft = null;
+    $node->saveQuietly();
+
+    expect($node->getDescendants())->toBeEmpty();
+    expect($node->getAncestors())->toBeEmpty(); // line 693 check
+});
