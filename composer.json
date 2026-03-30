@@ -23,8 +23,8 @@
     }
   ],
   "require-dev": {
-    "pestphp/pest": "^3.8.2",
-    "pestphp/pest-plugin-laravel": "^3.2.0",
+    "pestphp/pest": "^4.4.1",
+    "pestphp/pest-plugin-laravel": "^4.1.0",
     "phpstan/phpstan": "^2.1",
     "larastan/larastan": "^3.4",
     "laravel/pint": "^1.22",
