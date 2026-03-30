@@ -362,17 +362,20 @@ it('handles fallback to root when parent has null nested set values', function (
 it('prevents infinite loops when checking for circular references', function () {
     $node1 = Taxonomy::create(['name' => 'Node 1', 'type' => TaxonomyType::Category->value]);
     $node2 = Taxonomy::create(['name' => 'Node 2', 'type' => TaxonomyType::Category->value, 'parent_id' => $node1->id]);
-    $node3 = Taxonomy::create(['name' => 'Node 3', 'type' => TaxonomyType::Category->value, 'parent_id' => $node2->id]);
+    $node3 = Taxonomy::create(['name' => 'Node 3', 'type' => TaxonomyType::Category->value]); // Completely separate node
 
-    // Manually create a circular reference bypassing the normal checks
-    $node1->parent_id = $node3->id;
+    // Manually create a circular reference bypassing the normal checks between Node 1 and Node 2
+    // Node 1 -> Node 2 -> Node 1 (Infinite loop)
+    $node1->parent_id = $node2->id;
     $node1->saveQuietly();
 
-    // Now if we check wouldCreateCircularReference, it should traverse:
-    // target parent = node2
-    // node2's parent is node1
-    // node1's parent is node3
-    // node3's parent is node2 ... loop detected!
+    // Now if Node 3 tries to move under Node 2, it will traverse the tree upwards to check for circular reference
+    // target parent = Node 2
+    // Node 2's parent is Node 1
+    // Node 1's parent is Node 2
+    // Node 2 is already visited! This hits the `in_array($currentParentId, $visited)` check (lines 583-586).
+
+    // It should detect the infinite loop and return true
     $result = $node3->wouldCreateCircularReference($node2->id);
 
     expect($result)->toBeTrue();
