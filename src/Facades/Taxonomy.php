@@ -4,6 +4,7 @@ namespace Aliziodev\LaravelTaxonomy\Facades;
 
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy as TaxonomyModel;
+use Aliziodev\LaravelTaxonomy\TaxonomyManager;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Facade;
@@ -34,7 +35,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static Collection<int, TaxonomyModel> getAncestors(int $taxonomyId) Get all ancestors of a taxonomy
  * @method static void clearCacheForType(string|TaxonomyType $type) Clear cache for a specific taxonomy type
  *
- * @see \Aliziodev\LaravelTaxonomy\TaxonomyManager
+ * @see TaxonomyManager
  */
 class Taxonomy extends Facade
 {

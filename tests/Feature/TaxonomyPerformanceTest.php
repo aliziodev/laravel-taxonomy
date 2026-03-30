@@ -16,7 +16,7 @@ beforeEach(function () {
     // Ensure no active transactions from previous tests
     try {
         DB::rollBack();
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         // Ignore if no transaction is active
     }
 
@@ -30,7 +30,7 @@ afterEach(function () {
     // Ensure no active transactions before cleanup
     try {
         DB::rollBack();
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         // Ignore if no transaction is active
     }
 
@@ -781,7 +781,7 @@ function measurePerformance(string $operation, callable $function): mixed
     // Ensure clean transaction state before measurement
     try {
         DB::rollBack();
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         // Ignore if no transaction is active
     }
 
@@ -796,7 +796,7 @@ function measurePerformance(string $operation, callable $function): mixed
     // Ensure clean transaction state after measurement
     try {
         DB::rollBack();
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         // Ignore if no transaction is active
     }
 

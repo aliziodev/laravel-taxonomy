@@ -4,6 +4,8 @@ namespace Aliziodev\LaravelTaxonomy\Tests;
 
 use Aliziodev\LaravelTaxonomy\TaxonomyProvider;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Application;
+use Illuminate\Testing\PendingCommand;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
@@ -21,7 +23,7 @@ abstract class TestCase extends BaseTestCase
         // Run migrations
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         $result = $this->artisan('migrate', ['--database' => 'testing']);
-        $this->assertInstanceOf(\Illuminate\Testing\PendingCommand::class, $result);
+        $this->assertInstanceOf(PendingCommand::class, $result);
         $result->run();
 
         // Create products table for testing
@@ -45,7 +47,7 @@ abstract class TestCase extends BaseTestCase
     /**
      * Get package providers.
      *
-     * @param  \Illuminate\Foundation\Application  $app
+     * @param  Application  $app
      * @return array<int, class-string>
      */
     protected function getPackageProviders($app): array
@@ -58,7 +60,7 @@ abstract class TestCase extends BaseTestCase
     /**
      * Define environment setup.
      *
-     * @param  \Illuminate\Foundation\Application  $app
+     * @param  Application  $app
      */
     protected function defineEnvironment($app): void
     {

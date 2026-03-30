@@ -311,7 +311,7 @@ it('can handle race condition concurrent move operations', function () {
                 $freshMovingNode->moveToParent($targetParent->id);
                 $results[] = $targetParent->id;
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $exceptions[] = $e->getMessage();
         }
     }

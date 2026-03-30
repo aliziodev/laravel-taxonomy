@@ -4,7 +4,9 @@ use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
 use Aliziodev\LaravelTaxonomy\TaxonomyManager;
 use Aliziodev\LaravelTaxonomy\TaxonomyProvider;
 use Aliziodev\LaravelTaxonomy\Tests\Support\NoDbTestCase as TestCase;
+use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Artisan;
 
 uses(TestCase::class);
 
@@ -84,7 +86,7 @@ it('respects configured migration paths when autoload is enabled', function () {
         }
     };
     App::instance('migrator', $fakeMigrator);
-    App::instance(\Illuminate\Database\Migrations\Migrator::class, $fakeMigrator);
+    App::instance(Migrator::class, $fakeMigrator);
 
     // Re-run provider boot to apply current config and register migration paths
     $provider = new TaxonomyProvider(App::getFacadeRoot());
@@ -118,7 +120,7 @@ it('does not register custom migration paths when autoload is disabled', functio
         }
     };
     App::instance('migrator', $fakeMigrator);
-    App::instance(\Illuminate\Database\Migrations\Migrator::class, $fakeMigrator);
+    App::instance(Migrator::class, $fakeMigrator);
 
     // Re-run provider boot; with autoload disabled it should not add the custom path
     $provider = new TaxonomyProvider(App::getFacadeRoot());
@@ -136,7 +138,7 @@ it('registers console commands when running in console', function () {
     $provider = new TaxonomyProvider(App::getFacadeRoot());
     $provider->boot();
 
-    $commands = array_keys(\Illuminate\Support\Facades\Artisan::all());
+    $commands = array_keys(Artisan::all());
     expect($commands)->toContain('taxonomy:install');
     expect($commands)->toContain('taxonomy:rebuild-nested-set');
 });

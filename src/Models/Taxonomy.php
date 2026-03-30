@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
@@ -29,14 +30,14 @@ use Illuminate\Support\Str;
  * @property int|null $rgt
  * @property int|null $depth
  * @property array<string, mixed>|null $meta
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy> $children
- * @property-read \Aliziodev\LaravelTaxonomy\Models\Taxonomy|null $parent
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ * @property-read Collection<int, Taxonomy> $children
+ * @property-read Taxonomy|null $parent
  * @property-read string $path
  * @property-read string $full_slug
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>|null $children_nested
+ * @property-read Collection<int, Taxonomy>|null $children_nested
  * @property-read int|null $tree_depth
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static> type(string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType $type)
@@ -198,7 +199,7 @@ class Taxonomy extends Model
      * Get the parent taxonomy.
      */
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<self, $this>
+     * @return BelongsTo<self, $this>
      */
     public function parent(): BelongsTo
     {
@@ -209,7 +210,7 @@ class Taxonomy extends Model
      * Get the children taxonomies.
      */
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<self, $this>
+     * @return HasMany<self, $this>
      */
     public function children(): HasMany
     {
@@ -219,11 +220,11 @@ class Taxonomy extends Model
     /**
      * Get all descendants of the taxonomy.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, self>
+     * @return Collection<int, self>
      */
     public function descendants(): Collection
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, self> $descendants */
+        /** @var Collection<int, self> $descendants */
         $descendants = new Collection;
 
         // Load children relationship if not already loaded
@@ -234,7 +235,7 @@ class Taxonomy extends Model
         foreach ($this->children as $child) {
             /* @var self $child */
             $descendants->push($child);
-            /** @var \Illuminate\Database\Eloquent\Collection<int, self> $childDescendants */
+            /** @var Collection<int, self> $childDescendants */
             $childDescendants = $child->descendants();
             $descendants = $descendants->merge($childDescendants);
         }
@@ -245,11 +246,11 @@ class Taxonomy extends Model
     /**
      * Get all ancestors of the taxonomy.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, self>
+     * @return Collection<int, self>
      */
     public function ancestors(): Collection
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, self> $ancestors */
+        /** @var Collection<int, self> $ancestors */
         $ancestors = new Collection;
         $parent = $this->parent;
 
@@ -303,8 +304,8 @@ class Taxonomy extends Model
      * Scope a query to only include taxonomies of a given type.
      */
     /**
-     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeType(Builder $query, string|TaxonomyType $type): Builder
     {
@@ -317,8 +318,8 @@ class Taxonomy extends Model
      * Scope a query to only include root taxonomies (no parent).
      */
     /**
-     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeRoot(Builder $query): Builder
     {
@@ -329,8 +330,8 @@ class Taxonomy extends Model
      * Scope a query to order taxonomies by sort_order.
      */
     /**
-     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeOrdered(Builder $query): Builder
     {
@@ -340,7 +341,7 @@ class Taxonomy extends Model
     /**
      * Get a flat tree representation of the taxonomy hierarchy.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     * @return Collection<int, static>
      */
     public static function flatTree(string|TaxonomyType|null $type = null, ?int $parentId = null, int $depth = 0): Collection
     {
@@ -352,7 +353,7 @@ class Taxonomy extends Model
 
         $query->where('parent_id', $parentId)->ordered();
 
-        /** @var \Illuminate\Database\Eloquent\Collection<int, static> $result */
+        /** @var Collection<int, static> $result */
         $result = new Collection;
 
         foreach ($query->get() as $taxonomy) {
@@ -367,7 +368,7 @@ class Taxonomy extends Model
     /**
      * Get a nested tree representation of the taxonomy hierarchy.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     * @return Collection<int, static>
      */
     public static function tree(string|TaxonomyType|null $type = null, ?int $parentId = null): Collection
     {
@@ -664,7 +665,7 @@ class Taxonomy extends Model
     /**
      * Get all descendants using nested set.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     * @return Collection<int, static>
      */
     public function getDescendants(): Collection
     {
@@ -672,7 +673,7 @@ class Taxonomy extends Model
             return new Collection;
         }
 
-        /** @var \Illuminate\Database\Eloquent\Collection<int, static> $result */
+        /** @var Collection<int, static> $result */
         $result = static::where('type', $this->type)
             ->where('lft', '>', $this->lft)
             ->where('rgt', '<', $this->rgt)
@@ -685,7 +686,7 @@ class Taxonomy extends Model
     /**
      * Get all ancestors using nested set.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     * @return Collection<int, static>
      */
     public function getAncestors(): Collection
     {
@@ -693,7 +694,7 @@ class Taxonomy extends Model
             return new Collection;
         }
 
-        /** @var \Illuminate\Database\Eloquent\Collection<int, static> $result */
+        /** @var Collection<int, static> $result */
         $result = static::where('type', $this->type)
             ->where('lft', '<', $this->lft)
             ->where('rgt', '>', $this->rgt)
@@ -706,7 +707,7 @@ class Taxonomy extends Model
     /**
      * Get siblings of this taxonomy (same parent, same level).
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, self>
+     * @return Collection<int, self>
      */
     public function getSiblings()
     {
@@ -731,11 +732,11 @@ class Taxonomy extends Model
     /**
      * Get direct children using nested set.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     * @return Collection<int, static>
      */
     public function getChildren(): Collection
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, static> $result */
+        /** @var Collection<int, static> $result */
         $result = static::where('parent_id', $this->id)
             ->orderBy('lft')
             ->get();
@@ -777,8 +778,8 @@ class Taxonomy extends Model
      * Scope to get only root taxonomies using nested set.
      */
     /**
-     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeRoots(Builder $query): Builder
     {
@@ -789,8 +790,8 @@ class Taxonomy extends Model
      * Scope to get taxonomies at a specific depth.
      */
     /**
-     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeAtDepth(Builder $query, int $depth): Builder
     {
@@ -801,8 +802,8 @@ class Taxonomy extends Model
      * Scope to get taxonomies ordered by nested set.
      */
     /**
-     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeNestedSetOrder(Builder $query): Builder
     {
@@ -812,7 +813,7 @@ class Taxonomy extends Model
     /**
      * Get nested tree using nested set (more efficient than recursive queries).
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     * @return Collection<int, static>
      */
     public static function getNestedTree(string|TaxonomyType|null $type = null): Collection
     {
@@ -825,7 +826,7 @@ class Taxonomy extends Model
 
         // When no type is specified, get all types and build separate trees
         $allTypes = static::select('type')->distinct()->pluck('type');
-        /** @var \Illuminate\Database\Eloquent\Collection<int, static> $allTrees */
+        /** @var Collection<int, static> $allTrees */
         $allTrees = new Collection;
 
         foreach ($allTypes as $typeValue) {
@@ -841,12 +842,12 @@ class Taxonomy extends Model
     /**
      * Build nested tree structure from flat collection.
      *
-     * @param  \Illuminate\Database\Eloquent\Collection<int, static>  $taxonomies
-     * @return \Illuminate\Database\Eloquent\Collection<int, static>
+     * @param  Collection<int, static>  $taxonomies
+     * @return Collection<int, static>
      */
     protected static function buildNestedTree(Collection $taxonomies): Collection
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, static> $tree */
+        /** @var Collection<int, static> $tree */
         $tree = new Collection;
         /** @var array<static> $stack */
         $stack = [];
@@ -867,7 +868,7 @@ class Taxonomy extends Model
                 // Child level - add to parent's children collection
                 $parent = end($stack);
                 if ($parent && empty($parent->children_nested)) {
-                    /** @var \Illuminate\Database\Eloquent\Collection<int, static> $childrenNested */
+                    /** @var Collection<int, static> $childrenNested */
                     $childrenNested = new Collection;
                     $parent->setAttribute('children_nested', $childrenNested);
                 }

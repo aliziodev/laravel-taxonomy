@@ -36,11 +36,11 @@ trait HasTaxonomy
      * Get all taxonomies for this model.
      *
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
-     * @return \Illuminate\Database\Eloquent\Relations\MorphToMany<\Aliziodev\LaravelTaxonomy\Models\Taxonomy, $this> The taxonomy relationship
+     * @return MorphToMany<Taxonomy, $this> The taxonomy relationship
      */
     public function taxonomies(string $name = 'taxonomable'): MorphToMany
     {
-        /** @var class-string<\Aliziodev\LaravelTaxonomy\Models\Taxonomy> $related */
+        /** @var class-string<Taxonomy> $related */
         $related = config('taxonomy.model', Taxonomy::class);
 
         return $this->morphToMany(
@@ -55,9 +55,9 @@ trait HasTaxonomy
     /**
      * Get all taxonomies of a specific type for this model.
      *
-     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType  $type  The taxonomy type
+     * @param  string|TaxonomyType  $type  The taxonomy type
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
-     * @return \Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy> Collection of taxonomies
+     * @return Collection<int, Taxonomy> Collection of taxonomies
      */
     public function taxonomiesOfType(string|TaxonomyType $type, string $name = 'taxonomable'): Collection
     {
@@ -69,7 +69,7 @@ trait HasTaxonomy
     /**
      * Attach taxonomies to the model.
      *
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies  The taxonomies to attach
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to attach
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
      * @return $this
      */
@@ -84,7 +84,7 @@ trait HasTaxonomy
     /**
      * Detach taxonomies from the model.
      *
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>|null  $taxonomies  The taxonomies to detach (null to detach all)
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>|null  $taxonomies  The taxonomies to detach (null to detach all)
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
      * @return $this
      */
@@ -105,7 +105,7 @@ trait HasTaxonomy
     /**
      * Sync taxonomies with the model.
      *
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
      * @return $this
      */
@@ -120,7 +120,7 @@ trait HasTaxonomy
     /**
      * Toggle taxonomies for the model.
      *
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
      * @return $this
      */
@@ -135,8 +135,8 @@ trait HasTaxonomy
     /**
      * Detach taxonomies of a specific type from the model.
      *
-     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType  $type  The taxonomy type
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>|null  $taxonomies  The taxonomies to detach (null to detach all of this type)
+     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>|null  $taxonomies  The taxonomies to detach (null to detach all of this type)
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
      * @return $this
      */
@@ -153,7 +153,7 @@ trait HasTaxonomy
             $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
             // Verify that the taxonomies belong to the specified type
-            /** @var class-string<\Aliziodev\LaravelTaxonomy\Models\Taxonomy> $modelClass */
+            /** @var class-string<Taxonomy> $modelClass */
             $modelClass = config('taxonomy.model', Taxonomy::class);
             $validTaxonomyIds = $modelClass::whereIn('id', $taxonomyIds)
                 ->where('type', $typeValue)
@@ -173,8 +173,8 @@ trait HasTaxonomy
     /**
      * Sync taxonomies of a specific type with the model.
      *
-     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType  $type  The taxonomy type
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies  The taxonomies to sync
+     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to sync
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
      * @return $this
      */
@@ -184,7 +184,7 @@ trait HasTaxonomy
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
         // Verify that the taxonomies belong to the specified type
-        /** @var class-string<\Aliziodev\LaravelTaxonomy\Models\Taxonomy> $modelClass */
+        /** @var class-string<Taxonomy> $modelClass */
         $modelClass = config('taxonomy.model', Taxonomy::class);
         $validTaxonomyIds = $modelClass::whereIn('id', $taxonomyIds)
             ->where('type', $typeValue)
@@ -210,8 +210,8 @@ trait HasTaxonomy
     /**
      * Attach taxonomies of a specific type to the model.
      *
-     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType  $type  The taxonomy type
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies  The taxonomies to attach
+     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to attach
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
      * @return $this
      */
@@ -221,7 +221,7 @@ trait HasTaxonomy
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
         // Verify that the taxonomies belong to the specified type
-        /** @var class-string<\Aliziodev\LaravelTaxonomy\Models\Taxonomy> $modelClass */
+        /** @var class-string<Taxonomy> $modelClass */
         $modelClass = config('taxonomy.model', Taxonomy::class);
         $validTaxonomyIds = $modelClass::whereIn('id', $taxonomyIds)
             ->where('type', $typeValue)
@@ -238,8 +238,8 @@ trait HasTaxonomy
     /**
      * Toggle taxonomies of a specific type for the model.
      *
-     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType  $type  The taxonomy type
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies  The taxonomies to toggle
+     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to toggle
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
      * @return $this
      */
@@ -249,7 +249,7 @@ trait HasTaxonomy
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
         // Verify that the taxonomies belong to the specified type
-        /** @var class-string<\Aliziodev\LaravelTaxonomy\Models\Taxonomy> $modelClass */
+        /** @var class-string<Taxonomy> $modelClass */
         $modelClass = config('taxonomy.model', Taxonomy::class);
         $validTaxonomyIds = $modelClass::whereIn('id', $taxonomyIds)
             ->where('type', $typeValue)
@@ -266,7 +266,7 @@ trait HasTaxonomy
     /**
      * Determine if the model has any of the given taxonomies.
      *
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies  The taxonomies to check
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to check
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
      * @return bool True if the model has any of the given taxonomies
      */
@@ -280,7 +280,7 @@ trait HasTaxonomy
     /**
      * Determine if the model has all of the given taxonomies.
      *
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
      */
     public function hasAllTaxonomies($taxonomies, string $name = 'taxonomable'): bool
@@ -303,8 +303,8 @@ trait HasTaxonomy
     /**
      * Determine if the model has any of the given taxonomies of a specific type.
      *
-     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType  $type  The taxonomy type
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies  The taxonomies to check
+     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to check
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
      * @return bool True if the model has any of the given taxonomies of the specified type
      */
@@ -322,8 +322,8 @@ trait HasTaxonomy
     /**
      * Determine if the model has all of the given taxonomies of a specific type.
      *
-     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType  $type  The taxonomy type
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies  The taxonomies to check
+     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to check
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
      * @return bool True if the model has all of the given taxonomies of the specified type
      */
@@ -333,7 +333,7 @@ trait HasTaxonomy
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
         // Verify that the taxonomies belong to the specified type
-        /** @var class-string<\Aliziodev\LaravelTaxonomy\Models\Taxonomy> $modelClass */
+        /** @var class-string<Taxonomy> $modelClass */
         $modelClass = config('taxonomy.model', Taxonomy::class);
         $validTaxonomyIds = $modelClass::whereIn('id', $taxonomyIds)
             ->where('type', $typeValue)
@@ -353,10 +353,10 @@ trait HasTaxonomy
     /**
      * Scope a query to include models that have any of the given taxonomies.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies
+     * @param  Builder<$this>  $query
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
-     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     * @return Builder<$this>
      */
     public function scopeWithAnyTaxonomies(Builder $query, $taxonomies, string $name = 'taxonomable'): Builder
     {
@@ -370,10 +370,10 @@ trait HasTaxonomy
     /**
      * Scope a query to include models that have all of the given taxonomies.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies
+     * @param  Builder<$this>  $query
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
-     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     * @return Builder<$this>
      */
     public function scopeWithAllTaxonomies(Builder $query, $taxonomies, string $name = 'taxonomable'): Builder
     {
@@ -391,9 +391,9 @@ trait HasTaxonomy
     /**
      * Scope a query to include models that have taxonomies of the given type.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
+     * @param  Builder<$this>  $query
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
-     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     * @return Builder<$this>
      */
     public function scopeWithTaxonomyType(Builder $query, string|TaxonomyType $type, string $name = 'taxonomable'): Builder
     {
@@ -407,10 +407,10 @@ trait HasTaxonomy
     /**
      * Scope a query to include models that have specific taxonomies.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies
+     * @param  Builder<$this>  $query
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
-     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     * @return Builder<$this>
      */
     public function scopeWithTaxonomy(Builder $query, $taxonomies, string $name = 'taxonomable'): Builder
     {
@@ -424,10 +424,10 @@ trait HasTaxonomy
     /**
      * Scope a query to exclude models that have specific taxonomies.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies
+     * @param  Builder<$this>  $query
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
-     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     * @return Builder<$this>
      */
     public function scopeWithoutTaxonomies(Builder $query, $taxonomies, string $name = 'taxonomable'): Builder
     {
@@ -441,11 +441,11 @@ trait HasTaxonomy
     /**
      * Scope a query to include models that have any of the given taxonomies of a specific type.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
-     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType  $type  The taxonomy type
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies  The taxonomies to filter by
+     * @param  Builder<$this>  $query
+     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to filter by
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
-     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     * @return Builder<$this>
      */
     public function scopeWithAnyTaxonomiesOfType(Builder $query, string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): Builder
     {
@@ -461,11 +461,11 @@ trait HasTaxonomy
     /**
      * Scope a query to include models that have all of the given taxonomies of a specific type.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
-     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType  $type  The taxonomy type
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies  The taxonomies to filter by
+     * @param  Builder<$this>  $query
+     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to filter by
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
-     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     * @return Builder<$this>
      */
     public function scopeWithAllTaxonomiesOfType(Builder $query, string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): Builder
     {
@@ -473,7 +473,7 @@ trait HasTaxonomy
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
         // Verify that the taxonomies belong to the specified type
-        /** @var class-string<\Aliziodev\LaravelTaxonomy\Models\Taxonomy> $modelClass */
+        /** @var class-string<Taxonomy> $modelClass */
         $modelClass = config('taxonomy.model', Taxonomy::class);
         $validTaxonomyIds = $modelClass::whereIn('id', $taxonomyIds)
             ->where('type', $typeValue)
@@ -493,11 +493,11 @@ trait HasTaxonomy
     /**
      * Scope a query to exclude models that have any of the given taxonomies of a specific type.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
-     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType  $type  The taxonomy type
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>  $taxonomies  The taxonomies to exclude
+     * @param  Builder<$this>  $query
+     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to exclude
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
-     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     * @return Builder<$this>
      */
     public function scopeWithoutTaxonomiesOfType(Builder $query, string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): Builder
     {
@@ -513,10 +513,10 @@ trait HasTaxonomy
     /**
      * Filter models by multiple taxonomy criteria.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
+     * @param  Builder<$this>  $query
      * @param  array<string, mixed>  $filters
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
-     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     * @return Builder<$this>
      */
     public function scopeFilterByTaxonomies(Builder $query, array $filters, string $name = 'taxonomable'): Builder
     {
@@ -550,11 +550,11 @@ trait HasTaxonomy
     /**
      * Scope a query to include models that have taxonomy with the given slug.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
+     * @param  Builder<$this>  $query
      * @param  string  $slug  The taxonomy slug
-     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType|null  $type  Optional taxonomy type filter
+     * @param  string|TaxonomyType|null  $type  Optional taxonomy type filter
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
-     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     * @return Builder<$this>
      */
     public function scopeWithTaxonomySlug(Builder $query, string $slug, string|TaxonomyType|null $type = null, string $name = 'taxonomable'): Builder
     {
@@ -570,7 +570,7 @@ trait HasTaxonomy
     /**
      * Get the taxonomy IDs from the given taxonomies.
      *
-     * @param  int|string|array<int, int|string|\Aliziodev\LaravelTaxonomy\Models\Taxonomy>|\Aliziodev\LaravelTaxonomy\Models\Taxonomy|\Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>|null  $taxonomies
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>|null  $taxonomies
      * @return array<int, int|string>
      */
     protected function getTaxonomyIds($taxonomies): array
@@ -605,12 +605,12 @@ trait HasTaxonomy
     /**
      * Get hierarchical taxonomies for this model including descendants.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>
+     * @return Collection<int, Taxonomy>
      */
-    public function getHierarchicalTaxonomies(string|TaxonomyType|null $type = null): \Illuminate\Database\Eloquent\Collection
+    public function getHierarchicalTaxonomies(string|TaxonomyType|null $type = null): Collection
     {
         $taxonomies = $type ? $this->taxonomiesOfType($type) : $this->taxonomies()->get();
-        $hierarchical = new \Illuminate\Database\Eloquent\Collection;
+        $hierarchical = new Collection;
 
         foreach ($taxonomies as $taxonomy) {
             // Add the taxonomy itself
@@ -629,12 +629,12 @@ trait HasTaxonomy
     /**
      * Get all ancestor taxonomies for this model's taxonomies.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, \Aliziodev\LaravelTaxonomy\Models\Taxonomy>
+     * @return Collection<int, Taxonomy>
      */
-    public function getAncestorTaxonomies(string|TaxonomyType|null $type = null): \Illuminate\Database\Eloquent\Collection
+    public function getAncestorTaxonomies(string|TaxonomyType|null $type = null): Collection
     {
         $taxonomies = $type ? $this->taxonomiesOfType($type) : $this->taxonomies()->get();
-        $ancestors = new \Illuminate\Database\Eloquent\Collection;
+        $ancestors = new Collection;
 
         foreach ($taxonomies as $taxonomy) {
             // Add all its ancestors
@@ -650,12 +650,12 @@ trait HasTaxonomy
     /**
      * Scope to get models that have taxonomies within a specific hierarchy.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     * @param  Builder<$this>  $query
+     * @return Builder<$this>
      */
     public function scopeWithTaxonomyHierarchy(Builder $query, int $taxonomyId, bool $includeDescendants = true): Builder
     {
-        /** @var class-string<\Aliziodev\LaravelTaxonomy\Models\Taxonomy> $modelClass */
+        /** @var class-string<Taxonomy> $modelClass */
         $modelClass = config('taxonomy.model', Taxonomy::class);
         $taxonomy = $modelClass::find($taxonomyId);
 
@@ -678,8 +678,8 @@ trait HasTaxonomy
     /**
      * Scope to get models that have taxonomies at a specific depth level.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     * @param  Builder<$this>  $query
+     * @return Builder<$this>
      */
     public function scopeWithTaxonomyAtDepth(Builder $query, int $depth, string|TaxonomyType|null $type = null): Builder
     {
@@ -697,7 +697,7 @@ trait HasTaxonomy
      */
     public function hasAncestorTaxonomy(int $taxonomyId): bool
     {
-        /** @var class-string<\Aliziodev\LaravelTaxonomy\Models\Taxonomy> $modelClass */
+        /** @var class-string<Taxonomy> $modelClass */
         $modelClass = config('taxonomy.model', Taxonomy::class);
         $taxonomy = $modelClass::find($taxonomyId);
 
@@ -716,7 +716,7 @@ trait HasTaxonomy
      */
     public function hasDescendantTaxonomy(int $taxonomyId): bool
     {
-        /** @var class-string<\Aliziodev\LaravelTaxonomy\Models\Taxonomy> $modelClass */
+        /** @var class-string<Taxonomy> $modelClass */
         $modelClass = config('taxonomy.model', Taxonomy::class);
         $taxonomy = $modelClass::find($taxonomyId);
 
@@ -735,7 +735,7 @@ trait HasTaxonomy
     /**
      * Get the count of taxonomies of a specific type for this model.
      *
-     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType  $type  The taxonomy type
+     * @param  string|TaxonomyType  $type  The taxonomy type
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
      * @return int The count of taxonomies of the specified type
      */
@@ -749,9 +749,9 @@ trait HasTaxonomy
     /**
      * Get the first taxonomy of a specific type for this model.
      *
-     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType  $type  The taxonomy type
+     * @param  string|TaxonomyType  $type  The taxonomy type
      * @param  string  $name  The name of the relationship (default: 'taxonomable')
-     * @return \Aliziodev\LaravelTaxonomy\Models\Taxonomy|null The first taxonomy of the specified type or null if none found
+     * @return Taxonomy|null The first taxonomy of the specified type or null if none found
      */
     public function getFirstTaxonomyOfType(string|TaxonomyType $type, string $name = 'taxonomable'): ?Taxonomy
     {
@@ -763,11 +763,11 @@ trait HasTaxonomy
     /**
      * Scope a query to order models by taxonomy type and optionally by taxonomy name.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
-     * @param  string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType  $type  The taxonomy type to order by
+     * @param  Builder<$this>  $query
+     * @param  string|TaxonomyType  $type  The taxonomy type to order by
      * @param  string  $direction  The sort direction ('asc' or 'desc')
      * @param  string  $orderBy  The field to order by ('name' or 'slug')
-     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     * @return Builder<$this>
      */
     public function scopeOrderByTaxonomyType(Builder $query, string|TaxonomyType $type, string $direction = 'asc', string $orderBy = 'name'): Builder
     {

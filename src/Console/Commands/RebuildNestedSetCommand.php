@@ -28,7 +28,7 @@ class RebuildNestedSetCommand extends Command
     /**
      * Get the taxonomy model class from config.
      *
-     * @return class-string<\Aliziodev\LaravelTaxonomy\Models\Taxonomy>
+     * @return class-string<Taxonomy>
      */
     protected function getModelClass(): string
     {

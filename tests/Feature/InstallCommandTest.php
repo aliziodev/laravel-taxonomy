@@ -33,7 +33,7 @@ it('command has proper structure', function () {
     expect($command)->toBeInstanceOf(Command::class);
 
     // Test signature and description are set
-    $reflection = new \ReflectionClass($command);
+    $reflection = new ReflectionClass($command);
     $signatureProperty = $reflection->getProperty('signature');
     $signatureProperty->setAccessible(true);
     $descriptionProperty = $reflection->getProperty('description');
@@ -53,7 +53,7 @@ it('handle method has correct signature', function () {
     $command = new InstallCommand;
 
     // Verify the method signature through reflection
-    $reflection = new \ReflectionMethod($command, 'handle');
+    $reflection = new ReflectionMethod($command, 'handle');
     expect($reflection->isPublic())->toBeTrue();
     expect($reflection->getNumberOfParameters())->toBe(0);
 

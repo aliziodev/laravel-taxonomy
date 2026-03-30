@@ -57,7 +57,7 @@ it('can handle concurrent move operations with locking', function () {
                 $lockedNode = Taxonomy::lockForUpdate()->find($node->id);
 
                 if (! $lockedNode) {
-                    throw new \Exception("Node {$node->id} not found or locked");
+                    throw new Exception("Node {$node->id} not found or locked");
                 }
 
                 // Alternate target parent
@@ -73,7 +73,7 @@ it('can handle concurrent move operations with locking', function () {
                     'success' => true,
                 ];
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errors[] = [
                 'node_id' => $node->id,
                 'error' => $e->getMessage(),
@@ -127,7 +127,7 @@ it('can handle concurrent creation with unique constraints', function () {
                     'slug' => $taxonomy->slug,
                 ];
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $errors[] = [
                 'attempt' => $i,
                 'error' => $e->getMessage(),
@@ -181,7 +181,7 @@ it('can handle concurrent rebuild operations', function () {
 
             $rebuildTime = microtime(true) - $startTime;
             $rebuildResults[count($rebuildResults) - 1]['duration'] = $rebuildTime;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $rebuildErrors[] = [
                 'rebuild_id' => $i,
                 'error' => $e->getMessage(),
@@ -234,7 +234,7 @@ it('can handle concurrent cache operations', function () {
                 'tree_count' => $tree->count(),
                 'cache_hit' => $i > 1, // First call is cache miss, rest should be hits
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $cacheErrors[] = [
                 'access_id' => $i,
                 'error' => $e->getMessage(),
@@ -321,7 +321,7 @@ it('can handle deadlock detection and recovery', function () {
 
             $deadlockResults[] = 'Transaction 1 completed';
         });
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         $deadlockErrors[] = 'Transaction 1 failed: ' . $e->getMessage();
     }
 
@@ -341,7 +341,7 @@ it('can handle deadlock detection and recovery', function () {
 
             $deadlockResults[] = 'Transaction 2 completed';
         });
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         $deadlockErrors[] = 'Transaction 2 failed: ' . $e->getMessage();
     }
 
@@ -391,7 +391,7 @@ it('can handle transaction isolation levels', function () {
             // READ COMMITTED: should see the update
             // REPEATABLE READ: should not see the update
         });
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         $isolationResults['error'] = $e->getMessage();
     }
 

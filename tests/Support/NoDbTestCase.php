@@ -3,6 +3,7 @@
 namespace Aliziodev\LaravelTaxonomy\Tests\Support;
 
 use Aliziodev\LaravelTaxonomy\TaxonomyProvider;
+use Illuminate\Foundation\Application;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 
 /**
@@ -13,7 +14,7 @@ abstract class NoDbTestCase extends BaseTestCase
     /**
      * Get package providers.
      *
-     * @param  \Illuminate\Foundation\Application  $app
+     * @param  Application  $app
      * @return array<int, class-string>
      */
     protected function getPackageProviders($app): array
@@ -26,7 +27,7 @@ abstract class NoDbTestCase extends BaseTestCase
     /**
      * Define environment setup.
      *
-     * @param  \Illuminate\Foundation\Application  $app
+     * @param  Application  $app
      */
     protected function defineEnvironment($app): void
     {

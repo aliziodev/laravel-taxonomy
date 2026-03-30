@@ -1,6 +1,7 @@
 <?php
 
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
+use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
 
 return [
 
@@ -85,7 +86,7 @@ return [
     | - Integrate with other packages or systems
     |
     */
-    'model' => \Aliziodev\LaravelTaxonomy\Models\Taxonomy::class,
+    'model' => Taxonomy::class,
 
     /*
     |--------------------------------------------------------------------------

@@ -4,8 +4,12 @@ use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
 use Aliziodev\LaravelTaxonomy\Tests\Models\Product;
 use Aliziodev\LaravelTaxonomy\Tests\TestCase;
+use Aliziodev\LaravelTaxonomy\Traits\HasTaxonomy;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -451,7 +455,7 @@ it('detaches taxonomies when model is force deleted', function () {
 
     // Verify taxonomies are detached from the deleted model
     // Check the pivot table directly since the model is deleted
-    $pivotCount = \Illuminate\Support\Facades\DB::table('taxonomables')
+    $pivotCount = DB::table('taxonomables')
         ->where('taxonomable_type', Product::class)
         ->where('taxonomable_id', $model->id)
         ->count();
@@ -461,10 +465,10 @@ it('detaches taxonomies when model is force deleted', function () {
 
 it('detaches taxonomies when model is soft deleted with force delete', function () {
     // Create a model that supports soft deletes
-    $testModelClass = new class extends \Illuminate\Database\Eloquent\Model
+    $testModelClass = new class extends Model
     {
-        use \Aliziodev\LaravelTaxonomy\Traits\HasTaxonomy;
-        use \Illuminate\Database\Eloquent\SoftDeletes;
+        use HasTaxonomy;
+        use SoftDeletes;
 
         protected $table = 'test_models';
         protected $fillable = ['name'];
@@ -495,7 +499,7 @@ it('detaches taxonomies when model is soft deleted with force delete', function 
     $testModel->delete();
 
     // Verify taxonomy is still attached after soft delete
-    $pivotCount = \Illuminate\Support\Facades\DB::table('taxonomables')
+    $pivotCount = DB::table('taxonomables')
         ->where('taxonomable_type', get_class($testModel))
         ->where('taxonomable_id', $testModel->getKey())
         ->count();
@@ -506,7 +510,7 @@ it('detaches taxonomies when model is soft deleted with force delete', function 
     $testModel->forceDelete();
 
     // Verify taxonomy is detached after force delete
-    $pivotCountAfterForceDelete = \Illuminate\Support\Facades\DB::table('taxonomables')
+    $pivotCountAfterForceDelete = DB::table('taxonomables')
         ->where('taxonomable_type', get_class($testModel))
         ->where('taxonomable_id', $testModel->getKey())
         ->count();

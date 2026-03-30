@@ -91,7 +91,7 @@ it('can handle concurrent duplicate slug handling', function () {
                 'slug' => $baseSlug, // Intentionally same slug
             ]);
             $createdTaxonomies[] = $taxonomy;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $exceptions[] = $e->getMessage();
         }
     }
@@ -327,8 +327,8 @@ it('can handle database connection stress', function () {
             $operationTime = microtime(true) - $startTime;
             $results[] = $operationTime;
 
-        } catch (\Exception $e) {
-            throw new \Exception("Connection failed at iteration {$i}: " . $e->getMessage());
+        } catch (Exception $e) {
+            throw new Exception("Connection failed at iteration {$i}: " . $e->getMessage());
         }
     }
 
