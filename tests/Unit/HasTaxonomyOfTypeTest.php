@@ -3,6 +3,7 @@
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
 use Aliziodev\LaravelTaxonomy\Tests\Models\Product;
+use Aliziodev\LaravelTaxonomy\Tests\Models\ProductWithCustomKey;
 use Aliziodev\LaravelTaxonomy\Tests\TestCase;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -17,6 +18,13 @@ beforeEach(function () {
         $table->string('name');
         $table->timestamps();
         $table->softDeletes();
+    });
+
+    // Create products_custom_key table for custom primary key tests
+    Schema::create('products_custom_key', function (Blueprint $table) {
+        $table->string('product_code')->primary();
+        $table->string('name');
+        $table->timestamps();
     });
 });
 
@@ -701,4 +709,92 @@ it('handles mixed valid and invalid taxonomy IDs', function () {
 
     expect($model->hasTaxonomies($category))->toBeTrue();
     expect($model->getTaxonomyCountByType(TaxonomyType::Category))->toBe(1);
+});
+
+it('orders models by taxonomy sort_order', function () {
+    // Setup test data
+    $model1 = Product::create(['name' => 'Product 1']);
+    $model2 = Product::create(['name' => 'Product 2']);
+    $model3 = Product::create(['name' => 'Product 3']);
+
+    $category1 = Taxonomy::create([
+        'name' => 'Electronics',
+        'type' => TaxonomyType::Category->value,
+        'sort_order' => 3,
+    ]);
+
+    $category2 = Taxonomy::create([
+        'name' => 'Computers',
+        'type' => TaxonomyType::Category->value,
+        'sort_order' => 1,
+    ]);
+
+    $category3 = Taxonomy::create([
+        'name' => 'Books',
+        'type' => TaxonomyType::Category->value,
+        'sort_order' => 2,
+    ]);
+
+    $model1->attachTaxonomies([$category1]);
+    $model2->attachTaxonomies([$category2]);
+    $model3->attachTaxonomies([$category3]);
+
+    $results = Product::orderByTaxonomyType(TaxonomyType::Category, 'asc', 'sort_order')->get();
+
+    expect($results)->toHaveCount(3);
+    // sort_order: Computers=1, Books=2, Electronics=3
+    expect($results->first()->id)->toBe($model2->id); // Computers (sort_order=1) comes first
+    expect($results->last()->id)->toBe($model1->id);  // Electronics (sort_order=3) comes last
+});
+
+it('falls back to name ordering for invalid orderBy parameter', function () {
+    $model1 = Product::create(['name' => 'Product 1']);
+    $model2 = Product::create(['name' => 'Product 2']);
+
+    $category1 = Taxonomy::create([
+        'name' => 'Zara',
+        'type' => TaxonomyType::Category->value,
+    ]);
+
+    $category2 = Taxonomy::create([
+        'name' => 'Apple',
+        'type' => TaxonomyType::Category->value,
+    ]);
+
+    $model1->attachTaxonomies([$category1]);
+    $model2->attachTaxonomies([$category2]);
+
+    // 'invalid_column' should fall back to 'name'
+    $results = Product::orderByTaxonomyType(TaxonomyType::Category, 'asc', 'invalid_column')->get();
+
+    expect($results)->toHaveCount(2);
+    // Falls back to name ordering: Apple, Zara
+    expect($results->first()->id)->toBe($model2->id); // Apple comes first
+    expect($results->last()->id)->toBe($model1->id);  // Zara comes last
+});
+
+it('works correctly with a model that has a custom primary key', function () {
+    $model1 = ProductWithCustomKey::create(['product_code' => 'SKU-001', 'name' => 'Product Alpha']);
+    $model2 = ProductWithCustomKey::create(['product_code' => 'SKU-002', 'name' => 'Product Beta']);
+
+    $category1 = Taxonomy::create([
+        'name' => 'Electronics',
+        'type' => TaxonomyType::Category->value,
+    ]);
+
+    $category2 = Taxonomy::create([
+        'name' => 'Computers',
+        'type' => TaxonomyType::Category->value,
+    ]);
+
+    $model1->attachTaxonomies([$category1]);
+    $model2->attachTaxonomies([$category2]);
+
+    // This should use product_code as the join key, not id
+    $results = ProductWithCustomKey::orderByTaxonomyType(TaxonomyType::Category, 'asc', 'name')->get();
+
+    expect($results)->toHaveCount(2);
+    // Ordered by taxonomy name: Computers, Electronics
+    expect($results->first()->product_code)->toBe('SKU-002'); // Computers comes first
+    expect($results->last()->product_code)->toBe('SKU-001');  // Electronics comes last
 });

@@ -766,17 +766,17 @@ trait HasTaxonomy
      * @param  Builder<$this>  $query
      * @param  string|TaxonomyType  $type  The taxonomy type to order by
      * @param  string  $direction  The sort direction ('asc' or 'desc')
-     * @param  string  $orderBy  The field to order by ('name' or 'slug')
+     * @param  string  $orderBy  The field to order by ('name', 'slug', or 'sort_order')
      * @return Builder<$this>
      */
     public function scopeOrderByTaxonomyType(Builder $query, string|TaxonomyType $type, string $direction = 'asc', string $orderBy = 'name'): Builder
     {
         $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
         $direction = strtolower($direction) === 'desc' ? 'desc' : 'asc';
-        $orderBy = in_array($orderBy, ['name', 'slug']) ? $orderBy : 'name';
+        $orderBy = in_array($orderBy, ['name', 'slug', 'sort_order']) ? $orderBy : 'name';
 
         return $query->join('taxonomables as tax_order', function ($join) {
-            $join->on($this->getTable() . '.id', '=', 'tax_order.taxonomable_id')
+            $join->on($this->getTable() . '.' . $this->getKeyName(), '=', 'tax_order.taxonomable_id')
                 ->where('tax_order.taxonomable_type', '=', get_class($this));
         })
             ->join('taxonomies as tax_sort', 'tax_order.taxonomy_id', '=', 'tax_sort.id')
