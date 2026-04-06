@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.10.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.9.0...v2.10.0) (2026-04-06)
+
+### Features
+
+* add type-specific taxonomy management methods to HasTaxonomy trait with supporting tests ([7914b53](https://github.com/aliziodev/laravel-taxonomy/commit/7914b5380da7b926e201f0d295729deccd4ca565))
+
 ## [2.9.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.8.0...v2.9.0) (2026-03-30)
 
 ### Features
