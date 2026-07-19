@@ -101,7 +101,7 @@ it('does not leak cached trees between cache scopes', function () {
     $keys = 0;
     foreach (['tenant-a', 'tenant-b'] as $candidate) {
         $scope = $candidate;
-        $keys++;
+        ++$keys;
     }
     expect($keys)->toBe(2);
 });
