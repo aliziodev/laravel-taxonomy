@@ -103,12 +103,20 @@ it('can handle large scale performance 10k taxonomies', function () {
         return $randomNode->getDescendants();
     });
 
-    // Verify performance thresholds (adjusted for realistic expectations)
-    assertPerformanceThreshold('bulk_creation_10k', 30.0);
-    assertPerformanceThreshold('rebuild_10k', 45.0); // Increased from 35.0 to 45.0 for complex nested set rebuild
-    assertPerformanceThreshold('get_tree_10k', 5.0);
+    // Budgets are roughly ten times the measured local cost on a 10,000-node
+    // tree of depth 3, which leaves room for slower CI hardware while still
+    // catching a real regression. Measured when these were set:
+    //
+    //   bulk_creation 1.48s   rebuild 0.51s   get_tree 0.57s
+    //   complex_query 0.03s   move 0.93s      ancestors/descendants <0.01s
+    //
+    // The old budgets (30s/45s/60s) were set against a flat, unlinked table
+    // where most of these operations did nothing, so they could not fail.
+    assertPerformanceThreshold('bulk_creation_10k', 15.0);
+    assertPerformanceThreshold('rebuild_10k', 10.0);
+    assertPerformanceThreshold('get_tree_10k', 8.0);
     assertPerformanceThreshold('complex_query_10k', 3.0);
-    assertPerformanceThreshold('move_operation_10k', 60.0); // Increased from 35.0 to 60.0 for CI runner tolerance
+    assertPerformanceThreshold('move_operation_10k', 15.0);
     assertPerformanceThreshold('get_ancestors_10k', 1.0);
     assertPerformanceThreshold('get_descendants_10k', 2.0);
 });
@@ -706,29 +714,55 @@ function assertValidPerformanceNestedSetStructure(): void
  */
 function bulkCreateTaxonomies(int $count): void
 {
-    $batchSize = 1000;
-    $batches = ceil($count / $batchSize);
+    // This used to raw-insert flat rows straight through DB::table(), which
+    // meant no row had a parent_id, an lft/rgt or a depth. Every hierarchy
+    // measurement below was therefore reading an empty structure: the
+    // "complex query" filtered on whereNotNull('parent_id') and matched
+    // nothing, and ancestors/descendants were empty by construction.
+    //
+    // Build a real tree instead -- roughly 10 roots, then three more levels --
+    // so the numbers describe the code people actually run.
+    $perLevel = max(2, (int) ceil(pow($count / 10, 1 / 3)));
 
-    DB::transaction(function () use ($count, $batchSize, $batches) {
-        for ($batch = 0; $batch < $batches; ++$batch) {
-            $batchCount = min($batchSize, $count - ($batch * $batchSize));
-            $taxonomies = [];
+    $rows = [];
+    $index = 0;
 
-            for ($i = 1; $i <= $batchCount; ++$i) {
-                $globalIndex = ($batch * $batchSize) + $i;
-                $uniqueId = uniqid();
-                $taxonomies[] = [
-                    'name' => "Performance Test Category {$globalIndex}",
+    $take = function () use (&$index, $count): bool {
+        return $index++ < $count;
+    };
+
+    // Level 0
+    $roots = [];
+    for ($r = 1; $r <= 10 && $take(); ++$r) {
+        $roots[] = ['name' => "Perf Root {$r}", 'type' => TaxonomyType::Category->value];
+    }
+    Taxonomy::bulkCreate($roots);
+    $parents = Taxonomy::where('type', TaxonomyType::Category->value)->pluck('id')->all();
+
+    // Levels 1..3
+    for ($level = 1; $level <= 3; ++$level) {
+        $rows = [];
+        foreach ($parents as $parentId) {
+            for ($c = 1; $c <= $perLevel && $take(); ++$c) {
+                $rows[] = [
+                    'name' => "Perf L{$level} {$parentId}.{$c}",
                     'type' => TaxonomyType::Category->value,
-                    'slug' => "performance-test-category-{$globalIndex}-{$uniqueId}",
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                    'parent_id' => $parentId,
+                    'sort_order' => $c,
                 ];
             }
-
-            DB::table('taxonomies')->insert($taxonomies);
         }
-    });
+
+        if ($rows === []) {
+            break;
+        }
+
+        Taxonomy::bulkCreate($rows);
+        $parents = Taxonomy::where('type', TaxonomyType::Category->value)
+            ->where('depth', $level)
+            ->pluck('id')
+            ->all();
+    }
 }
 
 /**

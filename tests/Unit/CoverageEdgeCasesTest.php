@@ -113,6 +113,19 @@ it('returns early when a type has no rows to rebuild', function () {
     expect(Taxonomy::count())->toBe(0);
 });
 
+it('deletes a leaf whose nested set values were never populated', function () {
+    $orphan = Taxonomy::create(['name' => 'Raw', 'type' => 'category']);
+
+    // Rows written by raw SQL or an older import carry no lft/rgt. Deleting
+    // one must not try to close a gap that does not exist.
+    Taxonomy::withoutEvents(fn () => Taxonomy::where('id', $orphan->id)
+        ->update(['lft' => null, 'rgt' => null]));
+
+    $orphan->refresh()->delete();
+
+    expect(Taxonomy::count())->toBe(0);
+});
+
 it('stops descendants() from looping on a cyclic parent chain', function () {
     $a = Taxonomy::create(['name' => 'A', 'type' => 'category']);
     $b = Taxonomy::create(['name' => 'B', 'type' => 'category', 'parent_id' => $a->id]);
