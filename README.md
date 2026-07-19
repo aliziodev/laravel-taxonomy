@@ -668,10 +668,16 @@ $product->syncTaxonomies([1, 2, 3]);
 // Toggle taxonomies (attach if not present, detach if present)
 $product->toggleTaxonomies([1, 2, 3]);
 
-// Work with different relationship names
-$product->attachTaxonomies($categoryIds, 'categories');
-$product->attachTaxonomies($tagIds, 'tags');
 ```
+
+> **Note on the `$name` parameter.** Every taxonomy method accepts an optional
+> relationship name (default `taxonomable`). It selects the morph columns used
+> on the pivot table — `{$name}_id` and `{$name}_type` — so a value other than
+> `taxonomable` only works if you have added those columns yourself. The
+> shipped migration creates `taxonomable_id` and `taxonomable_type` only, so
+> passing e.g. `'categories'` against the default schema fails with
+> `no such column: taxonomables.categories_id`. Use taxonomy **types** to
+> separate categories from tags; that is what they are for.
 
 ### Advanced Bulk Management
 

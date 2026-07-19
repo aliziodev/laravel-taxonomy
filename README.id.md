@@ -682,10 +682,16 @@ $product->syncTaxonomies([1, 2, 3]);
 // Toggle taksonomi (lampirkan jika tidak ada, lepaskan jika ada)
 $product->toggleTaxonomies([1, 2, 3]);
 
-// Bekerja dengan nama relasi yang berbeda
-$product->attachTaxonomies($categoryIds, 'categories');
-$product->attachTaxonomies($tagIds, 'tags');
 ```
+
+> **Catatan tentang parameter `$name`.** Semua method taxonomy menerima nama
+> relasi opsional (default `taxonomable`). Nama itu menentukan kolom morph yang
+> dipakai pada tabel pivot — `{$name}_id` dan `{$name}_type` — sehingga nilai
+> selain `taxonomable` hanya berfungsi bila Anda sendiri sudah menambahkan
+> kolom tersebut. Migration bawaan hanya membuat `taxonomable_id` dan
+> `taxonomable_type`, jadi memakai misalnya `'categories'` pada skema default
+> akan gagal dengan `no such column: taxonomables.categories_id`. Gunakan
+> **type** taksonomi untuk memisahkan kategori dan tag; itu fungsinya.
 
 ### Manajemen Bulk Lanjutan
 

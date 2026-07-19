@@ -182,6 +182,12 @@ class Taxonomy extends Model
         });
 
         static::restored(function (self $taxonomy) {
+            // A trashed node keeps the lft/rgt it had when it was deleted, and
+            // rebuilds skip trashed rows, so by the time it is restored those
+            // values usually collide with a live node. Renumbering the type
+            // puts it back into a consistent set.
+            static::rebuildNestedSet($taxonomy->type);
+
             // Clear caches for this type after restore
             app(TaxonomyManager::class)->clearCacheForType($taxonomy->type);
         });

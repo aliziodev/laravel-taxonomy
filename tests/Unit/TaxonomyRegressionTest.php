@@ -222,6 +222,25 @@ it('returns descendants in depth-first order', function () {
         ->toBe(['Child 1', 'Grandchild 1', 'Child 2']);
 });
 
+it('reinserts a restored node into the nested set', function () {
+    Taxonomy::create(['name' => 'A', 'type' => 'category', 'sort_order' => 1]);
+    $b = Taxonomy::create(['name' => 'B', 'type' => 'category', 'sort_order' => 2]);
+    Taxonomy::create(['name' => 'C', 'type' => 'category', 'sort_order' => 3]);
+
+    $b->delete();
+
+    // Rebuilds skip trashed rows, so B keeps the lft/rgt it had when deleted
+    // and used to collide with a live node on the way back in.
+    Taxonomy::rebuildNestedSet('category');
+
+    $b->restore();
+
+    $lfts = Taxonomy::orderBy('lft')->pluck('lft')->all();
+
+    expect($lfts)->toBe(array_values(array_unique($lfts)))
+        ->and(count($lfts))->toBe(3);
+});
+
 /*
 |--------------------------------------------------------------------------
 | Exceptions
