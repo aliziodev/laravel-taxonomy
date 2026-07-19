@@ -16,6 +16,47 @@ TaxonomyManager::resolveCacheScopeUsing(fn () => tenant()?->getKey());
 
 Single-tenant applications need no changes: with no resolver registered the cache keys are byte-identical to previous releases, so upgrading does not orphan a warm cache.
 
+### Deprecated: custom relationship names
+
+Every taxonomy method takes an optional relationship name (default
+`taxonomable`). Passing anything else is deprecated and will be removed in
+3.0; doing so now raises an `E_USER_DEPRECATED` notice, once per name.
+
+It was never usable on the shipped schema. The name selects the pivot morph
+columns `{$name}_id` and `{$name}_type`, and the migration creates only
+`taxonomable_id` / `taxonomable_type`, so a call such as
+
+```php
+$product->attachTaxonomies($categoryIds, 'categories');
+```
+
+fails with `no such column: taxonomables.categories_id`. Query scopes could
+never honour it at all: Eloquent resolves relationships by name at the point
+of use, so `whereHas('taxonomies', ...)` has nowhere to pass a runtime
+argument, and the parameter was silently ignored there.
+
+Use taxonomy **types** to separate categories from tags. If you genuinely need
+several roles for the same type, add a single `relation` column to the pivot
+and filter with `wherePivot()` — one column covers any number of roles, and it
+keeps working with `whereHas`.
+
+### Behaviour change: type validation ignores global scopes
+
+The `*OfType` methods (`syncTaxonomiesOfType()`, `attachTaxonomiesOfType()`,
+and friends) verify the IDs they are given by re-querying the taxonomy model.
+That lookup no longer runs through the application's global scopes.
+
+This fixes multi-tenant setups where a tenant scope silently discarded
+taxonomies the caller had explicitly selected — shared rows visible to every
+tenant were the usual casualty (issue #15). Soft deletes are still enforced,
+and taxonomies of the wrong type are still rejected.
+
+Note the trade-off: if you relied on a global scope to stop a taxonomy from
+another tenant being attached, that filtering is gone. It was never a designed
+protection — `syncTaxonomies()` has always attached whatever IDs it is handed
+— but if your application passes user-supplied IDs straight through, validate
+them (for example with `Rule::exists()` scoped to the tenant).
+
 ### Fixes worth knowing about
 
 - `attachTaxonomies()`, `syncTaxonomies()` and friends now accept a `Support\Collection` (what `collect()` and `pluck()` return). These previously resolved to an empty set and did nothing, without raising an error. Code that silently no-opped will now actually write.

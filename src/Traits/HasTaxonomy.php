@@ -39,11 +39,14 @@ trait HasTaxonomy
     /**
      * Get all taxonomies for this model.
      *
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return MorphToMany<Taxonomy, $this> The taxonomy relationship
      */
     public function taxonomies(string $name = 'taxonomable'): MorphToMany
     {
+        static::warnAboutRelationshipName($name);
+
         /** @var class-string<Taxonomy> $related */
         $related = config('taxonomy.model', Taxonomy::class);
 
@@ -54,6 +57,37 @@ trait HasTaxonomy
             $name . '_id',
             'taxonomy_id'
         )->withTimestamps();
+    }
+
+    /**
+     * Emit a deprecation notice when a non-default relationship name is used.
+     *
+     * Deduplicated per name so a loop cannot flood the log.
+     *
+     * @internal
+     */
+    protected static function warnAboutRelationshipName(string $name): void
+    {
+        if ($name === 'taxonomable') {
+            return;
+        }
+
+        static $warned = [];
+
+        if (isset($warned[$name])) {
+            return;
+        }
+
+        $warned[$name] = true;
+
+        trigger_error(
+            "Passing a custom relationship name ('{$name}') to the taxonomy methods is deprecated "
+            . "and will be removed in 3.0. It selects the pivot morph columns '{$name}_id' and "
+            . "'{$name}_type', which the package's migration does not create, and Eloquent resolves "
+            . 'relationships statically so query scopes cannot honour it at all. '
+            . 'Use taxonomy types to separate categories from tags.',
+            E_USER_DEPRECATED
+        );
     }
 
     /**
@@ -138,7 +172,8 @@ trait HasTaxonomy
      * Get all taxonomies of a specific type for this model.
      *
      * @param  string|TaxonomyType  $type  The taxonomy type
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return Collection<int, Taxonomy> Collection of taxonomies
      */
     public function taxonomiesOfType(string|TaxonomyType $type, string $name = 'taxonomable'): Collection
@@ -152,7 +187,8 @@ trait HasTaxonomy
      * Attach taxonomies to the model.
      *
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to attach
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return $this
      */
     public function attachTaxonomies($taxonomies, string $name = 'taxonomable'): self
@@ -167,7 +203,8 @@ trait HasTaxonomy
      * Detach taxonomies from the model.
      *
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>|null  $taxonomies  The taxonomies to detach (null to detach all)
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return $this
      */
     public function detachTaxonomies($taxonomies = null, string $name = 'taxonomable'): self
@@ -188,7 +225,8 @@ trait HasTaxonomy
      * Sync taxonomies with the model.
      *
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return $this
      */
     public function syncTaxonomies($taxonomies, string $name = 'taxonomable'): self
@@ -203,7 +241,8 @@ trait HasTaxonomy
      * Toggle taxonomies for the model.
      *
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return $this
      */
     public function toggleTaxonomies($taxonomies, string $name = 'taxonomable'): self
@@ -219,7 +258,8 @@ trait HasTaxonomy
      *
      * @param  string|TaxonomyType  $type  The taxonomy type
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>|null  $taxonomies  The taxonomies to detach (null to detach all of this type)
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return $this
      */
     public function detachTaxonomiesOfType(string|TaxonomyType $type, $taxonomies = null, string $name = 'taxonomable'): self
@@ -243,7 +283,8 @@ trait HasTaxonomy
      *
      * @param  string|TaxonomyType  $type  The taxonomy type
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to sync
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return $this
      */
     public function syncTaxonomiesOfType(string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): self
@@ -271,7 +312,8 @@ trait HasTaxonomy
      *
      * @param  string|TaxonomyType  $type  The taxonomy type
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to attach
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return $this
      */
     public function attachTaxonomiesOfType(string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): self
@@ -290,7 +332,8 @@ trait HasTaxonomy
      *
      * @param  string|TaxonomyType  $type  The taxonomy type
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to toggle
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return $this
      */
     public function toggleTaxonomiesOfType(string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): self
@@ -308,7 +351,8 @@ trait HasTaxonomy
      * Determine if the model has any of the given taxonomies.
      *
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to check
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return bool True if the model has any of the given taxonomies
      */
     public function hasTaxonomies($taxonomies, string $name = 'taxonomable'): bool
@@ -322,7 +366,8 @@ trait HasTaxonomy
      * Determine if the model has all of the given taxonomies.
      *
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      */
     public function hasAllTaxonomies($taxonomies, string $name = 'taxonomable'): bool
     {
@@ -346,7 +391,8 @@ trait HasTaxonomy
      *
      * @param  string|TaxonomyType  $type  The taxonomy type
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to check
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return bool True if the model has any of the given taxonomies of the specified type
      */
     public function hasTaxonomiesOfType(string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): bool
@@ -365,7 +411,8 @@ trait HasTaxonomy
      *
      * @param  string|TaxonomyType  $type  The taxonomy type
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to check
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return bool True if the model has all of the given taxonomies of the specified type
      */
     public function hasAllTaxonomiesOfType(string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): bool
@@ -388,11 +435,14 @@ trait HasTaxonomy
      *
      * @param  Builder<$this>  $query
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return Builder<$this>
      */
     public function scopeWithAnyTaxonomies(Builder $query, $taxonomies, string $name = 'taxonomable'): Builder
     {
+        static::warnAboutRelationshipName($name);
+
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
         return $query->whereHas('taxonomies', function ($query) use ($taxonomyIds) {
@@ -405,11 +455,14 @@ trait HasTaxonomy
      *
      * @param  Builder<$this>  $query
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return Builder<$this>
      */
     public function scopeWithAllTaxonomies(Builder $query, $taxonomies, string $name = 'taxonomable'): Builder
     {
+        static::warnAboutRelationshipName($name);
+
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
         if (empty($taxonomyIds)) {
@@ -427,11 +480,14 @@ trait HasTaxonomy
      * Scope a query to include models that have taxonomies of the given type.
      *
      * @param  Builder<$this>  $query
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return Builder<$this>
      */
     public function scopeWithTaxonomyType(Builder $query, string|TaxonomyType $type, string $name = 'taxonomable'): Builder
     {
+        static::warnAboutRelationshipName($name);
+
         $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
 
         return $query->whereHas('taxonomies', function ($query) use ($typeValue) {
@@ -444,11 +500,14 @@ trait HasTaxonomy
      *
      * @param  Builder<$this>  $query
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return Builder<$this>
      */
     public function scopeWithTaxonomy(Builder $query, $taxonomies, string $name = 'taxonomable'): Builder
     {
+        static::warnAboutRelationshipName($name);
+
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
         return $query->whereHas('taxonomies', function ($query) use ($taxonomyIds) {
@@ -461,11 +520,14 @@ trait HasTaxonomy
      *
      * @param  Builder<$this>  $query
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return Builder<$this>
      */
     public function scopeWithoutTaxonomies(Builder $query, $taxonomies, string $name = 'taxonomable'): Builder
     {
+        static::warnAboutRelationshipName($name);
+
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
         return $query->whereDoesntHave('taxonomies', function ($query) use ($taxonomyIds) {
@@ -479,11 +541,14 @@ trait HasTaxonomy
      * @param  Builder<$this>  $query
      * @param  string|TaxonomyType  $type  The taxonomy type
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to filter by
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return Builder<$this>
      */
     public function scopeWithAnyTaxonomiesOfType(Builder $query, string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): Builder
     {
+        static::warnAboutRelationshipName($name);
+
         $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
@@ -499,11 +564,14 @@ trait HasTaxonomy
      * @param  Builder<$this>  $query
      * @param  string|TaxonomyType  $type  The taxonomy type
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to filter by
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return Builder<$this>
      */
     public function scopeWithAllTaxonomiesOfType(Builder $query, string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): Builder
     {
+        static::warnAboutRelationshipName($name);
+
         $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
         $validTaxonomyIds = $this->resolveTaxonomyIdsOfType($type, $taxonomies);
 
@@ -526,11 +594,14 @@ trait HasTaxonomy
      * @param  Builder<$this>  $query
      * @param  string|TaxonomyType  $type  The taxonomy type
      * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>  $taxonomies  The taxonomies to exclude
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return Builder<$this>
      */
     public function scopeWithoutTaxonomiesOfType(Builder $query, string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): Builder
     {
+        static::warnAboutRelationshipName($name);
+
         $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
@@ -545,11 +616,14 @@ trait HasTaxonomy
      *
      * @param  Builder<$this>  $query
      * @param  array<string, mixed>  $filters
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return Builder<$this>
      */
     public function scopeFilterByTaxonomies(Builder $query, array $filters, string $name = 'taxonomable'): Builder
     {
+        static::warnAboutRelationshipName($name);
+
         foreach ($filters as $key => $value) {
             if ($key === 'exclude' && ! empty($value)) {
                 $query->withoutTaxonomies($value, $name);
@@ -583,11 +657,14 @@ trait HasTaxonomy
      * @param  Builder<$this>  $query
      * @param  string  $slug  The taxonomy slug
      * @param  string|TaxonomyType|null  $type  Optional taxonomy type filter
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return Builder<$this>
      */
     public function scopeWithTaxonomySlug(Builder $query, string $slug, string|TaxonomyType|null $type = null, string $name = 'taxonomable'): Builder
     {
+        static::warnAboutRelationshipName($name);
+
         return $query->whereHas('taxonomies', function ($q) use ($slug, $type) {
             $q->where('slug', $slug);
 
@@ -773,7 +850,8 @@ trait HasTaxonomy
      * Get the count of taxonomies of a specific type for this model.
      *
      * @param  string|TaxonomyType  $type  The taxonomy type
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return int The count of taxonomies of the specified type
      */
     public function getTaxonomyCountByType(string|TaxonomyType $type, string $name = 'taxonomable'): int
@@ -787,7 +865,8 @@ trait HasTaxonomy
      * Get the first taxonomy of a specific type for this model.
      *
      * @param  string|TaxonomyType  $type  The taxonomy type
-     * @param  string  $name  The name of the relationship (default: 'taxonomable')
+     * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
+     *                        only the default 'taxonomable' works on the shipped schema.
      * @return Taxonomy|null The first taxonomy of the specified type or null if none found
      */
     public function getFirstTaxonomyOfType(string|TaxonomyType $type, string $name = 'taxonomable'): ?Taxonomy
