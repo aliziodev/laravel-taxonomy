@@ -58,10 +58,26 @@ enum TaxonomyType: string
     }
 
     /**
-     * Alias for the label() method.
+     * Human-readable label, named to match Filament's HasLabel contract.
      *
-     * Provides an alternative method name for getting the human-readable label.
-     * This method exists for consistency with other Laravel conventions.
+     * This is not redundant with label(). Filament resolves enum labels through
+     * `Filament\Support\Contracts\HasLabel`, which requires `getLabel(): ?string`.
+     * Returning `string` satisfies that (a return type may be narrowed), so an
+     * application enum can implement the contract with no glue code:
+     *
+     *     enum ProductType: string implements HasLabel
+     *     {
+     *         case Category = 'category';
+     *
+     *         public function getLabel(): string
+     *         {
+     *             return TaxonomyType::from($this->value)->getLabel();
+     *         }
+     *     }
+     *
+     * Filament is not a dependency of this package; the method simply keeps the
+     * shape its contract expects. Prefer label() when you are not bridging to
+     * Filament.
      *
      * @return string The human-readable label
      */
