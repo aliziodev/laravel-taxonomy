@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.11.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.10.0...v2.11.0) (2026-07-19)
+
+### Bug Fixes
+
+* multi-tenant cache leak, silent no-ops, and nested set query cost ([7909084](https://github.com/aliziodev/laravel-taxonomy/commit/790908493d6a2fb69fc6f19140abaa534a4987bd))
+* normalise taxonomy type to a string ([c8ab2b1](https://github.com/aliziodev/laravel-taxonomy/commit/c8ab2b1fe3710f540918b83178fa2d8a8d2000b2))
+* rebuild the nested set when a trashed taxonomy is restored ([c9dab26](https://github.com/aliziodev/laravel-taxonomy/commit/c9dab263c6fed54a72168b320361b6a0f75212f1))
+* restore depth-first descendants, correct facade hints, widen type inputs ([b54ac99](https://github.com/aliziodev/laravel-taxonomy/commit/b54ac99062fa9d477150afda763946d786abefb4))
+* stop global scopes from silently dropping taxonomies in *OfType methods ([f2f45d3](https://github.com/aliziodev/laravel-taxonomy/commit/f2f45d344d9c9d809f2e660fef4b9f8b0ee59165))
+
+### Features
+
+* add tenant-scoped cache isolation ([4a2a57b](https://github.com/aliziodev/laravel-taxonomy/commit/4a2a57b285a20b1a5e55bf0b0d33f89357f21be2))
+
 ## [2.10.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.9.0...v2.10.0) (2026-04-06)
 
 ### Features
