@@ -738,12 +738,16 @@ class Taxonomy extends Model
 
         /** @var array<int|string, array{lft: int, rgt: int, depth: int}> $updates */
         $updates = [];
-        $visited = [];
         $counter = 1;
 
-        // Explicit stack rather than recursion: deep trees no longer risk
-        // exhausting the PHP stack, and a cyclic parent_id can no longer loop
-        // forever because every node is entered at most once.
+        // Explicit stack rather than recursion, so a deep tree cannot exhaust
+        // the PHP stack.
+        //
+        // No visited-set is needed: parent_id is single-valued, so each row
+        // lands in exactly one $childrenByParent bucket and can be pushed at
+        // most once. A cyclic parent chain simply never appears in the root
+        // bucket, so the walk skips it rather than looping -- see the
+        // "terminates on a cyclic parent chain" test.
         /** @var list<array{0: object, 1: int, 2: bool}> $stack */
         $stack = [];
 
@@ -759,12 +763,6 @@ class Taxonomy extends Model
 
                 continue;
             }
-
-            if (isset($visited[$node->id])) {
-                continue;
-            }
-
-            $visited[$node->id] = true;
 
             $updates[$node->id] = [
                 'lft' => $counter++,

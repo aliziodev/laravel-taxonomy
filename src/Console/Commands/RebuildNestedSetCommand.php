@@ -221,10 +221,8 @@ class RebuildNestedSetCommand extends Command
      */
     protected function hasInteractiveStdin(): bool
     {
-        if (! defined('STDIN') || ! is_resource(STDIN)) {
-            return false;
-        }
-
-        return function_exists('stream_isatty') ? stream_isatty(STDIN) : true;
+        // stream_isatty() has existed since PHP 7.2 and this package requires
+        // 8.2, so no function_exists() guard is needed.
+        return defined('STDIN') && is_resource(STDIN) && stream_isatty(STDIN);
     }
 }

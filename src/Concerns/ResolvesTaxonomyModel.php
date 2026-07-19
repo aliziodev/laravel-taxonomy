@@ -21,17 +21,4 @@ trait ResolvesTaxonomyModel
     {
         return config('taxonomy.model', Taxonomy::class);
     }
-
-    /**
-     * Get the taxonomies table name.
-     *
-     * Read from the resolved model rather than straight from config, so a
-     * custom model that overrides getTable() is honoured too.
-     */
-    protected function getTaxonomyTable(): string
-    {
-        $modelClass = $this->getModelClass();
-
-        return (new $modelClass)->getTable();
-    }
 }
