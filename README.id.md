@@ -26,7 +26,7 @@ Kelola kategori, tag, dan struktur hierarkis apa pun di Laravel. Semua term disi
 
 ## Kebutuhan
 
-| | |
+| Kebutuhan | Versi |
 |---|---|
 | PHP | 8.2 atau lebih baru |
 | Laravel | 11, 12, atau 13 |

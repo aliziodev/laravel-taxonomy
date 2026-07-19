@@ -26,10 +26,10 @@ Manage categories, tags and any hierarchical structure in Laravel. Terms live in
 
 ## Requirements
 
-| | |
-|---|---|
-| PHP | 8.2 or newer |
-| Laravel | 11, 12 or 13 |
+| Requirement | Version        |
+|-------------|----------------|
+| PHP         | 8.2 or newer   |
+| Laravel     | 11, 12 or 13   |
 
 ## Installation
 
