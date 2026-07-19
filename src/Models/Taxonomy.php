@@ -194,6 +194,20 @@ class Taxonomy extends Model
     }
 
     /**
+     * Normalise the type to its scalar value.
+     *
+     * Every API in this package accepts a TaxonomyType (or any backed enum)
+     * wherever a type is expected. Without this, an instance created with an
+     * enum kept the enum object in memory while a reloaded instance held a
+     * string, so `$a->type === $b->type` was false for the same type and
+     * isAncestorOf()/isDescendantOf() silently returned false.
+     */
+    protected function setTypeAttribute(mixed $value): void
+    {
+        $this->attributes['type'] = $value instanceof \BackedEnum ? $value->value : $value;
+    }
+
+    /**
      * Get the table associated with the model.
      */
     public function getTable(): string

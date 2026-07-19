@@ -243,6 +243,35 @@ it('reinserts a restored node into the nested set', function () {
 
 /*
 |--------------------------------------------------------------------------
+| Type normalisation
+|--------------------------------------------------------------------------
+*/
+
+it('stores type as a string even when created from an enum', function () {
+    $created = Taxonomy::create(['name' => 'Electronics', 'type' => TaxonomyType::Category]);
+
+    // The enum object used to survive in memory while a reloaded instance held
+    // a string, so the same type compared unequal to itself.
+    expect($created->type)->toBe('category')
+        ->and($created->type)->toBe(Taxonomy::find($created->id)->type);
+});
+
+it('compares ancestry across freshly created and reloaded instances', function () {
+    $parent = Taxonomy::create(['name' => 'Electronics', 'type' => TaxonomyType::Category]);
+    $child = Taxonomy::create([
+        'name' => 'Phones',
+        'type' => TaxonomyType::Category,
+        'parent_id' => $parent->id,
+    ]);
+
+    // isAncestorOf() compares types strictly; an enum on one side and a string
+    // on the other made it silently return false.
+    expect($parent->refresh()->isAncestorOf($child))->toBeTrue()
+        ->and($child->isDescendantOf($parent))->toBeTrue();
+});
+
+/*
+|--------------------------------------------------------------------------
 | Exceptions
 |--------------------------------------------------------------------------
 */
