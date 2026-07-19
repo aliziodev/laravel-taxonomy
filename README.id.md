@@ -19,7 +19,7 @@ Kelola kategori, tag, dan struktur hierarkis apa pun di Laravel. Semua term disi
 ## Daftar Isi
 
 - [Kebutuhan](#kebutuhan) · [Instalasi](#instalasi) · [Konfigurasi](#konfigurasi)
-- [Mulai cepat](#mulai-cepat) · [Mengelola taksonomi](#mengelola-taksonomi) · [Melampirkan ke model](#melampirkan-ke-model)
+- [Mulai cepat](#mulai-cepat) · [Mengelola taksonomi](#mengelola-taksonomi) · [Impor massal](#impor-massal) · [Melampirkan ke model](#melampirkan-ke-model)
 - [Query scope](#query-scope) · [Hierarki](#hierarki) · [Type](#type) · [Metadata](#metadata)
 - [Cache](#cache) · [Multitenancy](#multitenancy) · [Slug dan exception](#slug-dan-exception)
 - [Perintah artisan](#perintah-artisan) · [Contoh](#contoh) · [Pemecahan masalah](#pemecahan-masalah)
@@ -142,6 +142,7 @@ Facade `Taxonomy` adalah proxy untuk `TaxonomyManager` dan menyediakan tepat met
 ```php
 Taxonomy::create($attributes);                   // buat
 Taxonomy::createOrUpdate($attributes);           // buat, atau perbarui bila slug+type cocok
+Taxonomy::bulkCreate($rows, $chunkSize = 1000);   // insert banyak sekaligus, tanpa model event
 Taxonomy::find($id);
 Taxonomy::findMany($ids, $perPage = null, $page = 1);
 Taxonomy::findBySlug('smartphones', TaxonomyType::Category);
@@ -171,6 +172,59 @@ Taxonomy::clearCacheForType($type);
 > ```
 
 Scope pada model: `type()`, `root()`, `ordered()`, `roots()`, `atDepth()`, `nestedSetOrder()`.
+
+## Impor massal
+
+`create()` memakan empat sampai tujuh query per baris — cek slug, pencarian
+induk atau `max(rgt)`, UPDATE rentang yang melebarkan nested set, insert-nya
+sendiri, lalu pembaruan cache. Wajar untuk beberapa baris, menyiksa untuk
+seeder.
+
+`bulkCreate()` menyelesaikan slug di memori, insert secara berkelompok, dan
+menomori ulang nested set sekali di akhir:
+
+```php
+Taxonomy::bulkCreate([
+    ['name' => 'Electronics', 'type' => TaxonomyType::Category],
+    ['name' => 'Books',       'type' => TaxonomyType::Category, 'sort_order' => 2],
+    ['name' => 'Fiction',     'type' => TaxonomyType::Category, 'parent_id' => $booksId],
+]);
+```
+
+Terukur pada 10.000 baris:
+
+| | Waktu | Query |
+|---|---|---|
+| `create()` dalam loop, datar | 14,8s | 40.000 |
+| **`bulkCreate()`, datar** | **0,95s** | **32** |
+| `create()` dalam loop, bersarang | 22,0s | 59.980 |
+| **`bulkCreate()`, bersarang** | **1,0s** | **37** |
+
+Kedua jalur menghasilkan pohon yang sama; yang berbeda hanya jumlah perjalanan
+ke database.
+
+Ia menerima iterable apa pun, jadi generator menjaga memori tetap rendah pada
+impor besar:
+
+```php
+Taxonomy::bulkCreate((function () {
+    foreach (LazyCollection::make($csvRows) as $row) {
+        yield ['name' => $row['name'], 'type' => 'category'];
+    }
+})(), chunkSize: 500);
+```
+
+Setiap baris membutuhkan `name` dan `type`, ditambah opsional `slug`,
+`description`, `parent_id`, `sort_order`, `meta`, `created_at`, dan
+`updated_at`. Slug dibuat dan di-deduplikasi terhadap batch maupun baris yang
+sudah ada di tabel; slug eksplisit yang sudah terpakai melempar
+`DuplicateSlugException`, persis seperti `create()`.
+
+> **Model event tidak dipicu.** Itu harga dari kecepatannya. Bila Anda
+> bergantung pada observer, atau apa pun yang terkait `creating`/`created`,
+> tetap gunakan `create()`. Semua yang dikerjakan paket ini di hook tersebut —
+> pembuatan slug, nilai nested set, pembatalan cache — sudah dilakukan
+> `bulkCreate()` untuk Anda.
 
 ## Melampirkan ke model
 

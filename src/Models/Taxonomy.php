@@ -522,6 +522,155 @@ class Taxonomy extends Model
     }
 
     /**
+     * Insert many taxonomies in a single pass.
+     *
+     * create() costs four to seven queries per row: a slug-uniqueness check, a
+     * parent or max(rgt) lookup, the range updates that widen the nested set,
+     * the insert itself, and a cache bump. That is fine for a handful of rows
+     * and painful for ten thousand.
+     *
+     * This resolves slugs in memory, writes in chunks, and renumbers the
+     * nested set once per type at the end -- the same end state, two orders of
+     * magnitude fewer queries.
+     *
+     * Rows may set parent_id to a taxonomy that already exists; the closing
+     * rebuild picks up the hierarchy either way.
+     *
+     * Model events are NOT fired. That is the trade being made for the speed,
+     * so anything relying on observers should keep using create().
+     *
+     * @param  iterable<int, array<string, mixed>>  $rows  Each needs at least a name and a type
+     * @param  int  $chunkSize  Rows per insert statement
+     * @return int Number of rows inserted
+     *
+     * @throws MissingSlugException If slug generation is disabled and a row omits one
+     * @throws DuplicateSlugException If an explicit slug collides within its type
+     */
+    public static function bulkCreate(iterable $rows, int $chunkSize = 1000): int
+    {
+        /** @var array<string, list<array<string, mixed>>> $byType */
+        $byType = [];
+
+        foreach ($rows as $row) {
+            if (! isset($row['type'])) {
+                throw new \InvalidArgumentException('Each row passed to bulkCreate() must declare a type.');
+            }
+
+            $type = $row['type'] instanceof \BackedEnum ? (string) $row['type']->value : (string) $row['type'];
+            $row['type'] = $type;
+            $byType[$type][] = $row;
+        }
+
+        if ($byType === []) {
+            return 0;
+        }
+
+        $instance = static::query()->getModel();
+        $connection = $instance->getConnection();
+        $table = $instance->getTable();
+        $now = $instance->freshTimestampString();
+        $inserted = 0;
+
+        foreach ($byType as $type => $typeRows) {
+            $prepared = static::prepareBulkRows($typeRows, $type, $now);
+
+            foreach (array_chunk($prepared, max(1, $chunkSize)) as $chunk) {
+                $connection->table($table)->insert($chunk);
+                $inserted += count($chunk);
+            }
+
+            // One renumbering for the whole type rather than per row.
+            static::rebuildNestedSet($type);
+            app(TaxonomyManager::class)->clearCacheForType($type);
+        }
+
+        return $inserted;
+    }
+
+    /**
+     * Resolve slugs and column defaults for one type's worth of bulk rows.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array<string, mixed>>
+     *
+     * @throws MissingSlugException
+     * @throws DuplicateSlugException
+     */
+    protected static function prepareBulkRows(array $rows, string $type, string $now): array
+    {
+        $generate = (bool) config('taxonomy.slugs.generate', true);
+
+        // Every slug already taken in this type, fetched once instead of once
+        // per row.
+        $taken = array_fill_keys(
+            static::withTrashed()->where('type', $type)->pluck('slug')->all(),
+            true
+        );
+
+        $prepared = [];
+
+        foreach ($rows as $row) {
+            if (! isset($row['name'])) {
+                throw new \InvalidArgumentException('Each row passed to bulkCreate() must declare a name.');
+            }
+
+            $explicitSlug = isset($row['slug']) && $row['slug'] !== '';
+
+            if (! $explicitSlug && ! $generate) {
+                throw new MissingSlugException;
+            }
+
+            if ($explicitSlug) {
+                $slug = (string) $row['slug'];
+
+                if (isset($taken[$slug])) {
+                    throw new DuplicateSlugException($slug, $type);
+                }
+            } else {
+                $slug = static::uniqueSlugAgainst(Str::slug((string) $row['name']), $taken);
+            }
+
+            $taken[$slug] = true;
+
+            $meta = $row['meta'] ?? null;
+
+            $prepared[] = [
+                'name' => $row['name'],
+                'slug' => $slug,
+                'type' => $type,
+                'description' => $row['description'] ?? null,
+                'parent_id' => $row['parent_id'] ?? null,
+                'sort_order' => $row['sort_order'] ?? 0,
+                'meta' => $meta === null ? null : json_encode($meta),
+                'created_at' => $row['created_at'] ?? $now,
+                'updated_at' => $row['updated_at'] ?? $now,
+            ];
+        }
+
+        return $prepared;
+    }
+
+    /**
+     * Find the first free variant of a slug, checking an in-memory set.
+     *
+     * @param  array<string, true>  $taken
+     */
+    protected static function uniqueSlugAgainst(string $base, array $taken): string
+    {
+        if (! isset($taken[$base])) {
+            return $base;
+        }
+
+        $counter = 1;
+
+        while (isset($taken[$base . '-' . $counter])) {
+            ++$counter;
+        }
+
+        return $base . '-' . $counter;
+    }
+
+    /**
      * Check if a slug exists within a specific type.
      *
      * @param  string  $slug  The slug to check

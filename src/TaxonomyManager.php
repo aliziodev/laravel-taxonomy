@@ -122,6 +122,22 @@ class TaxonomyManager
     }
 
     /**
+     * Insert many taxonomies in a single pass.
+     *
+     * Two orders of magnitude fewer queries than looping over create(), at the
+     * cost of not firing model events. See Taxonomy::bulkCreate().
+     *
+     * @param  iterable<int, array<string, mixed>>  $rows
+     * @return int Number of rows inserted
+     */
+    public function bulkCreate(iterable $rows, int $chunkSize = 1000): int
+    {
+        $modelClass = $this->getModelClass();
+
+        return $modelClass::bulkCreate($rows, $chunkSize);
+    }
+
+    /**
      * Find a taxonomy by its slug.
      */
     public function findBySlug(string $slug, string|TaxonomyType|null $type = null): ?Taxonomy

@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Facade;
  *
  * @method static TaxonomyModel create(array<string, mixed> $attributes) Create a new taxonomy
  * @method static TaxonomyModel createOrUpdate(array<string, mixed> $attributes) Create a new taxonomy or update if it already exists
+ * @method static int bulkCreate(iterable<int, array<string, mixed>> $rows, int $chunkSize = 1000) Insert many taxonomies in one pass, without firing model events
  * @method static TaxonomyModel|null findBySlug(string $slug, string|TaxonomyType|null $type = null) Find a taxonomy by its slug
  * @method static Collection<int, TaxonomyModel> tree(string|TaxonomyType|null $type = null, ?int $parentId = null) Get a nested tree representation of the taxonomy hierarchy
  * @method static Collection<int, TaxonomyModel> flatTree(string|TaxonomyType|null $type = null, ?int $parentId = null, int $depth = 0) Get a flat tree representation of the taxonomy hierarchy
