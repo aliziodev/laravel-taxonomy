@@ -816,10 +816,36 @@ function assertPerformanceThreshold(string $operation, float $maxSeconds): void
 {
     global $performanceMetrics;
     $duration = $performanceMetrics[$operation]['duration'] ?? 0;
+
+    // A coverage driver instruments every executed line, so the same operation
+    // measures roughly twenty times slower under Xdebug than it does
+    // uninstrumented -- enough to blow any wall-clock budget regardless of how
+    // fast the code actually is. The work still runs (so coverage is
+    // unaffected) and the six uninstrumented matrix jobs still enforce these
+    // budgets; only the assertion is skipped here.
+    if (isCollectingCoverage()) {
+        expect($duration)->toBeGreaterThanOrEqual(0.0);
+
+        return;
+    }
+
     expect($duration)->toBeLessThan(
         $maxSeconds,
         "Operation '{$operation}' took too long: {$duration} seconds (max: {$maxSeconds})"
     );
+}
+
+/**
+ * Helper: Detect an active code coverage driver.
+ */
+function isCollectingCoverage(): bool
+{
+    if (extension_loaded('pcov') && (bool) ini_get('pcov.enabled')) {
+        return true;
+    }
+
+    return extension_loaded('xdebug')
+        && str_contains((string) getenv('XDEBUG_MODE'), 'coverage');
 }
 
 /**
