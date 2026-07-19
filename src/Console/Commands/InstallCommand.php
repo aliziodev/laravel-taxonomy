@@ -11,7 +11,8 @@ class InstallCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'taxonomy:install';
+    protected $signature = 'taxonomy:install
+                            {--force : Overwrite the config and migrations if they already exist}';
 
     /**
      * The console command description.
@@ -22,24 +23,31 @@ class InstallCommand extends Command
 
     /**
      * Execute the console command.
-     *
-     * @return int
      */
-    public function handle()
+    public function handle(): int
     {
         $this->info('Installing Laravel Taxonomy...');
 
-        // Publish config file
-        $this->call('vendor:publish', [
-            '--provider' => 'Aliziodev\\LaravelTaxonomy\\TaxonomyProvider',
-            '--tag' => 'taxonomy-config',
-        ]);
+        $force = (bool) $this->option('force');
+        $configExisted = file_exists(config_path('taxonomy.php'));
 
-        // Publish migration files
-        $this->call('vendor:publish', [
-            '--provider' => 'Aliziodev\\LaravelTaxonomy\\TaxonomyProvider',
+        // Without --force, vendor:publish skips files that already exist. That
+        // is the safe default, but it used to happen silently and the command
+        // still reported a successful install.
+        $this->call('vendor:publish', array_filter([
+            '--tag' => 'taxonomy-config',
+            '--force' => $force,
+        ]));
+
+        $this->call('vendor:publish', array_filter([
             '--tag' => 'taxonomy-migrations',
-        ]);
+            '--force' => $force,
+        ]));
+
+        if ($configExisted && ! $force) {
+            $this->warn('config/taxonomy.php already existed and was left untouched.');
+            $this->warn('Re-run with --force to overwrite it with the current defaults.');
+        }
 
         $this->info('Laravel Taxonomy has been installed successfully!');
         $this->info('You can now run your migrations with: php artisan migrate');

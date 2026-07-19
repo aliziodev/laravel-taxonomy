@@ -8,7 +8,6 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $tableNames = config('taxonomy.table_names');
         $tableNames = array_merge([
             'taxonomies' => 'taxonomies',
             'taxonomables' => 'taxonomables',
@@ -59,7 +58,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        $tableNames = config('taxonomy.table_names');
         $tableNames = array_merge([
             'taxonomies' => 'taxonomies',
             'taxonomables' => 'taxonomables',

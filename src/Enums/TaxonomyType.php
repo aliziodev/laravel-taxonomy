@@ -2,6 +2,8 @@
 
 namespace Aliziodev\LaravelTaxonomy\Enums;
 
+use Illuminate\Support\Str;
+
 /**
  * Taxonomy Type Enum.
  *
@@ -47,17 +49,12 @@ enum TaxonomyType: string
      */
     public function label(): string
     {
-        return match ($this) {
-            self::Category => 'Category',
-            self::Tag => 'Tag',
-            self::Color => 'Color',
-            self::Size => 'Size',
-            self::Unit => 'Unit',
-            self::Type => 'Type',
-            self::Brand => 'Brand',
-            self::Model => 'Model',
-            self::Variant => 'Variant',
-        };
+        // Every arm of the previous match returned the value title-cased, so
+        // adding a case meant either repeating that or hitting an
+        // UnhandledMatchError at runtime. Str::headline gives the same result
+        // for all existing cases and a sensible one for multi-word values
+        // ('product_type' becomes 'Product Type').
+        return Str::headline($this->value);
     }
 
     /**
@@ -84,11 +81,9 @@ enum TaxonomyType: string
      */
     public static function options(): array
     {
-        return collect(self::cases())->map(function ($case) {
-            return [
-                'value' => $case->value,
-                'label' => $case->label(),
-            ];
-        })->toArray();
+        return array_map(fn (self $case) => [
+            'value' => $case->value,
+            'label' => $case->label(),
+        ], self::cases());
     }
 }

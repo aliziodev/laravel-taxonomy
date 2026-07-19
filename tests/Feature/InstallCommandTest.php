@@ -39,7 +39,11 @@ it('command has proper structure', function () {
     $descriptionProperty = $reflection->getProperty('description');
     $descriptionProperty->setAccessible(true);
 
-    expect($signatureProperty->getValue($command))->toBe('taxonomy:install');
+    // Assert the command name rather than the whole signature string, so
+    // adding an option does not break this test.
+    expect($signatureProperty->getValue($command))->toStartWith('taxonomy:install');
+    expect($command->getName())->toBe('taxonomy:install');
+    expect($command->getDefinition()->hasOption('force'))->toBeTrue();
     expect($descriptionProperty->getValue($command))->toBe('Install the Laravel Taxonomy package');
 });
 
@@ -57,9 +61,10 @@ it('handle method has correct signature', function () {
     expect($reflection->isPublic())->toBeTrue();
     expect($reflection->getNumberOfParameters())->toBe(0);
 
-    // Verify return type through reflection
+    // handle() declares : int, matching the documented contract.
     $returnType = $reflection->getReturnType();
-    expect($returnType)->toBeNull(); // Laravel commands typically don't declare return types
+    expect($returnType)->toBeInstanceOf(ReflectionNamedType::class);
+    expect((string) $returnType)->toBe('int');
 
     // Verify method is defined in the class
     expect($reflection->getDeclaringClass()->getName())->toBe(InstallCommand::class);

@@ -2,6 +2,7 @@
 
 namespace Aliziodev\LaravelTaxonomy;
 
+use Aliziodev\LaravelTaxonomy\Concerns\ResolvesTaxonomyModel;
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
 use Illuminate\Database\Eloquent\Collection;
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\Cache;
  */
 class TaxonomyManager
 {
+    use ResolvesTaxonomyModel;
+
     /**
      * Runtime resolver used to namespace cache keys per tenant/context.
      *
@@ -91,16 +94,6 @@ class TaxonomyManager
         $ttl = config('taxonomy.cache.ttl');
 
         return now()->addSeconds(is_numeric($ttl) ? (int) $ttl : 86400);
-    }
-
-    /**
-     * Get the taxonomy model class from config.
-     *
-     * @return class-string<Taxonomy>
-     */
-    protected function getModelClass(): string
-    {
-        return config('taxonomy.model', Taxonomy::class);
     }
 
     /**

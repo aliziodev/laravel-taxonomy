@@ -2,14 +2,16 @@
 
 namespace Aliziodev\LaravelTaxonomy\Console\Commands;
 
+use Aliziodev\LaravelTaxonomy\Concerns\ResolvesTaxonomyModel;
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
-use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
 use Aliziodev\LaravelTaxonomy\TaxonomyManager;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 class RebuildNestedSetCommand extends Command
 {
+    use ResolvesTaxonomyModel;
+
     /**
      * The name and signature of the console command.
      *
@@ -27,34 +29,22 @@ class RebuildNestedSetCommand extends Command
     protected $description = 'Rebuild nested set values (lft, rgt, depth) for taxonomy hierarchies';
 
     /**
-     * Get the taxonomy model class from config.
-     *
-     * @return class-string<Taxonomy>
-     */
-    protected function getModelClass(): string
-    {
-        return config('taxonomy.model', Taxonomy::class);
-    }
-
-    /**
      * Execute the console command.
      */
     public function handle(): int
     {
+        /** @var string|null $type */
         $type = $this->argument('type');
-        $force = $this->option('force');
+        $force = (bool) $this->option('force');
 
-        // Validate type if provided
-        if ($type !== null && ! $this->isValidType(is_string($type) ? $type : '')) {
-            $typeStr = is_string($type) ? $type : 'invalid';
-            $this->error('Invalid taxonomy type: ' . $typeStr);
+        if ($type !== null && ! $this->isValidType($type)) {
+            $this->error('Invalid taxonomy type: ' . $type);
             $this->info('Available types: ' . implode(', ', $this->getAvailableTypes()));
 
             return self::FAILURE;
         }
 
-        // Get types to rebuild
-        $types = $type !== null && is_string($type) ? [$type] : $this->getExistingTypes();
+        $types = $type !== null ? [$type] : $this->getExistingTypes();
 
         if (empty($types)) {
             $this->info('No taxonomies found to rebuild.');
@@ -62,21 +52,37 @@ class RebuildNestedSetCommand extends Command
             return self::SUCCESS;
         }
 
-        // Show confirmation unless forced
-        if (! $force && ! $this->confirmRebuild($types)) {
-            $this->info('Operation cancelled.');
+        // Counted once here and reused, rather than once for the confirmation
+        // prompt and again per type.
+        $counts = $this->countByType($types);
 
-            return self::FAILURE;
+        if (! $force) {
+            // Refusing to prompt is a hard stop: a deploy script that silently
+            // exited 0 without rebuilding would be worse than a loud failure.
+            if (! $this->canPrompt()) {
+                $this->error('Refusing to prompt on a non-interactive terminal. Re-run with --force.');
+
+                return self::FAILURE;
+            }
+
+            if (! $this->confirmRebuild($types, array_sum($counts))) {
+                // Declining a prompt is a choice, not an error.
+                $this->info('Operation cancelled.');
+
+                return self::SUCCESS;
+            }
         }
 
         $this->info('Starting nested set rebuild...');
         $startTime = microtime(true);
 
-        DB::transaction(function () use ($types) {
-            foreach ($types as $taxonomyType) {
-                $this->rebuildType($taxonomyType);
-            }
-        });
+        // One transaction per type rather than one spanning every type, so a
+        // large run holds locks for a bounded window.
+        foreach ($types as $taxonomyType) {
+            DB::transaction(function () use ($taxonomyType, $counts) {
+                $this->rebuildType($taxonomyType, $counts[$taxonomyType] ?? 0);
+            });
+        }
 
         $duration = round(microtime(true) - $startTime, 2);
         $this->info("Nested set rebuild completed in {$duration} seconds.");
@@ -87,12 +93,10 @@ class RebuildNestedSetCommand extends Command
     /**
      * Rebuild nested set for a specific type.
      */
-    protected function rebuildType(string $type): void
+    protected function rebuildType(string $type, int $count): void
     {
         $this->line("Rebuilding type: {$type}");
 
-        $modelClass = $this->getModelClass();
-        $count = $modelClass::where('type', $type)->count();
         if ($count === 0) {
             $this->line("  No taxonomies found for type: {$type}");
 
@@ -101,7 +105,7 @@ class RebuildNestedSetCommand extends Command
 
         $startTime = microtime(true);
 
-        // Use the model's rebuild method
+        $modelClass = $this->getModelClass();
         $modelClass::rebuildNestedSet($type);
 
         // rebuildNestedSet() writes without firing model events, so nothing
@@ -161,34 +165,55 @@ class RebuildNestedSetCommand extends Command
     }
 
     /**
+     * Count taxonomies per type in a single query.
+     *
+     * @param  array<string>  $types
+     * @return array<string, int>
+     */
+    protected function countByType(array $types): array
+    {
+        $modelClass = $this->getModelClass();
+
+        /** @var array<string, int> $counts */
+        $counts = $modelClass::whereIn('type', $types)
+            ->selectRaw('type, count(*) as aggregate')
+            ->groupBy('type')
+            ->pluck('aggregate', 'type')
+            ->map(fn ($value) => (int) $value)
+            ->all();
+
+        return $counts;
+    }
+
+    /**
      * Show confirmation dialog.
      *
      * @param  array<string>  $types
      */
-    protected function confirmRebuild(array $types): bool
+    protected function confirmRebuild(array $types, int $count): bool
     {
         $typesList = implode(', ', $types);
-        $modelClass = $this->getModelClass();
-        $count = $modelClass::whereIn('type', $types)->count();
 
         $this->warn("This will rebuild nested set values for {$count} taxonomies.");
         $this->warn("Types: {$typesList}");
         $this->warn('This operation will modify lft, rgt, and depth values.');
 
-        // There is nobody to answer the prompt when the command runs from a
-        // deploy script, cron job, CI pipeline or Artisan::call(). Prompting
-        // anyway blocks the process forever, so require --force instead.
-        //
-        // isInteractive() alone is not enough: Artisan::call() builds an
-        // ArrayInput that reports itself as interactive, so the attached
-        // stream is checked as well.
-        if (! $this->input->isInteractive() || ! $this->hasInteractiveStdin()) {
-            $this->warn('Non-interactive terminal detected. Re-run with --force to proceed.');
-
-            return false;
-        }
-
         return $this->confirm('Do you want to continue?');
+    }
+
+    /**
+     * Determine whether a confirmation prompt can actually be answered.
+     *
+     * There is nobody to answer when the command runs from a deploy script,
+     * cron job, CI pipeline or Artisan::call(). Prompting anyway blocks the
+     * process forever.
+     *
+     * isInteractive() alone is not enough: Artisan::call() builds an ArrayInput
+     * that reports itself as interactive, so the attached stream is checked too.
+     */
+    protected function canPrompt(): bool
+    {
+        return $this->input->isInteractive() && $this->hasInteractiveStdin();
     }
 
     /**
