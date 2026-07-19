@@ -1,7 +1,19 @@
 name: Auto Changelog and Release
 
+# Releases wait for the full test matrix.
+#
+# This used to run on push, in parallel with Tests. v2.11.0 was published at
+# 18:15:02 while the Tests run for the same commit did not start until
+# 18:20:39 -- and then failed. The inline test step this workflow used to
+# carry gave false confidence: it passed on one PHP/Laravel combination with
+# no coverage while the real matrix was red.
+#
+# workflow_run fires only after Tests has finished, and the conclusion check
+# means a red matrix never reaches semantic-release.
 on:
-    push:
+    workflow_run:
+        workflows: ["Tests"]
+        types: [completed]
         branches:
             - main
             - master
@@ -9,18 +21,24 @@ on:
 
 jobs:
     release:
+        # workflow_dispatch is a deliberate manual release; otherwise the
+        # triggering Tests run must have passed.
+        if: >-
+            github.event_name == 'workflow_dispatch' ||
+            github.event.workflow_run.conclusion == 'success'
+
         runs-on: ubuntu-latest
         permissions:
             contents: write
             issues: write
             pull-requests: write
-            packages: write
 
         steps:
             - name: Checkout code
               uses: actions/checkout@v5
               with:
                   fetch-depth: 0
+                  ref: ${{ github.event.workflow_run.head_branch || github.ref_name }}
                   token: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Setup Node.js
@@ -41,12 +59,10 @@ jobs:
                   npm install --save-dev semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github @semantic-release/commit-analyzer @semantic-release/release-notes-generator conventional-changelog-conventionalcommits
 
             - name: Install PHP dependencies
-              run: |
-                  composer install --prefer-dist --no-interaction
+              run: composer install --prefer-dist --no-interaction
 
-            - name: Run tests
-              run: vendor/bin/pest
-
+            # Tests already ran in the workflow that triggered this one. These
+            # two take seconds each and guard the tree that is about to ship.
             - name: Run PHPStan
               run: vendor/bin/phpstan analyse --memory-limit=2G
 
