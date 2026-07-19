@@ -1,6 +1,7 @@
 <?php
 
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
+use Aliziodev\LaravelTaxonomy\Exceptions\DuplicateSlugException;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
 use Aliziodev\LaravelTaxonomy\TaxonomyManager;
 use Aliziodev\LaravelTaxonomy\Tests\Models\Product;
@@ -207,6 +208,48 @@ it('returns flatTree in depth-first order with correct depths', function () {
 
     expect($flat->pluck('name')->all())->toBe(['A Root', 'B Child', 'C Grandchild', 'D Child'])
         ->and($flat->pluck('depth')->all())->toBe([0, 1, 2, 1]);
+});
+
+it('returns descendants in depth-first order', function () {
+    $root = Taxonomy::create(['name' => 'Root', 'type' => TaxonomyType::Category->value, 'sort_order' => 1]);
+    $childOne = Taxonomy::create(['name' => 'Child 1', 'type' => TaxonomyType::Category->value, 'parent_id' => $root->id, 'sort_order' => 1]);
+    Taxonomy::create(['name' => 'Grandchild 1', 'type' => TaxonomyType::Category->value, 'parent_id' => $childOne->id, 'sort_order' => 1]);
+    Taxonomy::create(['name' => 'Child 2', 'type' => TaxonomyType::Category->value, 'parent_id' => $root->id, 'sort_order' => 2]);
+
+    // A grandchild must follow its own parent, not trail after every sibling
+    // at the level above (which a breadth-first walk would produce).
+    expect($root->descendants()->pluck('name')->all())
+        ->toBe(['Child 1', 'Grandchild 1', 'Child 2']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Exceptions
+|--------------------------------------------------------------------------
+*/
+
+it('throws DuplicateSlugException when the type is passed as an enum', function () {
+    // The throw only fires when the slug is invisible to the lookup but still
+    // counts as taken: a trashed row with consider_trashed enabled.
+    config()->set('taxonomy.slugs.consider_trashed', true);
+
+    $existing = Taxonomy::create(['name' => 'Dupe', 'slug' => 'dupe', 'type' => TaxonomyType::Category->value]);
+    $existing->delete();
+
+    // Passing the enum used to raise a TypeError from the exception
+    // constructor instead of the exception the caller expects to catch.
+    expect(fn () => Taxonomy::createOrUpdate([
+        'name' => 'Other',
+        'slug' => 'dupe',
+        'type' => TaxonomyType::Category,
+    ]))->toThrow(DuplicateSlugException::class);
+});
+
+it('exposes the colliding slug and type on the exception', function () {
+    $e = new DuplicateSlugException('shoes', TaxonomyType::Category);
+
+    expect($e->getSlug())->toBe('shoes')
+        ->and($e->getType())->toBe(TaxonomyType::Category->value);
 });
 
 /*

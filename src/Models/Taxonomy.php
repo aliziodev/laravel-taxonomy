@@ -224,11 +224,13 @@ class Taxonomy extends Model
      */
     public function descendants(): Collection
     {
-        // Walks the tree one level at a time instead of one node at a time.
-        // Still driven by parent_id, so the result stays correct even when
-        // lft/rgt have drifted -- unlike getDescendants(), which trusts them.
-        /** @var Collection<int, self> $descendants */
-        $descendants = new Collection;
+        // Fetches one level at a time rather than one node at a time, then
+        // re-orders depth-first so the result matches the original recursive
+        // implementation. Still driven by parent_id, so it stays correct even
+        // when lft/rgt have drifted -- unlike getDescendants(), which trusts
+        // those values.
+        /** @var array<int|string, list<self>> $childrenByParent */
+        $childrenByParent = [];
 
         $parentIds = [$this->getKey()];
         $seen = [$this->getKey() => true];
@@ -248,8 +250,23 @@ class Taxonomy extends Model
                 }
 
                 $seen[$child->getKey()] = true;
-                $descendants->push($child);
+                $childrenByParent[$child->parent_id][] = $child;
                 $parentIds[] = $child->getKey();
+            }
+        }
+
+        /** @var Collection<int, self> $descendants */
+        $descendants = new Collection;
+
+        /** @var list<self> $stack */
+        $stack = array_reverse($childrenByParent[$this->getKey()] ?? []);
+
+        while ($stack !== []) {
+            $node = array_pop($stack);
+            $descendants->push($node);
+
+            foreach (array_reverse($childrenByParent[$node->getKey()] ?? []) as $child) {
+                $stack[] = $child;
             }
         }
 

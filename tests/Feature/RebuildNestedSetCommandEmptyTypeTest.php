@@ -152,3 +152,29 @@ it('returns early when no taxonomies found for type without processing', functio
     expect($output)->toContain('No taxonomies found for type: ' . TaxonomyType::Tag->value);
     expect($output)->not->toContain('Rebuilt 0 taxonomies'); // Should not reach rebuild logic
 });
+
+it('accepts a custom taxonomy type declared in config', function () {
+    config()->set('taxonomy.types', ['category', 'department']);
+
+    Taxonomy::create(['name' => 'Sales', 'type' => 'department']);
+
+    // Validating against the enum alone rejected this, even though running the
+    // command with no argument rebuilds 'department' happily.
+    $exitCode = Artisan::call('taxonomy:rebuild-nested-set', [
+        'type' => 'department',
+        '--force' => true,
+    ]);
+
+    expect($exitCode)->toBe(0);
+});
+
+it('accepts a taxonomy type that only exists in the database', function () {
+    Taxonomy::create(['name' => 'Legacy Type', 'type' => 'legacy_type']);
+
+    $exitCode = Artisan::call('taxonomy:rebuild-nested-set', [
+        'type' => 'legacy_type',
+        '--force' => true,
+    ]);
+
+    expect($exitCode)->toBe(0);
+});

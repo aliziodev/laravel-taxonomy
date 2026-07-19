@@ -123,13 +123,26 @@ class RebuildNestedSetCommand extends Command
     }
 
     /**
-     * Get all available taxonomy types from enum.
+     * Get all taxonomy types the command will accept.
+     *
+     * Validating against the enum alone rejected types declared in
+     * `taxonomy.types` and types that only exist in the database, which
+     * contradicted the no-argument run: that rebuilds whatever types it finds.
      *
      * @return array<string>
      */
     protected function getAvailableTypes(): array
     {
-        return array_map(fn ($case) => $case->value, TaxonomyType::cases());
+        /** @var array<int, string> $configured */
+        $configured = config('taxonomy.types', TaxonomyType::values());
+
+        $types = array_merge(
+            array_map(fn ($case) => $case->value, TaxonomyType::cases()),
+            array_values($configured),
+            $this->getExistingTypes(),
+        );
+
+        return array_values(array_unique(array_filter($types, 'is_string')));
     }
 
     /**
