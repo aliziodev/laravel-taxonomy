@@ -109,10 +109,28 @@ trait HasTaxonomy
 
         $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
         $modelClass = static::taxonomyModelClass();
+        $instance = new $modelClass;
 
-        return $modelClass::whereIn('id', $taxonomyIds)
+        // This lookup answers one question: of the IDs the caller handed us,
+        // which are of this type? Running it through the application's global
+        // scopes answers a different one, and in multi-tenant setups it
+        // silently dropped taxonomies the caller had explicitly selected --
+        // shared rows visible to every tenant were the usual casualty.
+        //
+        // syncTaxonomies() already attaches whatever IDs it is given without
+        // re-filtering, so scoping only the *OfType variants was inconsistent
+        // as well. Validating input IDs remains the application's job.
+        $query = $modelClass::query()->withoutGlobalScopes();
+
+        // withoutGlobalScopes() also drops SoftDeletingScope, so trashed rows
+        // are excluded explicitly rather than becoming attachable.
+        if ($instance instanceof Model && method_exists($instance, 'getDeletedAtColumn')) {
+            $query->whereNull($instance->getQualifiedDeletedAtColumn());
+        }
+
+        return $query->whereIn($instance->getQualifiedKeyName(), $taxonomyIds)
             ->where('type', $typeValue)
-            ->pluck('id')
+            ->pluck($instance->getKeyName())
             ->all();
     }
 
