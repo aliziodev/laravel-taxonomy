@@ -152,7 +152,7 @@ return [
     // Pengaturan generasi slug
     'slugs' => [
         'generate' => true,                // Auto-generate slug dari nama
-        'regenerate_on_update' => false,  // Regenerate slug ketika nama berubah
+        'regenerate_on_update' => true,   // Regenerate slug ketika nama berubah
     ],
 ];
 ```

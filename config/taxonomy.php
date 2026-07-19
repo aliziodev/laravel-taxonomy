@@ -127,6 +127,48 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Cache
+    |--------------------------------------------------------------------------
+    |
+    | The package caches tree lookups (tree, flatTree, getNestedTree) and
+    | invalidates them automatically whenever a taxonomy is written.
+    |
+    | - 'ttl' (int): Cache lifetime in seconds. Defaults to 86400 (24 hours).
+    |
+    | - 'scope' (class-string|null): Namespaces every cache key the package
+    |   writes. REQUIRED for multi-tenant applications, otherwise one tenant can
+    |   be served another tenant's cached taxonomy tree.
+    |
+    |   Set this to the name of an invokable class returning a unique
+    |   identifier for the current context (or null when there is none):
+    |
+    |       class TenantCacheScope
+    |       {
+    |           public function __invoke(): ?string
+    |           {
+    |               return tenant()?->getKey();
+    |           }
+    |       }
+    |
+    |       'scope' => TenantCacheScope::class,
+    |
+    |   A class name is used rather than a closure so this file stays
+    |   compatible with `php artisan config:cache`. If you prefer a closure,
+    |   register it from a service provider instead:
+    |
+    |       TaxonomyManager::resolveCacheScopeUsing(fn () => tenant()?->getKey());
+    |
+    |   When no scope is configured the cache keys are identical to previous
+    |   releases, so single-tenant applications are unaffected.
+    |
+    */
+    'cache' => [
+        'ttl' => 86400,
+        'scope' => null,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Migration Loading
     |--------------------------------------------------------------------------
     |

@@ -17,6 +17,83 @@ use Illuminate\Support\Facades\Cache;
 class TaxonomyManager
 {
     /**
+     * Runtime resolver used to namespace cache keys per tenant/context.
+     *
+     * @var (callable(): (string|int|null))|null
+     */
+    protected static $cacheScopeResolver = null;
+
+    /**
+     * Namespace every cache key this package writes with an application supplied
+     * scope, so that isolated contexts (tenants, workspaces, locales) never read
+     * each other's cached taxonomy trees.
+     *
+     * Register this from a service provider:
+     *
+     *     TaxonomyManager::resolveCacheScopeUsing(fn () => tenant()?->getKey());
+     *
+     * Pass null to restore the unscoped, global behaviour.
+     *
+     * @param  (callable(): (string|int|null))|null  $resolver
+     */
+    public static function resolveCacheScopeUsing(?callable $resolver): void
+    {
+        static::$cacheScopeResolver = $resolver;
+    }
+
+    /**
+     * Resolve the current cache scope, if any.
+     *
+     * Falls back to `taxonomy.cache.scope`, which may hold the class name of an
+     * invokable resolved through the container. A class name is used rather than
+     * a closure so the config stays compatible with `php artisan config:cache`.
+     */
+    protected function cacheScope(): ?string
+    {
+        $resolver = static::$cacheScopeResolver;
+
+        if ($resolver === null) {
+            /** @var class-string|null $configured */
+            $configured = config('taxonomy.cache.scope');
+
+            if ($configured === null) {
+                return null;
+            }
+
+            $resolver = app($configured);
+        }
+
+        $scope = $resolver();
+
+        return ($scope === null || $scope === '') ? null : (string) $scope;
+    }
+
+    /**
+     * Build a cache key, inserting the current scope only when one is active.
+     *
+     * When no scope is registered the key is byte-identical to the keys used by
+     * previous releases, so upgrading never orphans a warm cache.
+     */
+    protected function cacheKey(string $key): string
+    {
+        $scope = $this->cacheScope();
+
+        return $scope === null ? $key : "taxonomy_scope_{$scope}_{$key}";
+    }
+
+    /**
+     * Resolve the cache lifetime for tree lookups.
+     *
+     * Defaults to the historical 24 hours when `taxonomy.cache.ttl` is unset.
+     */
+    protected function cacheTtl(): \DateTimeInterface
+    {
+        $ttl = config('taxonomy.cache.ttl');
+
+        return now()->addSeconds(is_numeric($ttl) ? (int) $ttl : 86400);
+    }
+
+    /**
      * Get the taxonomy model class from config.
      *
      * @return class-string<Taxonomy>
@@ -77,9 +154,9 @@ class TaxonomyManager
         $normalizedType = $typeValue ?? 'all';
         $versionKey = $this->getCacheVersionKey($normalizedType);
         $version = (int) Cache::get($versionKey, 1);
-        $cacheKey = "taxonomy_tree_{$normalizedType}_{$parentId}_v{$version}";
+        $cacheKey = $this->cacheKey("taxonomy_tree_{$normalizedType}_{$parentId}_v{$version}");
 
-        return Cache::remember($cacheKey, now()->addHours(24), function () use ($type, $parentId) {
+        return Cache::remember($cacheKey, $this->cacheTtl(), function () use ($type, $parentId) {
             $modelClass = $this->getModelClass();
 
             return $modelClass::tree($type, $parentId);
@@ -103,9 +180,9 @@ class TaxonomyManager
         $normalizedType = $typeValue ?? 'all';
         $versionKey = $this->getCacheVersionKey($normalizedType);
         $version = (int) Cache::get($versionKey, 1);
-        $cacheKey = "taxonomy_flat_tree_{$normalizedType}_{$parentId}_{$depth}_v{$version}";
+        $cacheKey = $this->cacheKey("taxonomy_flat_tree_{$normalizedType}_{$parentId}_{$depth}_v{$version}");
 
-        return Cache::remember($cacheKey, now()->addHours(24), function () use ($type, $parentId, $depth) {
+        return Cache::remember($cacheKey, $this->cacheTtl(), function () use ($type, $parentId, $depth) {
             $modelClass = $this->getModelClass();
 
             return $modelClass::flatTree($type, $parentId, $depth);
@@ -133,9 +210,9 @@ class TaxonomyManager
     public function getNestedTree(string|TaxonomyType|null $type = null): Collection
     {
         $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
-        $cacheKey = "taxonomy_nested_tree_{$typeValue}";
+        $cacheKey = $this->cacheKey($this->nestedTreeKey($typeValue));
 
-        return Cache::remember($cacheKey, now()->addHours(24), function () use ($type) {
+        return Cache::remember($cacheKey, $this->cacheTtl(), function () use ($type) {
             $modelClass = $this->getModelClass();
 
             return $modelClass::getNestedTree($type);
@@ -228,7 +305,20 @@ class TaxonomyManager
         $this->bumpCacheVersion($this->getCacheVersionKey($type));
         $this->bumpCacheVersion($this->getCacheVersionKey('all'));
 
-        Cache::forget("taxonomy_nested_tree_{$type}");
+        Cache::forget($this->cacheKey($this->nestedTreeKey($type)));
+
+        // getNestedTree(null) caches every type under a single key. Without this
+        // it survived any single-type invalidation and served a stale tree for
+        // the full TTL.
+        Cache::forget($this->cacheKey($this->nestedTreeKey(null)));
+    }
+
+    /**
+     * Build the nested-tree cache key for a type (null means "all types").
+     */
+    protected function nestedTreeKey(?string $type): string
+    {
+        return "taxonomy_nested_tree_{$type}";
     }
 
     /**
@@ -236,9 +326,9 @@ class TaxonomyManager
      */
     protected function getCacheVersionKey(string $normalizedType): string
     {
-        return $normalizedType === 'all'
-            ? 'taxonomy_cache_version_all'
-            : "taxonomy_cache_version_{$normalizedType}";
+        // Scoped as well, otherwise one tenant's write would invalidate every
+        // other tenant's warm cache.
+        return $this->cacheKey("taxonomy_cache_version_{$normalizedType}");
     }
 
     /**

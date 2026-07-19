@@ -224,20 +224,33 @@ class Taxonomy extends Model
      */
     public function descendants(): Collection
     {
+        // Walks the tree one level at a time instead of one node at a time.
+        // Still driven by parent_id, so the result stays correct even when
+        // lft/rgt have drifted -- unlike getDescendants(), which trusts them.
         /** @var Collection<int, self> $descendants */
         $descendants = new Collection;
 
-        // Load children relationship if not already loaded
-        if (! $this->relationLoaded('children')) {
-            $this->load('children');
-        }
+        $parentIds = [$this->getKey()];
+        $seen = [$this->getKey() => true];
 
-        foreach ($this->children as $child) {
-            /* @var self $child */
-            $descendants->push($child);
-            /** @var Collection<int, self> $childDescendants */
-            $childDescendants = $child->descendants();
-            $descendants = $descendants->merge($childDescendants);
+        while ($parentIds !== []) {
+            /** @var Collection<int, self> $level */
+            $level = static::whereIn('parent_id', $parentIds)
+                ->orderBy('sort_order')
+                ->get();
+
+            $parentIds = [];
+
+            foreach ($level as $child) {
+                // Guards against a cyclic parent_id looping forever.
+                if (isset($seen[$child->getKey()])) {
+                    continue;
+                }
+
+                $seen[$child->getKey()] = true;
+                $descendants->push($child);
+                $parentIds[] = $child->getKey();
+            }
         }
 
         return $descendants;
@@ -345,21 +358,50 @@ class Taxonomy extends Model
      */
     public static function flatTree(string|TaxonomyType|null $type = null, ?int $parentId = null, int $depth = 0): Collection
     {
+        // Read the whole set once and assemble the tree in memory. This used to
+        // issue one query per node via recursion.
         $query = static::query();
 
         if ($type) {
             $query->type($type);
         }
 
-        $query->where('parent_id', $parentId)->ordered();
+        $rows = $query->ordered()->get();
+
+        /** @var array<int|string, list<static>> $childrenByParent */
+        $childrenByParent = [];
+
+        foreach ($rows as $row) {
+            $childrenByParent[$row->parent_id ?? 0][] = $row;
+        }
 
         /** @var Collection<int, static> $result */
         $result = new Collection;
+        $seen = [];
 
-        foreach ($query->get() as $taxonomy) {
-            $taxonomy->depth = $depth;
-            $result->push($taxonomy);
-            $result = $result->merge(static::flatTree($type, $taxonomy->id, $depth + 1));
+        // Depth-first, matching the ordering the recursive version produced.
+        /** @var list<array{0: static, 1: int}> $stack */
+        $stack = [];
+
+        foreach (array_reverse($childrenByParent[$parentId ?? 0] ?? []) as $node) {
+            $stack[] = [$node, $depth];
+        }
+
+        while ($stack !== []) {
+            [$node, $nodeDepth] = array_pop($stack);
+
+            if (isset($seen[$node->getKey()])) {
+                continue;
+            }
+
+            $seen[$node->getKey()] = true;
+
+            $node->depth = $nodeDepth;
+            $result->push($node);
+
+            foreach (array_reverse($childrenByParent[$node->getKey()] ?? []) as $child) {
+                $stack[] = [$child, $nodeDepth + 1];
+            }
         }
 
         return $result;
@@ -556,12 +598,12 @@ class Taxonomy extends Model
             throw new \Exception('Moving this taxonomy would create a circular reference.');
         }
 
-        // Set new parent and save
+        // Set new parent and save. The `updated` hook rebuilds the nested set
+        // whenever parent_id changes, and parent_id always changes here (an
+        // unchanged parent returned early above), so rebuilding again would
+        // simply repeat the same full-type pass.
         $this->parent_id = $parentId;
         $this->save();
-
-        // Rebuild nested set structure for this taxonomy type
-        static::rebuildNestedSet($this->type);
     }
 
     /**
@@ -627,39 +669,139 @@ class Taxonomy extends Model
      */
     public static function rebuildNestedSet(string $type): void
     {
-        $taxonomies = static::where('type', $type)
-            ->whereNull('parent_id')
+        // Previously this issued one SELECT per node (to fetch its children) and
+        // one UPDATE per node, i.e. 2N round-trips. The whole type is now read
+        // once, computed in memory, and written back in batched statements.
+        $rows = static::where('type', $type)
             ->orderBy('sort_order')
             ->orderBy('name')
-            ->get();
+            ->get(['id', 'parent_id', 'lft', 'rgt', 'depth']);
 
-        $counter = 1;
-        foreach ($taxonomies as $taxonomy) {
-            $counter = static::rebuildNode($taxonomy, $counter, 0);
+        if ($rows->isEmpty()) {
+            return;
         }
+
+        /** @var array<int|string, list<object{id: mixed, parent_id: mixed}>> $childrenByParent */
+        $childrenByParent = [];
+        $known = [];
+
+        foreach ($rows as $row) {
+            $known[$row->id] = true;
+        }
+
+        foreach ($rows as $row) {
+            // Treat a node whose parent is missing (or outside this type) as a
+            // root, otherwise its subtree would silently vanish from the set.
+            $parentKey = ($row->parent_id !== null && isset($known[$row->parent_id]))
+                ? $row->parent_id
+                : 0;
+
+            $childrenByParent[$parentKey][] = $row;
+        }
+
+        /** @var array<int|string, array{lft: int, rgt: int, depth: int}> $updates */
+        $updates = [];
+        $visited = [];
+        $counter = 1;
+
+        // Explicit stack rather than recursion: deep trees no longer risk
+        // exhausting the PHP stack, and a cyclic parent_id can no longer loop
+        // forever because every node is entered at most once.
+        /** @var list<array{0: object, 1: int, 2: bool}> $stack */
+        $stack = [];
+
+        foreach (array_reverse($childrenByParent[0] ?? []) as $root) {
+            $stack[] = [$root, 0, false];
+        }
+
+        while ($stack !== []) {
+            [$node, $depth, $closing] = array_pop($stack);
+
+            if ($closing) {
+                $updates[$node->id]['rgt'] = $counter++;
+
+                continue;
+            }
+
+            if (isset($visited[$node->id])) {
+                continue;
+            }
+
+            $visited[$node->id] = true;
+
+            $updates[$node->id] = [
+                'lft' => $counter++,
+                'rgt' => 0,
+                'depth' => $depth,
+            ];
+
+            // Push the closing marker first so it is popped after the subtree.
+            $stack[] = [$node, $depth, true];
+
+            foreach (array_reverse($childrenByParent[$node->id] ?? []) as $child) {
+                $stack[] = [$child, $depth + 1, false];
+            }
+        }
+
+        // Only write rows whose values actually moved.
+        $changed = [];
+        foreach ($rows as $row) {
+            $new = $updates[$row->id] ?? null;
+
+            if ($new === null) {
+                continue;
+            }
+
+            if ($row->lft !== $new['lft'] || $row->rgt !== $new['rgt'] || $row->depth !== $new['depth']) {
+                $changed[$row->id] = $new;
+            }
+        }
+
+        static::writeNestedSetValues($changed);
     }
 
     /**
-     * Rebuild a single node and its children.
+     * Persist computed lft/rgt/depth values using batched CASE statements.
+     *
+     * @param  array<int|string, array{lft: int, rgt: int, depth: int}>  $updates
      */
-    protected static function rebuildNode(self $node, int $counter, int $depth): int
+    protected static function writeNestedSetValues(array $updates): void
     {
-        $node->lft = $counter++;
-        $node->depth = $depth;
-
-        $children = static::where('parent_id', $node->id)
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
-
-        foreach ($children as $child) {
-            $counter = static::rebuildNode($child, $counter, $depth + 1);
+        if ($updates === []) {
+            return;
         }
 
-        $node->rgt = $counter++;
-        $node->saveQuietly();
+        $instance = static::query()->getModel();
+        $connection = $instance->getConnection();
+        $grammar = $connection->getQueryGrammar();
+        $table = $grammar->wrapTable($instance->getTable());
+        $keyColumn = $grammar->wrap($instance->getKeyName());
 
-        return $counter;
+        foreach (array_chunk($updates, 500, true) as $chunk) {
+            $sets = [];
+            $bindings = [];
+
+            foreach (['lft', 'rgt', 'depth'] as $column) {
+                $case = $grammar->wrap($column) . ' = (case';
+
+                foreach ($chunk as $id => $values) {
+                    $case .= " when {$keyColumn} = ? then ?";
+                    $bindings[] = $id;
+                    $bindings[] = $values[$column];
+                }
+
+                $sets[] = $case . " else {$grammar->wrap($column)} end)";
+            }
+
+            $ids = array_keys($chunk);
+            $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+            $bindings = array_merge($bindings, $ids);
+
+            $connection->update(
+                "update {$table} set " . implode(', ', $sets) . " where {$keyColumn} in ({$placeholders})",
+                $bindings
+            );
+        }
     }
 
     /**

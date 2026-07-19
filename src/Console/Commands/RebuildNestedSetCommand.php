@@ -4,6 +4,7 @@ namespace Aliziodev\LaravelTaxonomy\Console\Commands;
 
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
+use Aliziodev\LaravelTaxonomy\TaxonomyManager;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -101,8 +102,13 @@ class RebuildNestedSetCommand extends Command
         $startTime = microtime(true);
 
         // Use the model's rebuild method
-        $modelClass = $this->getModelClass();
         $modelClass::rebuildNestedSet($type);
+
+        // rebuildNestedSet() writes without firing model events, so nothing
+        // invalidates the cached trees. Without this the command reports
+        // success while the application keeps serving the pre-rebuild tree
+        // for the rest of the cache TTL.
+        app(TaxonomyManager::class)->clearCacheForType($type);
 
         $duration = round(microtime(true) - $startTime, 2);
         $this->line("  Rebuilt {$count} taxonomies in {$duration} seconds");
@@ -156,6 +162,31 @@ class RebuildNestedSetCommand extends Command
         $this->warn("Types: {$typesList}");
         $this->warn('This operation will modify lft, rgt, and depth values.');
 
+        // There is nobody to answer the prompt when the command runs from a
+        // deploy script, cron job, CI pipeline or Artisan::call(). Prompting
+        // anyway blocks the process forever, so require --force instead.
+        //
+        // isInteractive() alone is not enough: Artisan::call() builds an
+        // ArrayInput that reports itself as interactive, so the attached
+        // stream is checked as well.
+        if (! $this->input->isInteractive() || ! $this->hasInteractiveStdin()) {
+            $this->warn('Non-interactive terminal detected. Re-run with --force to proceed.');
+
+            return false;
+        }
+
         return $this->confirm('Do you want to continue?');
+    }
+
+    /**
+     * Determine whether STDIN is attached to a real terminal.
+     */
+    protected function hasInteractiveStdin(): bool
+    {
+        if (! defined('STDIN') || ! is_resource(STDIN)) {
+            return false;
+        }
+
+        return function_exists('stream_isatty') ? stream_isatty(STDIN) : true;
     }
 }

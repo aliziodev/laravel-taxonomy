@@ -4,9 +4,13 @@ namespace Aliziodev\LaravelTaxonomy\Traits;
 
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Support\Collection as SupportCollection;
+use Traversable;
 
 /**
  * HasTaxonomy trait provides taxonomy functionality to Eloquent models.
@@ -50,6 +54,66 @@ trait HasTaxonomy
             $name . '_id',
             'taxonomy_id'
         )->withTimestamps();
+    }
+
+    /**
+     * Resolve the configured taxonomy model class.
+     *
+     * @return class-string<Taxonomy>
+     */
+    protected static function taxonomyModelClass(): string
+    {
+        return config('taxonomy.model', Taxonomy::class);
+    }
+
+    /**
+     * Resolve the taxonomies table name.
+     *
+     * Queries must not hard-code 'taxonomies': the table is configurable via
+     * `taxonomy.table_names.taxonomies`, and a custom model may override it.
+     */
+    protected static function taxonomyTable(): string
+    {
+        // Deliberately not memoised in a static: the configured table (and the
+        // configured model) can change between requests and between tests, and
+        // a cached value would silently keep pointing at the old table.
+        $modelClass = static::taxonomyModelClass();
+
+        return (new $modelClass)->getTable();
+    }
+
+    /**
+     * Resolve the taxonomables pivot table name.
+     */
+    protected static function taxonomyPivotTable(): string
+    {
+        return config('taxonomy.table_names.taxonomables', 'taxonomables');
+    }
+
+    /**
+     * Reduce a set of taxonomies to the IDs that actually belong to $type.
+     *
+     * Extracted from six identical copies that previously lived in the
+     * *OfType methods.
+     *
+     * @param  int|string|array<int, int|string|Taxonomy>|Taxonomy|Collection<int, Taxonomy>|null  $taxonomies
+     * @return array<int, int|string>
+     */
+    protected function resolveTaxonomyIdsOfType(string|TaxonomyType $type, $taxonomies): array
+    {
+        $taxonomyIds = $this->getTaxonomyIds($taxonomies);
+
+        if (empty($taxonomyIds)) {
+            return [];
+        }
+
+        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $modelClass = static::taxonomyModelClass();
+
+        return $modelClass::whereIn('id', $taxonomyIds)
+            ->where('type', $typeValue)
+            ->pluck('id')
+            ->all();
     }
 
     /**
@@ -142,25 +206,11 @@ trait HasTaxonomy
      */
     public function detachTaxonomiesOfType(string|TaxonomyType $type, $taxonomies = null, string $name = 'taxonomable'): self
     {
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
-
         if (is_null($taxonomies)) {
             // Detach all taxonomies of this type
-            $taxonomiesToDetach = $this->taxonomiesOfType($type, $name);
-            $taxonomyIds = $taxonomiesToDetach->pluck('id')->toArray();
+            $taxonomyIds = $this->taxonomiesOfType($type, $name)->pluck('id')->all();
         } else {
-            // Get taxonomy IDs and filter by type
-            $taxonomyIds = $this->getTaxonomyIds($taxonomies);
-
-            // Verify that the taxonomies belong to the specified type
-            /** @var class-string<Taxonomy> $modelClass */
-            $modelClass = config('taxonomy.model', Taxonomy::class);
-            $validTaxonomyIds = $modelClass::whereIn('id', $taxonomyIds)
-                ->where('type', $typeValue)
-                ->pluck('id')
-                ->toArray();
-
-            $taxonomyIds = $validTaxonomyIds;
+            $taxonomyIds = $this->resolveTaxonomyIdsOfType($type, $taxonomies);
         }
 
         if (! empty($taxonomyIds)) {
@@ -180,16 +230,7 @@ trait HasTaxonomy
      */
     public function syncTaxonomiesOfType(string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): self
     {
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
-        $taxonomyIds = $this->getTaxonomyIds($taxonomies);
-
-        // Verify that the taxonomies belong to the specified type
-        /** @var class-string<Taxonomy> $modelClass */
-        $modelClass = config('taxonomy.model', Taxonomy::class);
-        $validTaxonomyIds = $modelClass::whereIn('id', $taxonomyIds)
-            ->where('type', $typeValue)
-            ->pluck('id')
-            ->toArray();
+        $validTaxonomyIds = $this->resolveTaxonomyIdsOfType($type, $taxonomies);
 
         // Get current taxonomies of this type
         $currentTaxonomiesOfType = $this->taxonomiesOfType($type, $name)->pluck('id')->toArray();
@@ -217,16 +258,7 @@ trait HasTaxonomy
      */
     public function attachTaxonomiesOfType(string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): self
     {
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
-        $taxonomyIds = $this->getTaxonomyIds($taxonomies);
-
-        // Verify that the taxonomies belong to the specified type
-        /** @var class-string<Taxonomy> $modelClass */
-        $modelClass = config('taxonomy.model', Taxonomy::class);
-        $validTaxonomyIds = $modelClass::whereIn('id', $taxonomyIds)
-            ->where('type', $typeValue)
-            ->pluck('id')
-            ->toArray();
+        $validTaxonomyIds = $this->resolveTaxonomyIdsOfType($type, $taxonomies);
 
         if (! empty($validTaxonomyIds)) {
             $this->taxonomies($name)->syncWithoutDetaching($validTaxonomyIds);
@@ -245,16 +277,7 @@ trait HasTaxonomy
      */
     public function toggleTaxonomiesOfType(string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): self
     {
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
-        $taxonomyIds = $this->getTaxonomyIds($taxonomies);
-
-        // Verify that the taxonomies belong to the specified type
-        /** @var class-string<Taxonomy> $modelClass */
-        $modelClass = config('taxonomy.model', Taxonomy::class);
-        $validTaxonomyIds = $modelClass::whereIn('id', $taxonomyIds)
-            ->where('type', $typeValue)
-            ->pluck('id')
-            ->toArray();
+        $validTaxonomyIds = $this->resolveTaxonomyIdsOfType($type, $taxonomies);
 
         if (! empty($validTaxonomyIds)) {
             $this->taxonomies($name)->toggle($validTaxonomyIds);
@@ -274,7 +297,7 @@ trait HasTaxonomy
     {
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
-        return $this->taxonomies($name)->whereIn('taxonomies.id', $taxonomyIds)->exists();
+        return $this->taxonomies($name)->whereIn(static::taxonomyTable() . '.id', $taxonomyIds)->exists();
     }
 
     /**
@@ -287,7 +310,7 @@ trait HasTaxonomy
     {
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
-        return $this->taxonomies($name)->whereIn('taxonomies.id', $taxonomyIds)->count() === count($taxonomyIds);
+        return $this->taxonomies($name)->whereIn(static::taxonomyTable() . '.id', $taxonomyIds)->count() === count($taxonomyIds);
     }
 
     /**
@@ -315,7 +338,7 @@ trait HasTaxonomy
 
         return $this->taxonomies($name)
             ->where('type', $typeValue)
-            ->whereIn('taxonomies.id', $taxonomyIds)
+            ->whereIn(static::taxonomyTable() . '.id', $taxonomyIds)
             ->exists();
     }
 
@@ -330,15 +353,7 @@ trait HasTaxonomy
     public function hasAllTaxonomiesOfType(string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): bool
     {
         $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
-        $taxonomyIds = $this->getTaxonomyIds($taxonomies);
-
-        // Verify that the taxonomies belong to the specified type
-        /** @var class-string<Taxonomy> $modelClass */
-        $modelClass = config('taxonomy.model', Taxonomy::class);
-        $validTaxonomyIds = $modelClass::whereIn('id', $taxonomyIds)
-            ->where('type', $typeValue)
-            ->pluck('id')
-            ->toArray();
+        $validTaxonomyIds = $this->resolveTaxonomyIdsOfType($type, $taxonomies);
 
         if (empty($validTaxonomyIds)) {
             return false;
@@ -346,7 +361,7 @@ trait HasTaxonomy
 
         return $this->taxonomies($name)
             ->where('type', $typeValue)
-            ->whereIn('taxonomies.id', $validTaxonomyIds)
+            ->whereIn(static::taxonomyTable() . '.id', $validTaxonomyIds)
             ->count() === count($validTaxonomyIds);
     }
 
@@ -363,7 +378,7 @@ trait HasTaxonomy
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
         return $query->whereHas('taxonomies', function ($query) use ($taxonomyIds) {
-            $query->whereIn('taxonomies.id', $taxonomyIds);
+            $query->whereIn(static::taxonomyTable() . '.id', $taxonomyIds);
         });
     }
 
@@ -379,13 +394,15 @@ trait HasTaxonomy
     {
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
-        foreach ($taxonomyIds as $taxonomyId) {
-            $query->whereHas('taxonomies', function ($query) use ($taxonomyId) {
-                $query->where('taxonomies.id', $taxonomyId);
-            });
+        if (empty($taxonomyIds)) {
+            return $query;
         }
 
-        return $query;
+        // One counted subquery instead of one subquery per taxonomy.
+        // getTaxonomyIds() de-duplicates, so the count is exact.
+        return $query->whereHas('taxonomies', function ($query) use ($taxonomyIds) {
+            $query->whereIn(static::taxonomyTable() . '.id', $taxonomyIds);
+        }, '=', count($taxonomyIds));
     }
 
     /**
@@ -417,7 +434,7 @@ trait HasTaxonomy
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
         return $query->whereHas('taxonomies', function ($query) use ($taxonomyIds) {
-            $query->whereIn('taxonomies.id', $taxonomyIds);
+            $query->whereIn(static::taxonomyTable() . '.id', $taxonomyIds);
         });
     }
 
@@ -434,7 +451,7 @@ trait HasTaxonomy
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
         return $query->whereDoesntHave('taxonomies', function ($query) use ($taxonomyIds) {
-            $query->whereIn('taxonomies.id', $taxonomyIds);
+            $query->whereIn(static::taxonomyTable() . '.id', $taxonomyIds);
         });
     }
 
@@ -454,7 +471,7 @@ trait HasTaxonomy
 
         return $query->whereHas('taxonomies', function ($query) use ($typeValue, $taxonomyIds) {
             $query->where('type', $typeValue)
-                ->whereIn('taxonomies.id', $taxonomyIds);
+                ->whereIn(static::taxonomyTable() . '.id', $taxonomyIds);
         });
     }
 
@@ -470,24 +487,19 @@ trait HasTaxonomy
     public function scopeWithAllTaxonomiesOfType(Builder $query, string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): Builder
     {
         $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
-        $taxonomyIds = $this->getTaxonomyIds($taxonomies);
+        $validTaxonomyIds = $this->resolveTaxonomyIdsOfType($type, $taxonomies);
 
-        // Verify that the taxonomies belong to the specified type
-        /** @var class-string<Taxonomy> $modelClass */
-        $modelClass = config('taxonomy.model', Taxonomy::class);
-        $validTaxonomyIds = $modelClass::whereIn('id', $taxonomyIds)
-            ->where('type', $typeValue)
-            ->pluck('id')
-            ->toArray();
-
-        foreach ($validTaxonomyIds as $taxonomyId) {
-            $query->whereHas('taxonomies', function ($query) use ($typeValue, $taxonomyId) {
-                $query->where('type', $typeValue)
-                    ->where('taxonomies.id', $taxonomyId);
-            });
+        if (empty($validTaxonomyIds)) {
+            return $query;
         }
 
-        return $query;
+        // One counted subquery instead of one subquery per taxonomy. The IDs are
+        // distinct, so matching all of them is equivalent to the previous
+        // chain of whereHas calls.
+        return $query->whereHas('taxonomies', function ($query) use ($typeValue, $validTaxonomyIds) {
+            $query->where('type', $typeValue)
+                ->whereIn(static::taxonomyTable() . '.id', $validTaxonomyIds);
+        }, '=', count($validTaxonomyIds));
     }
 
     /**
@@ -506,7 +518,7 @@ trait HasTaxonomy
 
         return $query->whereDoesntHave('taxonomies', function ($query) use ($typeValue, $taxonomyIds) {
             $query->where('type', $typeValue)
-                ->whereIn('taxonomies.id', $taxonomyIds);
+                ->whereIn(static::taxonomyTable() . '.id', $taxonomyIds);
         });
     }
 
@@ -583,20 +595,27 @@ trait HasTaxonomy
             return [$taxonomies];
         }
 
-        if ($taxonomies instanceof Taxonomy) {
-            return [$taxonomies->id];
+        if ($taxonomies instanceof Model) {
+            return [$taxonomies->getKey()];
+        }
+
+        // Accept any collection type, not just Eloquent ones. Previously a
+        // Support\Collection (what pluck()/collect() return) fell through to
+        // the empty array below, so attach/sync silently did nothing.
+        // Support\Collection is checked first because it is also Arrayable and
+        // Traversable, and only ->all() preserves the model instances.
+        if ($taxonomies instanceof SupportCollection) {
+            $taxonomies = $taxonomies->all();
+        } elseif ($taxonomies instanceof Traversable) {
+            $taxonomies = iterator_to_array($taxonomies);
+        } elseif ($taxonomies instanceof Arrayable) {
+            $taxonomies = $taxonomies->toArray();
         }
 
         if (is_array($taxonomies)) {
-            return array_map(function ($taxonomy) {
-                return $taxonomy instanceof Taxonomy ? $taxonomy->id : $taxonomy;
-            }, $taxonomies);
-        }
-
-        if ($taxonomies instanceof Collection) {
-            return $taxonomies->map(function ($taxonomy) {
-                return $taxonomy->id;
-            })->toArray();
+            return array_values(array_unique(array_map(function ($taxonomy) {
+                return $taxonomy instanceof Model ? $taxonomy->getKey() : $taxonomy;
+            }, $taxonomies), SORT_REGULAR));
         }
 
         return [];
@@ -671,7 +690,7 @@ trait HasTaxonomy
         }
 
         return $query->whereHas('taxonomies', function ($q) use ($taxonomyIds) {
-            $q->whereIn('taxonomies.id', $taxonomyIds->toArray());
+            $q->whereIn(static::taxonomyTable() . '.id', $taxonomyIds->toArray());
         });
     }
 
@@ -684,10 +703,10 @@ trait HasTaxonomy
     public function scopeWithTaxonomyAtDepth(Builder $query, int $depth, string|TaxonomyType|null $type = null): Builder
     {
         return $query->whereHas('taxonomies', function ($q) use ($depth, $type) {
-            $q->where('taxonomies.depth', $depth);
+            $q->where(static::taxonomyTable() . '.depth', $depth);
 
             if ($type) {
-                $q->where('taxonomies.type', $type instanceof TaxonomyType ? $type->value : $type);
+                $q->where(static::taxonomyTable() . '.type', $type instanceof TaxonomyType ? $type->value : $type);
             }
         });
     }
@@ -775,11 +794,15 @@ trait HasTaxonomy
         $direction = strtolower($direction) === 'desc' ? 'desc' : 'asc';
         $orderBy = in_array($orderBy, ['name', 'slug', 'sort_order']) ? $orderBy : 'name';
 
-        return $query->join('taxonomables as tax_order', function ($join) {
+        $pivotTable = static::taxonomyPivotTable();
+        $taxonomyTable = static::taxonomyTable();
+        $morphType = $this->getMorphClass();
+
+        return $query->join($pivotTable . ' as tax_order', function ($join) use ($morphType) {
             $join->on($this->getTable() . '.' . $this->getKeyName(), '=', 'tax_order.taxonomable_id')
-                ->where('tax_order.taxonomable_type', '=', get_class($this));
+                ->where('tax_order.taxonomable_type', '=', $morphType);
         })
-            ->join('taxonomies as tax_sort', 'tax_order.taxonomy_id', '=', 'tax_sort.id')
+            ->join($taxonomyTable . ' as tax_sort', 'tax_order.taxonomy_id', '=', 'tax_sort.id')
             ->where('tax_sort.type', $typeValue)
             ->orderBy('tax_sort.' . $orderBy, $direction)
             ->select($this->getTable() . '.*')

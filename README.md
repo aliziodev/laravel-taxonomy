@@ -151,7 +151,7 @@ return [
     // Slug generation settings
     'slugs' => [
         'generate' => true,                // Auto-generate slugs from names
-        'regenerate_on_update' => false,  // Regenerate slug when name changes
+        'regenerate_on_update' => true,   // Regenerate slug when name changes
     ],
 ];
 ```
@@ -189,6 +189,56 @@ You can also publish the package migrations and orchestrate them as needed:
 ```bash
 php artisan vendor:publish --provider="Aliziodev\LaravelTaxonomy\TaxonomyProvider" --tag="taxonomy-migrations"
 ```
+
+### Cache Isolation (Multi-tenant)
+
+> **Required for multi-tenant applications.** Tree lookups (`tree()`, `flatTree()`, `getNestedTree()`) are cached. Without a cache scope those entries are global, so one tenant can be served another tenant's taxonomy tree.
+
+Register a resolver that returns a unique identifier for the current tenant:
+
+```php
+// app/Providers/AppServiceProvider.php
+use Aliziodev\LaravelTaxonomy\TaxonomyManager;
+
+public function boot(): void
+{
+    TaxonomyManager::resolveCacheScopeUsing(fn () => tenant()?->getKey());
+}
+```
+
+If you prefer configuration, point `taxonomy.cache.scope` at an invokable class. A class name is used rather than a closure so the config stays compatible with `php artisan config:cache`:
+
+```php
+class TenantCacheScope
+{
+    public function __invoke(): ?string
+    {
+        return tenant()?->getKey();
+    }
+}
+
+// config/taxonomy.php
+'cache' => [
+    'ttl' => 86400,
+    'scope' => TenantCacheScope::class,
+],
+```
+
+When no scope is registered the cache keys are identical to previous releases, so single-tenant applications need no changes.
+
+#### Tenant columns and slug uniqueness
+
+The package does not add a `tenant_id` column. If you isolate tenants with a global scope on a custom taxonomy model, note that the shipped migration declares `unique(['slug', 'type', 'deleted_at'])`, which prevents two tenants from using the same slug within a type. Add your own migration to replace it:
+
+```php
+Schema::table('taxonomies', function (Blueprint $table) {
+    $table->dropUnique(['slug', 'type', 'deleted_at']);
+    $table->foreignId('tenant_id')->nullable()->index();
+    $table->unique(['tenant_id', 'slug', 'type', 'deleted_at']);
+});
+```
+
+Because slug uniqueness is also enforced in PHP via `Taxonomy::slugExists()`, your custom model's global scope must be active for that check to be tenant-aware.
 
 ### Configuration Options Explained
 

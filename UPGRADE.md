@@ -1,5 +1,28 @@
 # Upgrade Guide
 
+## Upgrading to v2.11.0
+
+No database changes are required and no public method signatures changed. Read the two notes below before deploying.
+
+### New: cache isolation for multi-tenant applications
+
+Tree lookups are cached, and those cache entries were previously global. In a multi-tenant application one tenant could be served another tenant's cached taxonomy tree. Register a scope resolver:
+
+```php
+use Aliziodev\LaravelTaxonomy\TaxonomyManager;
+
+TaxonomyManager::resolveCacheScopeUsing(fn () => tenant()?->getKey());
+```
+
+Single-tenant applications need no changes: with no resolver registered the cache keys are byte-identical to previous releases, so upgrading does not orphan a warm cache.
+
+### Fixes worth knowing about
+
+- `attachTaxonomies()`, `syncTaxonomies()` and friends now accept a `Support\Collection` (what `collect()` and `pluck()` return). These previously resolved to an empty set and did nothing, without raising an error. Code that silently no-opped will now actually write.
+- `taxonomy:rebuild-nested-set` no longer blocks forever when run without `--force` from a non-interactive context (CI, cron, deploy scripts, `Artisan::call()`). It now reports that `--force` is required and exits.
+- `taxonomy:rebuild-nested-set` now invalidates cached trees; previously a rebuild succeeded while the application kept serving the pre-rebuild tree for the rest of the cache TTL.
+- Query scopes now qualify columns with the configured table name instead of a hard-coded `taxonomies`, so `table_names.taxonomies` works.
+
 ## Upgrading to v2.3.0
 
 ### Breaking Changes
