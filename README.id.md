@@ -28,7 +28,7 @@ Kelola kategori, tag, dan struktur hierarkis apa pun di Laravel. Semua term disi
 
 | | |
 |---|---|
-| PHP | `^8.2` atau `^8.3` |
+| PHP | 8.2 atau lebih baru |
 | Laravel | 11, 12, atau 13 |
 
 ## Instalasi

@@ -28,7 +28,7 @@ Manage categories, tags and any hierarchical structure in Laravel. Terms live in
 
 | | |
 |---|---|
-| PHP | `^8.2` or `^8.3` |
+| PHP | 8.2 or newer |
 | Laravel | 11, 12 or 13 |
 
 ## Installation
