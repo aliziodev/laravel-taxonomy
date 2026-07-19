@@ -1,286 +1,142 @@
-# E-commerce Product Catalog
+# E-commerce product catalog
 
-**Scenario**: Building a multi-category e-commerce platform with products, brands, and attributes.
-
-## 1. Set up the taxonomy structure
+**Scenario**: a catalog needs three shapes of classification at once — a nested
+category tree, flat attributes like colour and size, and free-form tags. All
+three are taxonomy **types**.
 
 ```php
-use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
+use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
+```
 
-// Create main categories
+> `Facades\Taxonomy` proxies the manager (create, find, tree, …).
+> `Models\Taxonomy` is the Eloquent model, for query building. They are not
+> interchangeable — the facade has no `where()`.
+
+## 1. The category tree
+
+```php
 $electronics = Taxonomy::create([
     'name' => 'Electronics',
-    'type' => TaxonomyType::Category->value,
-    'meta' => [
-        'icon' => 'laptop',
-        'banner_image' => 'electronics-banner.jpg',
-        'seo_title' => 'Electronics - Latest Gadgets & Devices',
-    ],
+    'type' => TaxonomyType::Category,
+    'meta' => ['icon' => 'devices'],
 ]);
 
-$clothing = Taxonomy::create([
-    'name' => 'Clothing',
-    'type' => TaxonomyType::Category->value,
-    'meta' => [
-        'icon' => 'shirt',
-        'seasonal' => true,
-    ],
-]);
-
-// Create subcategories
-$smartphones = Taxonomy::create([
-    'name' => 'Smartphones',
-    'type' => TaxonomyType::Category->value,
-    'parent_id' => $electronics->id,
-    'meta' => [
-        'filters' => ['brand', 'price_range', 'storage', 'color'],
-        'popular' => true,
-    ],
-]);
-
-$laptops = Taxonomy::create([
-    'name' => 'Laptops',
-    'type' => TaxonomyType::Category->value,
+$phones = Taxonomy::create([
+    'name'      => 'Smartphones',
+    'type'      => TaxonomyType::Category,
     'parent_id' => $electronics->id,
 ]);
 
-// Create brands
-$apple = Taxonomy::create([
-    'name' => 'Apple',
-    'type' => 'brand',
-    'meta' => [
-        'logo' => 'apple-logo.png',
-        'premium' => true,
-        'warranty_years' => 1,
-    ],
-]);
-
-$samsung = Taxonomy::create([
-    'name' => 'Samsung',
-    'type' => 'brand',
-    'meta' => [
-        'logo' => 'samsung-logo.png',
-        'country' => 'South Korea',
-    ],
-]);
-
-// Create product attributes
-$colors = [
-    ['name' => 'Space Gray', 'hex' => '#8E8E93'],
-    ['name' => 'Silver', 'hex' => '#C7C7CC'],
-    ['name' => 'Gold', 'hex' => '#FFD700'],
-];
-
-foreach ($colors as $color) {
-    Taxonomy::create([
-        'name' => $color['name'],
-        'type' => TaxonomyType::Color->value,
-        'meta' => ['hex_code' => $color['hex']],
-    ]);
-}
-```
-
-## 2. Associate products with taxonomies
-
-```php
-$product = Product::create([
-    'name' => 'iPhone 15 Pro',
-    'description' => 'Latest iPhone with advanced features',
-    'price' => 999.99,
-    'sku' => 'IPH15PRO-128-SG',
-]);
-
-// Attach multiple taxonomy types
-$product->attachTaxonomies([
-    $electronics->id,
-    $smartphones->id,
-    $apple->id,
-    Taxonomy::findBySlug('space-gray')->id,
+$android = Taxonomy::create([
+    'name'      => 'Android',
+    'type'      => TaxonomyType::Category,
+    'parent_id' => $phones->id,
 ]);
 ```
 
-## 3. Build dynamic category navigation
+`parent_id` is all you set; `lft`, `rgt` and `depth` are maintained for you.
+
+## 2. Attributes and tags
+
+Colour and size are flat, so give them their own types and use `meta` and
+`sort_order` for presentation:
 
 ```php
-class CategoryController extends Controller
-{
-    public function index()
-    {
-        $categories = Taxonomy::tree(TaxonomyType::Category)
-            ->map(function ($category) {
-                return [
-                    'id' => $category->id,
-                    'name' => $category->name,
-                    'slug' => $category->slug,
-                    'icon' => $category->meta['icon'] ?? null,
-                    'product_count' => $category->models()->count(),
-                    'children' => $category->children->map(function ($child) {
-                        return [
-                            'id' => $child->id,
-                            'name' => $child->name,
-                            'slug' => $child->slug,
-                            'product_count' => $child->models()->count(),
-                        ];
-                    }),
-                ];
-            });
-
-        return view('categories.index', compact('categories'));
-    }
-
-    public function show($slug)
-    {
-        $category = Taxonomy::findBySlug($slug, TaxonomyType::Category);
-        
-        if (!$category) {
-            abort(404);
-        }
-
-        // Get products in this category and its subcategories
-        $categoryIds = collect([$category->id])
-            ->merge($category->getDescendants()->pluck('id'));
-
-        $products = Product::withAnyTaxonomies($categoryIds)
-            ->with(['taxonomies' => function ($query) {
-                $query->whereIn('type', ['brand', TaxonomyType::Color->value]);
-            }])
-            ->paginate(20);
-
-        // Get available filters
-        $brands = Taxonomy::whereIn('id', function ($query) use ($categoryIds) {
-            $query->select('taxonomy_id')
-                ->from('taxonomables')
-                ->whereIn('taxonomable_id', function ($subQuery) use ($categoryIds) {
-                    $subQuery->select('taxonomable_id')
-                        ->from('taxonomables')
-                        ->whereIn('taxonomy_id', $categoryIds);
-                })
-                ->where('taxonomable_type', Product::class);
-        })->where('type', 'brand')->get();
-
-        return view('categories.show', compact('category', 'products', 'brands'));
-    }
+foreach ([['Red', '#ef4444'], ['Blue', '#3b82f6']] as [$name, $hex]) {
+    Taxonomy::create(['name' => $name, 'type' => 'color', 'meta' => ['hex' => $hex]]);
 }
+
+foreach (['S', 'M', 'L', 'XL'] as $i => $size) {
+    Taxonomy::create(['name' => $size, 'type' => 'size', 'sort_order' => $i]);
+}
+
+Taxonomy::create(['name' => 'Bestseller', 'type' => TaxonomyType::Tag]);
 ```
 
-## 4. Advanced filtering and search
+Custom types need no registration — any string works. Listing them in
+`config('taxonomy.types')` only helps tooling and the rebuild command.
+
+## 3. Assigning to a product
 
 ```php
-class ProductSearchController extends Controller
+class Product extends Model
 {
-    public function search(Request $request)
-    {
-        $query = Product::query();
-
-        // Filter by categories
-        if ($request->filled('categories')) {
-            $query->withAnyTaxonomies($request->categories);
-        }
-
-        // Filter by brands
-        if ($request->filled('brands')) {
-            $query->withAnyTaxonomies($request->brands);
-        }
-
-        // Filter by colors
-        if ($request->filled('colors')) {
-            $query->withAnyTaxonomies($request->colors);
-        }
-
-        // Price range
-        if ($request->filled('min_price')) {
-            $query->where('price', '>=', $request->min_price);
-        }
-
-        if ($request->filled('max_price')) {
-            $query->where('price', '<=', $request->max_price);
-        }
-
-        // Text search
-        if ($request->filled('q')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->q . '%')
-                  ->orWhere('description', 'like', '%' . $request->q . '%');
-            });
-        }
-
-        $products = $query->with('taxonomies')->paginate(20);
-
-        return view('products.search', compact('products'));
-    }
+    use HasTaxonomy;
 }
+
+$product->syncTaxonomiesOfType(TaxonomyType::Category, [$android->id]);
+$product->syncTaxonomiesOfType('color', $colorIds);
+$product->attachTaxonomiesOfType(TaxonomyType::Tag, [$bestsellerId]);
 ```
 
-## 5. Product recommendation system
+The `*OfType` variants only touch one type, so re-syncing categories leaves
+colours and tags untouched. They take **ids or models**, never slugs — resolve
+a slug first with `Taxonomy::findBySlug('android', TaxonomyType::Category)`.
+
+## 4. Browsing a category
+
+Shoppers expect a category page to include everything nested beneath it.
+`withTaxonomyHierarchy()` covers the term plus its descendants:
 
 ```php
-class ProductRecommendationService
-{
-    public function getRelatedProducts(Product $product, int $limit = 6): Collection
-    {
-        $productTaxonomies = $product->taxonomies->pluck('id');
-        
-        return Product::withAnyTaxonomies($productTaxonomies)
-            ->where('id', '!=', $product->id)
-            ->withCount(['taxonomies' => function ($query) use ($productTaxonomies) {
-                $query->whereIn('taxonomy_id', $productTaxonomies);
-            }])
-            ->orderByDesc('taxonomies_count')
-            ->limit($limit)
-            ->get();
-    }
-
-    public function getCrossSellProducts(Product $product): Collection
-    {
-        // Get products frequently bought together
-        $categoryIds = $product->taxonomies
-            ->where('type', TaxonomyType::Category->value)
-            ->pluck('id');
-
-        return Product::withAnyTaxonomies($categoryIds)
-            ->where('id', '!=', $product->id)
-            ->where('price', '<', $product->price * 0.5) // Cheaper accessories
-            ->limit(4)
-            ->get();
-    }
-}
+Product::withTaxonomyHierarchy($phones->id)->paginate(24);   // includes Android
+Product::withTaxonomy([$phones->id])->paginate(24);          // that exact term only
 ```
 
-## 6. SEO-friendly URLs and breadcrumbs
+## 5. Faceted filtering
+
+`filterByTaxonomies()` maps a request payload straight onto types. Values
+within one type are OR-ed; separate types are AND-ed:
 
 ```php
-class BreadcrumbService
-{
-    public function generateProductBreadcrumbs(Product $product): array
-    {
-        $breadcrumbs = [['name' => 'Home', 'url' => route('home')]];
-        
-        $category = $product->taxonomies
-            ->where('type', TaxonomyType::Category->value)
-            ->first();
-
-        if ($category) {
-            $ancestors = $category->getAncestors();
-            
-            foreach ($ancestors as $ancestor) {
-                $breadcrumbs[] = [
-                    'name' => $ancestor->name,
-                    'url' => route('categories.show', $ancestor->slug),
-                ];
-            }
-            
-            $breadcrumbs[] = [
-                'name' => $category->name,
-                'url' => route('categories.show', $category->slug),
-            ];
-        }
-        
-        $breadcrumbs[] = ['name' => $product->name, 'url' => null];
-        
-        return $breadcrumbs;
-    }
-}
+// ?category=android&color[]=red&color[]=blue
+Product::filterByTaxonomies([
+    'category' => $request->input('category'),   // type => slug
+    'color'    => $request->input('color', []),  // red OR blue
+])->paginate(24);
 ```
 
-This e-commerce example demonstrates how Laravel Taxonomy can handle complex product categorization, filtering, and navigation requirements in a real-world application.
+For explicit control, use the scopes directly:
+
+```php
+Product::withTaxonomySlug('android', TaxonomyType::Category)
+    ->withAnyTaxonomiesOfType('color', $colorIds)
+    ->withAllTaxonomiesOfType('size', $sizeIds)
+    ->withoutTaxonomiesOfType(TaxonomyType::Tag, $discontinuedIds)
+    ->paginate(24);
+```
+
+## 6. Navigation and breadcrumbs
+
+```php
+// Menu: full tree, one query, cached
+$menu = Taxonomy::getNestedTree(TaxonomyType::Category);
+
+// Breadcrumb for the current category
+$category->path;   // "Electronics > Smartphones > Android"
+
+$trail = $category->ancestors()->reverse()->push($category);
+```
+
+## 7. Counting products per category
+
+`Taxonomy` has no `models` relation, so count from the product side:
+
+```php
+$total = Product::withTaxonomyHierarchy($phones->id)->count();
+```
+
+Or aggregate over the pivot for a whole level at once:
+
+```php
+$countsByTaxonomy = DB::table(config('taxonomy.table_names.taxonomables'))
+    ->where('taxonomable_type', (new Product)->getMorphClass())
+    ->whereIn('taxonomy_id', $categoryIds)
+    ->selectRaw('taxonomy_id, count(*) as total')
+    ->groupBy('taxonomy_id')
+    ->pluck('total', 'taxonomy_id');
+```
+
+Read the table name from config rather than hard-coding it; both the table
+names and the morph column type are configurable.

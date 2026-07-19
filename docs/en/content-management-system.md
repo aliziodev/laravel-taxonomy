@@ -1,282 +1,158 @@
-# Content Management System
+# Content management system
 
-**Scenario**: Building a CMS with articles, categories, tags, and content organization.
-
-## 1. Set up content taxonomies
+**Scenario**: articles filed under a category tree, tagged freely, and surfaced
+through archives and related-content listings.
 
 ```php
-// Create main content categories
-$newsCategory = Taxonomy::create([
-    'name' => 'News',
-    'type' => TaxonomyType::Category->value,
-    'meta' => [
-        'template' => 'news-layout',
-        'show_date' => true,
-        'allow_comments' => true,
-    ],
-]);
-
-$techNews = Taxonomy::create([
-    'name' => 'Technology',
-    'type' => TaxonomyType::Category->value,
-    'parent_id' => $newsCategory->id,
-    'meta' => [
-        'featured_color' => '#007bff',
-        'rss_enabled' => true,
-    ],
-]);
-
-// Create content tags
-$tags = ['Laravel', 'PHP', 'JavaScript', 'AI', 'Machine Learning'];
-foreach ($tags as $tagName) {
-    Taxonomy::create([
-        'name' => $tagName,
-        'type' => TaxonomyType::Tag->value,
-        'meta' => [
-            'trending' => in_array($tagName, ['AI', 'Machine Learning']),
-            'skill_level' => $tagName === 'Laravel' ? 'intermediate' : 'beginner',
-        ],
-    ]);
-}
+use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
+use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
+use Aliziodev\LaravelTaxonomy\Models\Taxonomy as TaxonomyModel;
 ```
 
-## 2. Article model with taxonomies
+## 1. Categories and tags
+
+An article usually belongs to **one** category but carries **many** tags. Both
+are taxonomies; only the type differs.
+
+```php
+$news = Taxonomy::create([
+    'name' => 'News',
+    'type' => TaxonomyType::Category,
+    'meta' => ['icon' => 'newspaper', 'colour' => '#2563eb'],
+]);
+
+$releases = Taxonomy::create([
+    'name'      => 'Product Releases',
+    'type'      => TaxonomyType::Category,
+    'parent_id' => $news->id,
+]);
+
+foreach (['Laravel', 'PHP', 'Testing'] as $tag) {
+    Taxonomy::create(['name' => $tag, 'type' => TaxonomyType::Tag]);
+}
+```
 
 ```php
 class Article extends Model
 {
     use HasTaxonomy;
-
-    protected $fillable = ['title', 'content', 'excerpt', 'published_at'];
-
-    public function scopePublished($query)
-    {
-        return $query->whereNotNull('published_at')
-            ->where('published_at', '<=', now());
-    }
-
-    public function getRouteKeyName()
-    {
-        return 'slug';
-    }
 }
 ```
 
-## 3. Create and categorize articles
+## 2. Publishing an article
 
 ```php
-$article = Article::create([
-    'title' => 'Getting Started with Laravel 11',
-    'content' => 'Laravel 11 introduces many exciting features...',
-    'excerpt' => 'Learn about the new features in Laravel 11',
-    'published_at' => now(),
+// One category, replacing whatever was there
+$article->syncTaxonomiesOfType(TaxonomyType::Category, [$releases->id]);
+
+// Tags, leaving the category alone
+$article->syncTaxonomiesOfType(TaxonomyType::Tag, $tagIds);
+```
+
+If the editor supplies tag names rather than ids, create-or-fetch them first —
+attaching a raw string attaches nothing:
+
+```php
+$tagIds = collect($request->input('tags', []))
+    ->map(fn (string $name) => Taxonomy::createOrUpdate([
+        'name' => $name,
+        'type' => TaxonomyType::Tag->value,
+    ])->id);
+
+$article->syncTaxonomiesOfType(TaxonomyType::Tag, $tagIds);
+```
+
+`createOrUpdate()` matches on slug + type, so repeated names reuse one term.
+
+## 3. Category and tag archives
+
+```php
+// Everything in a category, including its child categories
+Article::withTaxonomyHierarchy($news->id)
+    ->where('status', 'published')
+    ->latest()
+    ->paginate(15);
+
+// A single tag
+Article::withTaxonomySlug($slug, TaxonomyType::Tag)
+    ->where('status', 'published')
+    ->paginate(15);
+
+// Articles matching every one of several tags
+Article::withAllTaxonomiesOfType(TaxonomyType::Tag, $tagIds)->get();
+```
+
+## 4. Related articles
+
+Share-a-tag is a decent proxy for relatedness:
+
+```php
+$tagIds = $article->taxonomiesOfType(TaxonomyType::Tag)->pluck('id');
+
+$related = Article::withAnyTaxonomiesOfType(TaxonomyType::Tag, $tagIds)
+    ->whereKeyNot($article->getKey())
+    ->where('status', 'published')
+    ->limit(5)
+    ->get();
+```
+
+## 5. Navigation
+
+```php
+// Category menu: full depth, one query, cached
+$menu = Taxonomy::getNestedTree(TaxonomyType::Category);
+
+// Top-level only
+TaxonomyModel::type(TaxonomyType::Category)->root()->ordered()->get();
+
+// Breadcrumb
+$category->path;                                        // "News > Product Releases"
+$category->ancestors()->reverse()->push($category);     // Collection
+```
+
+## 6. A tag cloud
+
+Weight by usage, counted over the pivot:
+
+```php
+$usage = DB::table(config('taxonomy.table_names.taxonomables'))
+    ->where('taxonomable_type', (new Article)->getMorphClass())
+    ->selectRaw('taxonomy_id, count(*) as total')
+    ->groupBy('taxonomy_id')
+    ->pluck('total', 'taxonomy_id');
+
+$cloud = TaxonomyModel::type(TaxonomyType::Tag)
+    ->whereIn('id', $usage->keys())
+    ->get()
+    ->map(fn ($tag) => [
+        'name'  => $tag->name,
+        'slug'  => $tag->slug,
+        'count' => $usage[$tag->id] ?? 0,
+    ])
+    ->sortByDesc('count');
+```
+
+There is no `models` relation on `Taxonomy`, so counts come from the pivot or
+from the article side — and the table name comes from config, never a literal.
+
+## 7. SEO metadata
+
+`meta` is a JSON column, which makes it a natural home for per-term SEO fields:
+
+```php
+Taxonomy::create([
+    'name' => 'News',
+    'type' => TaxonomyType::Category,
+    'meta' => [
+        'seo' => [
+            'title'       => 'Latest News and Updates',
+            'description' => 'Stay current with our announcements.',
+        ],
+    ],
 ]);
 
-$article->attachTaxonomies([
-    $techNews->id,
-    Taxonomy::findBySlug('laravel')->id,
-    Taxonomy::findBySlug('php')->id,
-]);
+$category->meta['seo']['title'] ?? $category->name;
+
+// Queryable
+TaxonomyModel::where('meta->seo->title', '!=', null)->get();
 ```
-
-## 4. Build content filtering and navigation
-
-```php
-class ArticleController extends Controller
-{
-    public function index(Request $request)
-    {
-        $query = Article::published()->with('taxonomies');
-
-        // Filter by category
-        if ($request->category) {
-            $category = Taxonomy::findBySlug($request->category, TaxonomyType::Category);
-            if ($category) {
-                $categoryIds = collect([$category->id])
-                    ->merge($category->getDescendants()->pluck('id'));
-                $query->withAnyTaxonomies($categoryIds);
-            }
-        }
-
-        // Filter by tags
-        if ($request->tags) {
-            $tagSlugs = explode(',', $request->tags);
-            $tags = Taxonomy::whereIn('slug', $tagSlugs)
-                ->where('type', TaxonomyType::Tag->value)
-                ->get();
-            $query->withAllTaxonomies($tags);
-        }
-
-        $articles = $query->orderBy('published_at', 'desc')->paginate(10);
-
-        // Get popular tags
-        $popularTags = Taxonomy::where('type', TaxonomyType::Tag->value)
-            ->withCount('models')
-            ->orderBy('models_count', 'desc')
-            ->limit(10)
-            ->get();
-
-        return view('articles.index', compact('articles', 'popularTags'));
-    }
-
-    public function show(Article $article)
-    {
-        $categories = $article->taxonomiesOfType(TaxonomyType::Category);
-        $tags = $article->taxonomiesOfType(TaxonomyType::Tag);
-
-        // Get related articles
-        $relatedArticles = Article::published()
-            ->withAnyTaxonomies($tags->pluck('id'))
-            ->where('id', '!=', $article->id)
-            ->limit(5)
-            ->get();
-
-        return view('articles.show', compact('article', 'categories', 'tags', 'relatedArticles'));
-    }
-}
-```
-
-## 5. Advanced content organization
-
-```php
-class ContentOrganizationService
-{
-    public function getContentByCategory(string $categorySlug): Collection
-    {
-        $category = Taxonomy::findBySlug($categorySlug, TaxonomyType::Category);
-        
-        if (!$category) {
-            return collect();
-        }
-
-        // Get all descendant categories
-        $categoryIds = collect([$category->id])
-            ->merge($category->getDescendants()->pluck('id'));
-
-        return Article::published()
-            ->withAnyTaxonomies($categoryIds)
-            ->orderBy('published_at', 'desc')
-            ->get();
-    }
-
-    public function getTrendingContent(int $days = 7): Collection
-    {
-        $trendingTags = Taxonomy::where('type', TaxonomyType::Tag->value)
-            ->whereJsonContains('meta->trending', true)
-            ->get();
-
-        return Article::published()
-            ->withAnyTaxonomies($trendingTags->pluck('id'))
-            ->where('published_at', '>=', now()->subDays($days))
-            ->orderBy('published_at', 'desc')
-            ->get();
-    }
-
-    public function getContentArchive(): array
-    {
-        return Article::published()
-            ->selectRaw('YEAR(published_at) as year, MONTH(published_at) as month, COUNT(*) as count')
-            ->groupBy('year', 'month')
-            ->orderBy('year', 'desc')
-            ->orderBy('month', 'desc')
-            ->get()
-            ->groupBy('year')
-            ->toArray();
-    }
-}
-```
-
-## 6. SEO and meta management
-
-```php
-class SEOService
-{
-    public function generateMetaTags(Article $article): array
-    {
-        $categories = $article->taxonomiesOfType(TaxonomyType::Category);
-        $tags = $article->taxonomiesOfType(TaxonomyType::Tag);
-
-        return [
-            'title' => $article->title,
-            'description' => $article->excerpt,
-            'keywords' => $tags->pluck('name')->implode(', '),
-            'category' => $categories->first()?->name,
-            'article:section' => $categories->first()?->name,
-            'article:tag' => $tags->pluck('name')->toArray(),
-            'article:published_time' => $article->published_at?->toISOString(),
-        ];
-    }
-
-    public function generateBreadcrumbs(Article $article): array
-    {
-        $breadcrumbs = [['name' => 'Home', 'url' => route('home')]];
-        
-        $category = $article->taxonomiesOfType(TaxonomyType::Category)->first();
-        
-        if ($category) {
-            $ancestors = $category->getAncestors();
-            
-            foreach ($ancestors as $ancestor) {
-                $breadcrumbs[] = [
-                    'name' => $ancestor->name,
-                    'url' => route('articles.category', $ancestor->slug),
-                ];
-            }
-            
-            $breadcrumbs[] = [
-                'name' => $category->name,
-                'url' => route('articles.category', $category->slug),
-            ];
-        }
-        
-        $breadcrumbs[] = ['name' => $article->title, 'url' => null];
-        
-        return $breadcrumbs;
-    }
-}
-```
-
-## 7. Content analytics and reporting
-
-```php
-class ContentAnalyticsService
-{
-    public function getCategoryPerformance(): Collection
-    {
-        return Taxonomy::where('type', TaxonomyType::Category->value)
-            ->withCount('models')
-            ->with(['models' => function ($query) {
-                $query->where('published_at', '>=', now()->subMonth());
-            }])
-            ->get()
-            ->map(function ($category) {
-                return [
-                    'name' => $category->name,
-                    'total_articles' => $category->models_count,
-                    'recent_articles' => $category->models->count(),
-                    'engagement_rate' => $this->calculateEngagementRate($category),
-                ];
-            });
-    }
-
-    public function getPopularTags(int $limit = 20): Collection
-    {
-        return Taxonomy::where('type', TaxonomyType::Tag->value)
-            ->withCount(['models' => function ($query) {
-                $query->where('published_at', '>=', now()->subMonth());
-            }])
-            ->orderBy('models_count', 'desc')
-            ->limit($limit)
-            ->get();
-    }
-
-    private function calculateEngagementRate(Taxonomy $category): float
-    {
-        // Implementation depends on your analytics tracking
-        // This is a placeholder calculation
-        return rand(10, 95) / 100;
-    }
-}
-```
-
-This CMS example shows how Laravel Taxonomy can power a sophisticated content management system with hierarchical categories, flexible tagging, and advanced content organization features.

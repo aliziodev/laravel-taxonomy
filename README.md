@@ -1,212 +1,382 @@
 <p align="center"><img src="https://raw.githubusercontent.com/aliziodev/laravel-taxonomy/refs/heads/master/art/new-header.svg" width="400" alt="Laravel Taxonomy"></p>
 
 <p align="center">
-  <!-- Baris 1 -->
   <a href="https://codecov.io/gh/aliziodev/laravel-taxonomy"><img src="https://codecov.io/gh/aliziodev/laravel-taxonomy/branch/master/graph/badge.svg" alt="codecov"></a>
   <a href="https://github.com/aliziodev/laravel-taxonomy/actions"><img src="https://github.com/aliziodev/laravel-taxonomy/workflows/Tests/badge.svg" alt="Tests"></a>
   <a href="https://github.com/aliziodev/laravel-taxonomy/actions"><img src="https://github.com/aliziodev/laravel-taxonomy/workflows/Code%20Quality/badge.svg" alt="Code Quality"></a>
 </br>
-  <!-- Baris 2 -->
   <a href="https://packagist.org/packages/aliziodev/laravel-taxonomy"><img src="https://img.shields.io/packagist/v/aliziodev/laravel-taxonomy.svg" alt="Latest Version on Packagist"></a>
   <a href="https://packagist.org/packages/aliziodev/laravel-taxonomy"><img src="https://img.shields.io/packagist/dt/aliziodev/laravel-taxonomy.svg" alt="Total Downloads"></a>
   <a href="https://packagist.org/packages/aliziodev/laravel-taxonomy"><img src="https://img.shields.io/packagist/php-v/aliziodev/laravel-taxonomy.svg" alt="PHP Version"></a>
-  <a href="https://laravel.com/"><img src="https://img.shields.io/badge/Laravel-11.0%2B-orange.svg" alt="Laravel Version"></a>
+  <a href="https://laravel.com/"><img src="https://img.shields.io/badge/Laravel-11%20%7C%2012%20%7C%2013-orange.svg" alt="Laravel Version"></a>
   <a href="https://deepwiki.com/aliziodev/laravel-taxonomy"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>
 
-Laravel Taxonomy is a flexible and powerful package for managing taxonomies, categories, tags, and hierarchical structures in Laravel applications. Features nested-set support for optimal query performance on hierarchical data structures.
+Manage categories, tags and any hierarchical structure in Laravel. Terms live in one table, attach to any model through a polymorphic pivot, and hierarchies are maintained as a nested set so ancestor and descendant lookups stay a single query.
 
-## 📖 Documentation
+[🇮🇩 Dokumentasi Bahasa Indonesia](README.id.md)
 
--   [🇺🇸 English Documentation](README.md)
--   [🇮🇩 Dokumentasi Bahasa Indonesia](README.id.md)
+## Contents
 
-## 📋 Table of Contents
-
--   [Overview](#overview)
--   [Key Features](#key-features)
--   [Requirements](#requirements)
--   [Installation](#installation)
--   [Configuration](#️-configuration)
--   [Quick Start](#-quick-start)
--   [Basic Usage](#-basic-usage)
--   [Hierarchical Data & Nested Sets](#-hierarchical-data--nested-sets)
--   [Metadata Support](#-metadata-support)
--   [Bulk Operations](#-bulk-operations)
--   [Caching & Performance](#-caching--performance)
--   [Custom Taxonomy Types](#️-custom-taxonomy-types)
--   [Real-World Usage Scenarios](#-real-world-usage-scenarios)
--   [Advanced Features](#-advanced-features)
--   [Best Practices](#-best-practices)
--   [Custom Slugs and Error Handling](#custom-slugs-and-error-handling)
--   [Troubleshooting](#troubleshooting)
--   [Security](#security)
--   [Testing](#testing)
--   [License](#license)
-
-## Overview
-
-This package is ideal for:
-
--   E-commerce category management
--   Blog taxonomies
--   Content organization
--   Product attributes
--   Dynamic navigation
--   Any hierarchical data structure
-
-## Key Features
-
-### Core Functionality
-
--   **Hierarchical Terms**: Create parent-child relationships between terms
--   **Metadata Support**: Store additional data as JSON with each taxonomy
--   **Term Ordering**: Control the order of terms with sort_order
--   **Polymorphic Relationships**: Associate taxonomies with any model
--   **Multiple Term Types**: Use predefined types (Category, Tag, etc.) or create custom types
--   **Composite Unique Slugs**: Slugs are unique within their type, allowing same slug across different types
--   **Bulk Operations**: Attach, detach, sync, or toggle multiple taxonomies at once
--   **Advanced Querying**: Filter models by taxonomies with query scopes
-
-### Nested Set Features
-
--   **Tree Navigation**: Efficient ancestor and descendant queries
--   **Tree Manipulation**: Move, insert, and reorganize tree nodes
--   **Depth Management**: Track and query by hierarchy depth
--   **Tree Validation**: Maintain tree integrity automatically
--   **Efficient Queries**: Optimized database queries for hierarchical data
-
-### Performance & Scalability
-
--   **Caching System**: Improve performance with built-in caching
--   **Database Indexing**: Optimized indexes for fast queries
--   **Lazy Loading**: Efficient relationship loading
--   **Tree Structure**: Get hierarchical or flat tree representations
--   **Pagination Support**: Paginate results for better performance
-
-### Developer Experience
-
--   **Intuitive API**: Clean and expressive syntax
--   **Comprehensive Documentation**: Detailed guides and examples
--   **Type Safety**: Full support for Laravel's type system
--   **Testing Support**: Built-in testing utilities
+- [Requirements](#requirements) · [Installation](#installation) · [Configuration](#configuration)
+- [Quick start](#quick-start) · [Working with taxonomies](#working-with-taxonomies) · [Attaching to models](#attaching-to-models)
+- [Query scopes](#query-scopes) · [Hierarchies](#hierarchies) · [Types](#types) · [Metadata](#metadata)
+- [Caching](#caching) · [Multi-tenancy](#multi-tenancy) · [Slugs and exceptions](#slugs-and-exceptions)
+- [Console commands](#console-commands) · [Examples](#examples) · [Troubleshooting](#troubleshooting)
 
 ## Requirements
 
--   PHP 8.2+
--   Laravel 11.0+ or 12.0+
--   Composer 2.0+
+| | |
+|---|---|
+| PHP | `^8.2` or `^8.3` |
+| Laravel | 11, 12 or 13 |
 
 ## Installation
 
-### Via Composer
-
 ```bash
 composer require aliziodev/laravel-taxonomy
-```
-
-### Publish Configuration and Migrations
-
-You can publish the configuration and migrations using the provided install command:
-
-```bash
 php artisan taxonomy:install
-```
-
-Or manually:
-
-```bash
-php artisan vendor:publish --provider="Aliziodev\LaravelTaxonomy\TaxonomyProvider" --tag="taxonomy-config"
-php artisan vendor:publish --provider="Aliziodev\LaravelTaxonomy\TaxonomyProvider" --tag="taxonomy-migrations"
-```
-
-### Run Migrations
-
-```bash
 php artisan migrate
 ```
 
-## ⚙️ Configuration
+`taxonomy:install` publishes the config and the migration. Pass `--force` to overwrite files that already exist — without it, existing files are left untouched and the command tells you so.
 
-After publishing the configuration file, you can customize it in `config/taxonomy.php`. Here's a detailed explanation of each option:
+To publish individually:
+
+```bash
+php artisan vendor:publish --tag=taxonomy-config
+php artisan vendor:publish --tag=taxonomy-migrations
+```
+
+## Configuration
+
+`config/taxonomy.php`, with the shipped defaults:
 
 ```php
 return [
-    // Database table names
     'table_names' => [
-        'taxonomies' => 'taxonomies',      // Main taxonomy table
-        'taxonomables' => 'taxonomables',  // Polymorphic pivot table
+        'taxonomies'   => 'taxonomies',
+        'taxonomables' => 'taxonomables',
     ],
 
-    // Primary key type for polymorphic relationships
-    // Options: 'numeric' (default), 'uuid', 'ulid'
+    // Morph column type on the pivot: 'numeric', 'uuid' or 'ulid'.
+    // Must match how YOUR models are keyed. Set before the first migrate.
     'morph_type' => 'uuid',
 
-    // Available taxonomy types (can be extended)
     'types' => collect(TaxonomyType::cases())->pluck('value')->toArray(),
 
-    // Custom model binding (for extending the base Taxonomy model)
-    'model' => \Aliziodev\LaravelTaxonomy\Models\Taxonomy::class,
+    // Swap in your own model; it must extend the package's Taxonomy.
+    'model' => Taxonomy::class,
 
-    // Slug generation settings
     'slugs' => [
-        'generate' => true,                // Auto-generate slugs from names
-        'regenerate_on_update' => true,   // Regenerate slug when name changes
+        'generate'               => true,  // auto-generate from name when omitted
+        'regenerate_on_update'   => true,  // rewrite the slug when the name changes
+        'consider_trashed'       => false, // count soft-deleted rows when checking uniqueness
+        'regenerate_on_restore'  => true,  // resolve a conflict on restore instead of throwing
+    ],
+
+    'cache' => [
+        'ttl'   => 86400, // seconds
+        'scope' => null,  // see Multi-tenancy
+    ],
+
+    'migrations' => [
+        'autoload' => env('TAXONOMY_AUTOLOAD_MIGRATIONS', true),
+        'paths'    => [],
     ],
 ];
 ```
 
-### Migration Autoload (Multi-tenant)
+**`morph_type` is the one setting to get right up front.** It decides whether the pivot stores `taxonomable_id` as an integer, UUID or ULID, and it cannot be changed after you migrate without rewriting the table. Use `numeric` for the usual auto-incrementing keys.
 
-By default, the package registers its migration paths so they run automatically when you execute `php artisan migrate`. In multi-tenant applications, this can be undesired because migrations may run on the default connection.
-
-You can disable migration autoloading via configuration:
+**`migrations.autoload`** controls whether the package registers its migration path with `php artisan migrate`. Disable it when you run migrations per tenant connection:
 
 ```php
-// config/taxonomy.php
-'migrations' => [
-    'autoload' => false,            // Disable autoloading of package migrations
-    'paths' => [                    // Optional: custom paths if you still want autoloading
-        // database_path('migrations/tenants'),
-    ],
-],
+'migrations' => ['autoload' => false],
 ```
-
-Or with an environment variable:
-
-```dotenv
-TAXONOMY_AUTOLOAD_MIGRATIONS=false
-```
-
-With autoload disabled, run migrations explicitly per tenant or connection, for example:
 
 ```bash
 php artisan migrate --path=database/migrations/tenants --database=tenant
 ```
 
-You can also publish the package migrations and orchestrate them as needed:
-
-```bash
-php artisan vendor:publish --provider="Aliziodev\LaravelTaxonomy\TaxonomyProvider" --tag="taxonomy-migrations"
-```
-
-### Cache Isolation (Multi-tenant)
-
-> **Required for multi-tenant applications.** Tree lookups (`tree()`, `flatTree()`, `getNestedTree()`) are cached. Without a cache scope those entries are global, so one tenant can be served another tenant's taxonomy tree.
-
-Register a resolver that returns a unique identifier for the current tenant:
+## Quick start
 
 ```php
-// app/Providers/AppServiceProvider.php
-use Aliziodev\LaravelTaxonomy\TaxonomyManager;
+use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
+use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 
-public function boot(): void
+$electronics = Taxonomy::create([
+    'name' => 'Electronics',
+    'type' => TaxonomyType::Category,
+    'meta' => ['icon' => 'devices'],
+]);
+
+$phones = Taxonomy::create([
+    'name'      => 'Smartphones',
+    'type'      => TaxonomyType::Category,
+    'parent_id' => $electronics->id,
+]);
+```
+
+Add the trait to any model that should carry taxonomies:
+
+```php
+use Aliziodev\LaravelTaxonomy\Traits\HasTaxonomy;
+
+class Product extends Model
 {
-    TaxonomyManager::resolveCacheScopeUsing(fn () => tenant()?->getKey());
+    use HasTaxonomy;
 }
 ```
 
-If you prefer configuration, point `taxonomy.cache.scope` at an invokable class. A class name is used rather than a closure so the config stays compatible with `php artisan config:cache`:
+```php
+$product->attachTaxonomies([$phones->id]);
+$product->taxonomies;                                  // all attached terms
+Product::withTaxonomySlug('smartphones')->get();       // filter by slug
+```
+
+## Working with taxonomies
+
+The `Taxonomy` facade proxies `TaxonomyManager` and exposes exactly these methods:
+
+```php
+Taxonomy::create($attributes);                   // create
+Taxonomy::createOrUpdate($attributes);           // create, or update a matching slug+type
+Taxonomy::find($id);
+Taxonomy::findMany($ids, $perPage = null, $page = 1);
+Taxonomy::findBySlug('smartphones', TaxonomyType::Category);
+Taxonomy::findByType(TaxonomyType::Category, $perPage = null, $page = 1);
+Taxonomy::findByParent($parentId, $perPage = null, $page = 1);
+Taxonomy::search('phone', TaxonomyType::Category, $perPage = null, $page = 1);
+Taxonomy::exists('smartphones', TaxonomyType::Category);
+Taxonomy::getTypes();                            // Support\Collection<string>
+
+Taxonomy::tree($type = null, $parentId = null);        // nested, one level of children
+Taxonomy::flatTree($type = null, $parentId = null);    // flat, each node carries `depth`
+Taxonomy::getNestedTree($type = null);                 // fully nested, via the nested set
+
+Taxonomy::getDescendants($taxonomyId);
+Taxonomy::getAncestors($taxonomyId);
+Taxonomy::moveToParent($taxonomyId, $parentId);
+Taxonomy::rebuildNestedSet($type);
+Taxonomy::clearCacheForType($type);
+```
+
+> The facade is **not** an Eloquent builder. `Taxonomy::where(...)` and friends do not exist on it. For query building, import the model instead:
+>
+> ```php
+> use Aliziodev\LaravelTaxonomy\Models\Taxonomy as TaxonomyModel;
+>
+> TaxonomyModel::type(TaxonomyType::Category)->ordered()->get();
+> ```
+
+Model scopes: `type()`, `root()`, `ordered()`, `roots()`, `atDepth()`, `nestedSetOrder()`.
+
+## Attaching to models
+
+```php
+$product->attachTaxonomies([$a->id, $b->id]);   // add, keep existing
+$product->syncTaxonomies([$a->id, $b->id]);     // replace all
+$product->detachTaxonomies([$a->id]);           // remove some
+$product->detachTaxonomies();                   // remove all
+$product->toggleTaxonomies([$a->id]);           // flip
+```
+
+Each accepts an id, a `Taxonomy`, an array, or any collection:
+
+```php
+$product->attachTaxonomies($taxonomy);
+$product->attachTaxonomies(collect([$a, $b]));
+$product->attachTaxonomies(TaxonomyModel::type('category')->pluck('id'));
+```
+
+> These take taxonomy **ids or models**, not slugs. Passing a slug string attaches nothing. Resolve it first: `Taxonomy::findBySlug('featured', TaxonomyType::Tag)`.
+
+Reading and checking:
+
+```php
+$product->taxonomies;                                    // relation
+$product->taxonomiesOfType(TaxonomyType::Category);      // Collection
+$product->getFirstTaxonomyOfType(TaxonomyType::Category);
+$product->getTaxonomyCountByType(TaxonomyType::Tag);
+
+$product->hasTaxonomies([$a->id]);                       // any of
+$product->hasAllTaxonomies([$a->id, $b->id]);            // all of
+$product->hasTaxonomyType(TaxonomyType::Category);       // any of this type
+```
+
+### Type-specific variants
+
+Every attach/detach/sync/toggle has an `*OfType` twin that only touches terms of one type, leaving the rest of the model's taxonomies alone:
+
+```php
+$product->syncTaxonomiesOfType(TaxonomyType::Category, [$catA->id]);   // tags untouched
+$product->attachTaxonomiesOfType(TaxonomyType::Tag, [$tagA->id]);
+$product->detachTaxonomiesOfType(TaxonomyType::Tag);                   // all tags
+$product->toggleTaxonomiesOfType(TaxonomyType::Tag, [$tagA->id]);
+
+$product->hasTaxonomiesOfType(TaxonomyType::Tag, [$tagA->id]);
+$product->hasAllTaxonomiesOfType(TaxonomyType::Tag, [$tagA->id]);
+```
+
+Ids that are not of the given type are skipped — that filtering is the point of these methods.
+
+## Query scopes
+
+```php
+Product::withTaxonomy($ids)->get();               // has any of
+Product::withAnyTaxonomies($ids)->get();          // has any of
+Product::withAllTaxonomies($ids)->get();          // has every one
+Product::withoutTaxonomies($ids)->get();          // has none of
+Product::withTaxonomyType(TaxonomyType::Category)->get();
+Product::withTaxonomySlug('smartphones', TaxonomyType::Category)->get();
+
+Product::withAnyTaxonomiesOfType(TaxonomyType::Tag, $ids)->get();
+Product::withAllTaxonomiesOfType(TaxonomyType::Tag, $ids)->get();
+Product::withoutTaxonomiesOfType(TaxonomyType::Tag, $ids)->get();
+
+Product::withTaxonomyHierarchy($categoryId)->get();          // term + its descendants
+Product::withTaxonomyAtDepth(1, TaxonomyType::Category)->get();
+Product::orderByTaxonomyType(TaxonomyType::Category, 'asc', 'name')->get();
+```
+
+Scopes chain, so combining them is an AND:
+
+```php
+Product::withTaxonomySlug('smartphones', TaxonomyType::Category)
+    ->withAnyTaxonomiesOfType(TaxonomyType::Tag, $featuredIds)
+    ->get();
+```
+
+`filterByTaxonomies()` takes a keyed array, handy for request filters:
+
+```php
+Product::filterByTaxonomies([
+    'category' => 'smartphones',        // type => slug
+    'color'    => ['red', 'blue'],      // OR within the type
+    'exclude'  => $discontinuedIds,
+])->get();
+```
+
+## Hierarchies
+
+Hierarchy is stored twice: as `parent_id`, and as nested-set `lft`/`rgt`/`depth` columns kept in sync automatically on create, update, delete and restore.
+
+```php
+$node->parent;              // relation
+$node->children;            // relation, ordered by sort_order
+$node->ancestors();         // walks parent_id — correct even if lft/rgt drifted
+$node->descendants();       // depth-first, one query per level
+$node->getAncestors();      // nested set, single query
+$node->getDescendants();    // nested set, single query
+$node->getSiblings();
+$node->getChildren();
+
+$node->isAncestorOf($other);
+$node->isDescendantOf($other);
+$node->getLevel();          // depth, 0 for roots
+
+$node->path;                // "Electronics > Smartphones"
+$node->full_slug;           // "electronics/smartphones"
+
+$node->moveToParent($newParentId);   // throws on a circular move
+```
+
+`getAncestors()`/`getDescendants()` read `lft`/`rgt` and are the fastest option. `ancestors()`/`descendants()` follow `parent_id` and stay correct even if the nested set has drifted — use them if you write to the table outside the model.
+
+> **Refresh before using the nested-set variants on a model you already held.** Adding a child widens its parent's `rgt` in the database, and an instance loaded before that still carries the old bounds — `getDescendants()` then returns an empty collection with no error:
+>
+> ```php
+> $parent = Taxonomy::create(['name' => 'Electronics', 'type' => 'category']);
+> Taxonomy::create(['name' => 'Phones', 'type' => 'category', 'parent_id' => $parent->id]);
+>
+> $parent->getDescendants();            // empty — $parent->rgt is stale
+> $parent->refresh()->getDescendants(); // 1
+> ```
+>
+> `descendants()` is keyed on the id, so it is immune to this.
+
+Trees:
+
+```php
+Taxonomy::tree(TaxonomyType::Category);          // roots with one level eager-loaded
+Taxonomy::flatTree(TaxonomyType::Category);      // flat list, `depth` set on each node
+Taxonomy::getNestedTree(TaxonomyType::Category); // full depth, `children_nested` + `tree_depth`
+```
+
+## Types
+
+`TaxonomyType` ships `Category`, `Tag`, `Color`, `Size`, `Unit`, `Type`, `Brand`, `Model`, `Variant`. Everywhere a type is accepted you may pass the enum or a plain string, so custom types need no registration:
+
+```php
+Taxonomy::create(['name' => 'Winter', 'type' => 'season']);
+Product::withTaxonomyType('season')->get();
+```
+
+List them in config so tooling and the rebuild command know about them:
+
+```php
+'types' => ['category', 'tag', 'season', 'department'],
+```
+
+Enum helpers:
+
+```php
+TaxonomyType::values();               // ['category', 'tag', ...]
+TaxonomyType::options();              // [['value' => ..., 'label' => ...], ...]
+TaxonomyType::Category->label();      // 'Category'
+TaxonomyType::Category->getLabel();   // same, named for Filament's HasLabel contract
+```
+
+## Metadata
+
+`meta` is a JSON column, cast to array:
+
+```php
+Taxonomy::create([
+    'name' => 'Electronics',
+    'type' => TaxonomyType::Category,
+    'meta' => ['icon' => 'devices', 'color' => '#3498db', 'featured' => true],
+]);
+
+$taxonomy->meta['icon'];
+
+TaxonomyModel::where('meta->featured', true)->get();
+TaxonomyModel::whereJsonContains('meta->tags', 'sale')->get();
+```
+
+There is no translation layer; `meta` is a reasonable home for translations:
+
+```php
+'meta' => ['translations' => ['id' => ['name' => 'Elektronik']]],
+```
+
+## Caching
+
+`tree()`, `flatTree()` and `getNestedTree()` are cached for `cache.ttl` (24 hours by default) and invalidated automatically whenever a taxonomy is created, updated, deleted, restored, moved, or rebuilt.
+
+```php
+Taxonomy::clearCacheForType(TaxonomyType::Category);   // manual, rarely needed
+```
+
+Invalidation works by bumping a version key, so entries expire logically rather than being enumerated and deleted — that keeps it correct on cache stores without tag support.
+
+> Do not wrap these calls in another `Cache::remember()`. A second, unversioned layer will not see the package's invalidation and will serve stale trees.
+
+## Multi-tenancy
+
+Two things need attention.
+
+**1. Isolate the cache.** Cache keys are global unless you say otherwise, so without a scope one tenant can be served another tenant's tree. Register a resolver:
+
+```php
+use Aliziodev\LaravelTaxonomy\TaxonomyManager;
+
+// AppServiceProvider::boot()
+TaxonomyManager::resolveCacheScopeUsing(fn () => tenant()?->getKey());
+```
+
+Or point `taxonomy.cache.scope` at an invokable class — a class name rather than a closure, so the config survives `php artisan config:cache`:
 
 ```php
 class TenantCacheScope
@@ -216,19 +386,11 @@ class TenantCacheScope
         return tenant()?->getKey();
     }
 }
-
-// config/taxonomy.php
-'cache' => [
-    'ttl' => 86400,
-    'scope' => TenantCacheScope::class,
-],
 ```
 
-When no scope is registered the cache keys are identical to previous releases, so single-tenant applications need no changes.
+With no scope registered the keys are unchanged from earlier releases, so single-tenant apps need no action.
 
-#### Tenant columns and slug uniqueness
-
-The package does not add a `tenant_id` column. If you isolate tenants with a global scope on a custom taxonomy model, note that the shipped migration declares `unique(['slug', 'type', 'deleted_at'])`, which prevents two tenants from using the same slug within a type. Add your own migration to replace it:
+**2. Scope the data yourself.** The package ships no `tenant_id` column. Add one, and replace the unique index — the shipped `unique(['slug', 'type', 'deleted_at'])` otherwise stops two tenants using the same slug within a type:
 
 ```php
 Schema::table('taxonomies', function (Blueprint $table) {
@@ -238,1476 +400,108 @@ Schema::table('taxonomies', function (Blueprint $table) {
 });
 ```
 
-Because slug uniqueness is also enforced in PHP via `Taxonomy::slugExists()`, your custom model's global scope must be active for that check to be tenant-aware.
-
-### Configuration Options Explained
-
-#### Table Names
-
-Customize database table names if you need to avoid conflicts or follow specific naming conventions:
+Then point the package at a model carrying your scope:
 
 ```php
-'table_names' => [
-    'taxonomies' => 'custom_taxonomies',
-    'taxonomables' => 'custom_taxonomables',
-],
-```
+namespace App\Models;
 
-#### Morph Type
+use Aliziodev\LaravelTaxonomy\Models\Taxonomy as BaseTaxonomy;
 
-Choose the appropriate morph type based on your model's primary key:
-
-```php
-// For auto-incrementing integer IDs
-'morph_type' => 'numeric',
-
-// For UUID primary keys
-'morph_type' => 'uuid',
-
-// For ULID primary keys
-'morph_type' => 'ulid',
-```
-
-#### Custom Types
-
-Extend or replace the default taxonomy types:
-
-```php
-'types' => [
-    'category',
-    'tag',
-    'brand',
-    'collection',
-    'custom_type',
-],
-```
-
-#### Slug Configuration
-
-Control slug generation behavior:
-
-```php
-'slugs' => [
-    'generate' => false,               // Require manual slug input
-    'regenerate_on_update' => true,   // Auto-update slugs when names change
-],
-```
-
-#### Important: Composite Unique Constraint
-
-Starting from version 2.3.0, slugs are unique within their taxonomy type, not globally. This means:
-
--   ✅ You can have `slug: 'featured'` for both `Category` and `Tag` types
--   ✅ Better flexibility for organizing different taxonomy types
--   ⚠️ **Breaking Change**: If upgrading from v2.2.x, see [UPGRADE.md](UPGRADE.md) for migration instructions
-
-```php
-// This is now possible:
-Taxonomy::create(['name' => 'Featured', 'slug' => 'featured', 'type' => 'category']);
-Taxonomy::create(['name' => 'Featured', 'slug' => 'featured', 'type' => 'tag']);
-```
-
-## 🚀 Quick Start
-
-Get up and running with Laravel Taxonomy in minutes:
-
-### 1. Create Your First Taxonomy
-
-```php
-use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
-use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
-
-// Create a category
-$electronics = Taxonomy::create([
-    'name' => 'Electronics',
-    'type' => TaxonomyType::Category->value,
-    'description' => 'Electronic products and gadgets',
-]);
-
-// Create a subcategory
-$smartphones = Taxonomy::create([
-    'name' => 'Smartphones',
-    'type' => TaxonomyType::Category->value,
-    'parent_id' => $electronics->id,
-]);
-
-// Create tags
-$featured = Taxonomy::create([
-    'name' => 'Featured',
-    'type' => TaxonomyType::Tag->value,
-]);
-```
-
-### 2. Associate with Models
-
-```php
-// Assuming you have a Product model with HasTaxonomy trait
-$product = Product::create([
-    'name' => 'iPhone 15 Pro',
-    'price' => 999.99,
-]);
-
-// Attach taxonomies
-$product->attachTaxonomies([$electronics->id, $smartphones->id, $featured->id]);
-
-// Or attach by slug
-$product->attachTaxonomies(['electronics', 'smartphones', 'featured']);
-```
-
-### 3. Query and Filter
-
-```php
-// Find products in electronics category
-$products = Product::withTaxonomyType(TaxonomyType::Category)
-    ->withTaxonomySlug('electronics')
-    ->get();
-
-// Get all taxonomies of a specific type
-$categories = Taxonomy::findByType(TaxonomyType::Category);
-
-// Get hierarchical tree
-$categoryTree = Taxonomy::tree(TaxonomyType::Category);
-```
-
-## 📖 Basic Usage
-
-### Working with the Taxonomy Facade
-
-The `Taxonomy` facade provides a clean, expressive API for all taxonomy operations:
-
-```php
-use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
-use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
-
-// Create taxonomies
-$category = Taxonomy::create([
-    'name' => 'Books',
-    'type' => TaxonomyType::Category->value,
-    'description' => 'All kinds of books',
-    'meta' => [
-        'icon' => 'book',
-        'color' => '#3498db',
-        'featured' => true,
-    ],
-]);
-
-// Find taxonomies
-$taxonomy = Taxonomy::findBySlug('books');
-$exists = Taxonomy::exists('books');
-$categories = Taxonomy::findByType(TaxonomyType::Category);
-
-// Search taxonomies
-$results = Taxonomy::search('science', TaxonomyType::Category);
-
-// Get hierarchical data
-$tree = Taxonomy::tree(TaxonomyType::Category);
-$flatTree = Taxonomy::flatTree(TaxonomyType::Category);
-$nestedTree = Taxonomy::getNestedTree(TaxonomyType::Category);
-```
-
-### Working with Model Relationships
-
-Once you've added the `HasTaxonomy` trait to your models, you get access to powerful relationship methods:
-
-```php
-// Basic operations
-$product->attachTaxonomies($taxonomyIds);
-$product->detachTaxonomies($taxonomyIds);
-$product->syncTaxonomies($taxonomyIds);
-$product->toggleTaxonomies($taxonomyIds);
-
-// Type-specific operations (NEW)
-$product->attachTaxonomiesOfType(TaxonomyType::Category, $categoryIds);
-$product->detachTaxonomiesOfType(TaxonomyType::Category, $categoryIds);
-$product->syncTaxonomiesOfType(TaxonomyType::Category, $categoryIds);
-$product->toggleTaxonomiesOfType(TaxonomyType::Tag, $tagIds);
-
-// Check relationships
-$hasCategory = $product->hasTaxonomies($categoryIds);
-$hasAllTags = $product->hasAllTaxonomies($tagIds);
-$hasType = $product->hasTaxonomyType(TaxonomyType::Category);
-
-// Type-specific relationship checks (NEW)
-$hasCategories = $product->hasTaxonomiesOfType(TaxonomyType::Category, $categoryIds);
-$hasAllCategories = $product->hasAllTaxonomiesOfType(TaxonomyType::Category, $categoryIds);
-
-// Get related taxonomies
-$allTaxonomies = $product->taxonomies;
-$categories = $product->taxonomiesOfType(TaxonomyType::Category);
-$hierarchical = $product->getHierarchicalTaxonomies(TaxonomyType::Category);
-
-// Utility methods (NEW)
-$categoryCount = $product->getTaxonomyCountByType(TaxonomyType::Category);
-$firstCategory = $product->getFirstTaxonomyOfType(TaxonomyType::Category);
-```
-
-### Query Scopes for Filtering
-
-Filter your models using powerful query scopes:
-
-```php
-// Filter by taxonomy type
-$products = Product::withTaxonomyType(TaxonomyType::Category)->get();
-
-// Filter by specific taxonomies
-$products = Product::withAnyTaxonomies([$category1, $category2])->get();
-$products = Product::withAllTaxonomies([$tag1, $tag2])->get();
-
-// Type-specific filtering (NEW)
-$products = Product::withAnyTaxonomiesOfType(TaxonomyType::Category, [$category1, $category2])->get();
-$products = Product::withAllTaxonomiesOfType(TaxonomyType::Tag, [$tag1, $tag2])->get();
-$products = Product::withoutTaxonomiesOfType(TaxonomyType::Category, [$category1])->get();
-
-// Filter by taxonomy slug (any type)
-$products = Product::withTaxonomySlug('electronics')->get();
-
-// Filter by taxonomy slug with specific type (recommended)
-$products = Product::withTaxonomySlug('electronics', TaxonomyType::Category)->get();
-
-// Filter by hierarchy (includes descendants)
-$products = Product::withTaxonomyHierarchy($parentCategoryId)->get();
-
-// Filter by depth level
-$products = Product::withTaxonomyAtDepth(2, TaxonomyType::Category)->get();
-
-// Order by taxonomy type (NEW)
-$products = Product::orderByTaxonomyType(TaxonomyType::Category)->get();
-$products = Product::orderByTaxonomyType(TaxonomyType::Category, 'desc')->get();
-```
-
-#### Scope Chaining vs Single Scope with Type
-
-With the composite unique constraint, you have two approaches for filtering:
-
-```php
-// Approach 1: Single scope with type parameter (Recommended)
-// Finds products with taxonomy slug='electronics' AND type='category'
-$products = Product::withTaxonomySlug('electronics', TaxonomyType::Category)->get();
-
-// Approach 2: Chaining scopes (More flexible for complex queries)
-// Finds products that have ANY taxonomy with type='category' AND ANY taxonomy with slug='electronics'
-$products = Product::withTaxonomyType(TaxonomyType::Category)
-    ->withTaxonomySlug('electronics')
-    ->get();
-
-// Note: These may return different results if a product has multiple taxonomies
-```
-
-### Pagination Support
-
-The package supports pagination for search and find methods:
-
-```php
-// Paginate search results (5 items per page, page 1)
-$results = Taxonomy::search('electronic', null, 5, 1);
-
-// Paginate taxonomies by type
-$categories = Taxonomy::findByType(TaxonomyType::Category, 10, 1);
-
-// Paginate taxonomies by parent
-$children = Taxonomy::findByParent($parent->id, 10, 1);
-```
-
-### Complete Controller Example
-
-Here's a comprehensive example of using Laravel Taxonomy in a controller:
-
-```php
-namespace App\Http\Controllers;
-
-use App\Models\Product;
-use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
-use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
-use Illuminate\Http\Request;
-
-class ProductController extends Controller
+class Taxonomy extends BaseTaxonomy
 {
-    public function index(Request $request)
+    protected static function boot(): void
     {
-        // Get products filtered by category
-        $categorySlug = $request->input('category');
-        $query = Product::query();
-
-        if ($categorySlug) {
-            $category = Taxonomy::findBySlug($categorySlug, TaxonomyType::Category);
-            if ($category) {
-                $query->withAnyTaxonomies($category);
-            }
-        }
-
-        $products = $query->paginate(12);
-        $categories = Taxonomy::findByType(TaxonomyType::Category);
-
-        return view('products.index', compact('products', 'categories'));
-    }
-
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'categories' => 'required|array',
-            'tags' => 'nullable|array',
-        ]);
-
-        $product = Product::create($validated);
-
-        // Attach categories and tags
-        $product->attachTaxonomies($validated['categories']);
-        if (isset($validated['tags'])) {
-            $product->attachTaxonomies($validated['tags']);
-        }
-
-        return redirect()->route('products.show', $product)
-            ->with('success', 'Product created successfully.');
-    }
-}
-```
-
-## 🌳 Hierarchical Data & Nested Sets
-
-Laravel Taxonomy uses the Nested Set Model for efficient hierarchical data management:
-
-### Understanding Nested Sets
-
-The nested set model stores hierarchical data using `lft` (left) and `rgt` (right) values, along with `depth` for each node. This allows for efficient querying of hierarchical relationships.
-
-```php
-// Get all descendants of a taxonomy (children, grandchildren, etc.)
-$descendants = $taxonomy->getDescendants();
-
-// Get all ancestors of a taxonomy (parent, grandparent, etc.)
-$ancestors = $taxonomy->getAncestors();
-
-// Check hierarchical relationships
-$isParent = $parent->isAncestorOf($child);
-$isChild = $child->isDescendantOf($parent);
-
-// Get the depth level
-$level = $taxonomy->getLevel();
-
-// Get only root taxonomies
-$roots = Taxonomy::roots()->get();
-
-// Get taxonomies at specific depth
-$level2 = Taxonomy::atDepth(2)->get();
-```
-
-### Tree Operations
-
-```php
-// Move a taxonomy to a new parent
-Taxonomy::moveToParent($taxonomyId, $newParentId);
-
-// Rebuild nested set values (useful after bulk operations)
-Taxonomy::rebuildNestedSet(TaxonomyType::Category);
-
-// Get different tree representations
-$hierarchicalTree = Taxonomy::tree(TaxonomyType::Category);           // Parent-child relationships
-$flatTree = Taxonomy::flatTree(TaxonomyType::Category);               // Flat list with depth info
-$nestedTree = Taxonomy::getNestedTree(TaxonomyType::Category);        // Nested set ordered
-```
-
-## 📊 Metadata Support
-
-Store additional data with each taxonomy using JSON meta:
-
-```php
-// Create taxonomy with meta
-$category = Taxonomy::create([
-    'name' => 'Premium Products',
-    'type' => TaxonomyType::Category->value,
-    'meta' => [
-        'icon' => 'star',
-        'color' => '#gold',
-        'display_order' => 1,
-        'seo' => [
-            'title' => 'Premium Products - Best Quality',
-            'description' => 'Discover our premium product collection',
-            'keywords' => ['premium', 'quality', 'luxury'],
-        ],
-        'settings' => [
-            'show_in_menu' => true,
-            'featured' => true,
-            'requires_auth' => false,
-        ],
-    ],
-]);
-
-// Access meta
-$icon = $category->meta['icon'] ?? 'default';
-$seoTitle = $category->meta['seo']['title'] ?? $category->name;
-
-// Update meta
-$category->update([
-    'meta' => array_merge($category->meta ?? [], [
-        'updated_at' => now()->toISOString(),
-        'view_count' => ($category->meta['view_count'] ?? 0) + 1,
-    ]),
-]);
-```
-
-## 🔄 Bulk Operations
-
-Efficiently manage multiple taxonomy relationships:
-
-### Basic Bulk Operations
-
-```php
-// Attach multiple taxonomies (won't duplicate existing)
-$product->attachTaxonomies([1, 2, 3, 'electronics', 'featured']);
-
-// Detach specific taxonomies
-$product->detachTaxonomies([1, 2]);
-
-// Detach all taxonomies
-$product->detachTaxonomies();
-
-// Sync taxonomies (removes old, adds new)
-$product->syncTaxonomies([1, 2, 3]);
-
-// Toggle taxonomies (attach if not present, detach if present)
-$product->toggleTaxonomies([1, 2, 3]);
-
-```
-
-> **Note on the `$name` parameter.** Every taxonomy method accepts an optional
-> relationship name (default `taxonomable`). It selects the morph columns used
-> on the pivot table — `{$name}_id` and `{$name}_type` — so a value other than
-> `taxonomable` only works if you have added those columns yourself. The
-> shipped migration creates `taxonomable_id` and `taxonomable_type` only, so
-> passing e.g. `'categories'` against the default schema fails with
-> `no such column: taxonomables.categories_id`. Use taxonomy **types** to
-> separate categories from tags; that is what they are for.
-
-### Advanced Bulk Management
-
-```php
-class BulkTaxonomyService
-{
-    public function bulkAttach(Collection $models, array $taxonomyIds): void
-    {
-        $data = [];
-        $timestamp = now();
-
-        foreach ($models as $model) {
-            foreach ($taxonomyIds as $taxonomyId) {
-                $data[] = [
-                    'taxonomy_id' => $taxonomyId,
-                    'taxonomable_id' => $model->id,
-                    'taxonomable_type' => get_class($model),
-                    'created_at' => $timestamp,
-                    'updated_at' => $timestamp,
-                ];
-            }
-        }
-
-        DB::table('taxonomables')->insert($data);
-    }
-
-    public function bulkDetach(Collection $models, array $taxonomyIds): void
-    {
-        $modelIds = $models->pluck('id');
-        $modelType = get_class($models->first());
-
-        DB::table('taxonomables')
-            ->whereIn('taxonomy_id', $taxonomyIds)
-            ->whereIn('taxonomable_id', $modelIds)
-            ->where('taxonomable_type', $modelType)
-            ->delete();
-    }
-
-    public function bulkSync(Collection $models, array $taxonomyIds): void
-    {
-        $modelIds = $models->pluck('id');
-        $modelType = get_class($models->first());
-
-        // Remove existing associations
-        DB::table('taxonomables')
-            ->whereIn('taxonomable_id', $modelIds)
-            ->where('taxonomable_type', $modelType)
-            ->delete();
-
-        // Add new associations
-        $this->bulkAttach($models, $taxonomyIds);
-    }
-
-    public function migrateType(string $oldType, string $newType): int
-    {
-        return Taxonomy::where('type', $oldType)
-            ->update(['type' => $newType]);
-    }
-
-    public function mergeTaxonomies(Taxonomy $source, Taxonomy $target): void
-    {
-        DB::transaction(function () use ($source, $target) {
-            // Move all associations to target
-            DB::table('taxonomables')
-                ->where('taxonomy_id', $source->id)
-                ->update(['taxonomy_id' => $target->id]);
-
-            // Move children to target
-            Taxonomy::where('parent_id', $source->id)
-                ->update(['parent_id' => $target->id]);
-
-            // Delete source taxonomy
-            $source->delete();
-
-            // Rebuild nested set for target's tree
-            $target->rebuildNestedSet();
-        });
-    }
-}
-```
-
-## ⚡ Caching & Performance
-
-Laravel Taxonomy includes intelligent caching for optimal performance:
-
-### Automatic Caching
-
-```php
-// These operations are automatically cached
-$tree = Taxonomy::tree(TaxonomyType::Category);           // Cached for 24 hours
-$flatTree = Taxonomy::flatTree(TaxonomyType::Category);   // Cached for 24 hours
-$nestedTree = Taxonomy::getNestedTree(TaxonomyType::Category); // Cached for 24 hours
-```
-
-### Manual Cache Management
-
-```php
-// Clear cache for specific type
-Taxonomy::clearCacheForType(TaxonomyType::Category);
-
-// Cache is automatically cleared when:
-// - Taxonomies are created, updated, or deleted
-// - Nested set is rebuilt
-// - Taxonomies are moved in hierarchy
-```
-
-### Performance Tips
-
-```php
-// Use eager loading to avoid N+1 queries
-$products = Product::with(['taxonomies' => function ($query) {
-    $query->where('type', TaxonomyType::Category->value);
-}])->get();
-
-// Use pagination for large datasets
-$taxonomies = Taxonomy::findByType(TaxonomyType::Category, 20); // 20 per page
-
-// Use specific queries instead of loading all relationships
-$categories = $product->taxonomiesOfType(TaxonomyType::Category);
-```
-
-## 🏷️ Custom Taxonomy Types
-
-While the package comes with predefined taxonomy types in the `TaxonomyType` enum (Category, Tag, Color, Size, etc.), you can easily define and use your own custom types.
-
-### Defining Custom Types
-
-There are two ways to use custom taxonomy types:
-
-#### 1. Override the types configuration
-
-You can override the default types by modifying the `types` array in your `config/taxonomy.php` file:
-
-```php
-'types' => [
-    'category',
-    'tag',
-    // Default types you want to keep
-
-    // Your custom types
-    'genre',
-    'location',
-    'season',
-    'difficulty',
-],
-```
-
-#### 2. Use custom types directly
-
-You can also use custom types directly in your code without modifying the configuration:
-
-```php
-use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
-
-// Create a taxonomy with a custom type
-$genre = Taxonomy::create([
-    'name' => 'Science Fiction',
-    'type' => 'genre', // Custom type not defined in TaxonomyType enum
-    'description' => 'Science fiction genre',
-]);
-
-// Find taxonomies by custom type
-$genres = Taxonomy::findByType('genre');
-
-// Check if a model has taxonomies of a custom type
-$product->hasTaxonomyType('genre');
-
-// Get taxonomies of a custom type
-$productGenres = $product->taxonomiesOfType('genre');
-
-// Filter models by custom taxonomy type
-$products = Product::withTaxonomyType('genre')->get();
-```
-
-### Creating a Custom Type Enum
-
-For better type safety and organization, you can create your own enum for custom types:
-
-```php
-namespace App\Enums;
-
-enum GenreType: string
-{
-    case SciFi = 'sci-fi';
-    case Fantasy = 'fantasy';
-    case Horror = 'horror';
-    case Romance = 'romance';
-    case Mystery = 'mystery';
-
-    public static function values(): array
-    {
-        return array_column(self::cases(), 'value');
-    }
-}
-```
-
-Then use it in your code:
-
-```php
-use App\Enums\GenreType;
-use Aliziodev\LaravelTaxonomy\Facades\Taxonomy;
-
-// Create a taxonomy with a custom type from enum
-$genre = Taxonomy::create([
-    'name' => 'Science Fiction',
-    'type' => GenreType::SciFi->value,
-    'description' => 'Science fiction genre',
-]);
-
-// Find taxonomies by custom type from enum
-$sciFiBooks = Taxonomy::findByType(GenreType::SciFi);
-```
-
-## 🎯 Real-World Usage Scenarios
-
-For comprehensive examples of how to use Laravel Taxonomy in real-world applications, please refer to our detailed scenario documentation:
-
-### Available Scenarios
-
-1. **[E-commerce Product Catalog](docs/en/ecommerce-product-catalog.md)** - Building a comprehensive e-commerce platform with hierarchical categories, product tags, dynamic navigation, and advanced filtering.
-
-2. **[Content Management System](docs/en/content-management-system.md)** - Creating a flexible CMS with content categorization, tagging, filtering, and SEO optimization.
-
-3. **[Learning Management System](docs/en/learning-management-system.md)** - Developing an educational platform with courses, skills, difficulty levels, and personalized learning paths.
-
-4. **[Multi-tenant Business Application](docs/en/multi-tenant-business-application.md)** - Building a SaaS platform with tenant-specific taxonomies, project management, and customizable workflows.
-
-5. **[Analytics and Reporting](docs/en/analytics-and-reporting.md)** - Implementing comprehensive analytics, reporting dashboards, and automated insights using taxonomy data.
-
-Each scenario includes:
-
--   Complete code examples
--   Database setup and migrations
--   Controller implementations
--   Service layer patterns
-
-## 🚀 Advanced Features
-
-### 🔄 Nested Set Model
-
-Laravel Taxonomy uses the Nested Set Model for efficient hierarchical data management:
-
-```php
-// Get all descendants of a taxonomy
-$category = Taxonomy::find(1);
-$descendants = $category->getDescendants();
-
-// Get all ancestors of a taxonomy
-$ancestors = $category->getAncestors();
-
-// Get siblings
-$siblings = $category->getSiblings();
-
-// Check if taxonomy is descendant of another
-$isDescendant = $category->isDescendantOf($parentCategory);
-```
-
-### Performance Optimization
-
-**Caching Strategies**:
-
-```php
-// Cache taxonomy trees for better performance
-class CachedTaxonomyService
-{
-    public function getCachedTree(string $type, int $ttl = 3600): Collection
-    {
-        return Cache::remember("taxonomy_tree_{$type}", $ttl, function () use ($type) {
-            return Taxonomy::tree($type);
-        });
-    }
-
-    public function invalidateCache(string $type): void
-    {
-        Cache::forget("taxonomy_tree_{$type}");
-    }
-
-    public function warmCache(): void
-    {
-        $types = Taxonomy::distinct('type')->pluck('type');
-
-        foreach ($types as $type) {
-            $this->getCachedTree($type);
-        }
-    }
-}
-
-// Use in your models
-class Product extends Model
-{
-    use HasTaxonomy;
-
-    protected static function booted()
-    {
-        static::saved(function ($product) {
-            // Invalidate related caches when product taxonomies change
-            $types = $product->taxonomies->pluck('type')->unique();
-            foreach ($types as $type) {
-                Cache::forget("taxonomy_tree_{$type}");
+        parent::boot();
+
+        static::addGlobalScope('tenant', function ($query) {
+            if ($tenantId = tenant()?->getKey()) {
+                $query->where('tenant_id', $tenantId);
             }
         });
     }
 }
 ```
 
-**Eager Loading for Performance**:
-
 ```php
-// Efficient loading of taxonomies with models
-$products = Product::with([
-    'taxonomies' => function ($query) {
-        $query->select('id', 'name', 'slug', 'type', 'meta')
-              ->orderBy('type')
-              ->orderBy('name');
-    }
-])->get();
-
-// Load specific taxonomy types only
-$products = Product::with([
-    'taxonomies' => function ($query) {
-        $query->whereIn('type', ['category', 'brand']);
-    }
-])->get();
-
-// Preload taxonomy counts
-$categories = Taxonomy::where('type', 'category')
-    ->withCount(['models as product_count' => function ($query) {
-        $query->where('taxonomable_type', Product::class);
-    }])
-    ->get();
+'model' => \App\Models\Taxonomy::class,
 ```
 
-### Advanced Querying
+It must extend the package's `Taxonomy` — that is where slug generation and nested-set maintenance live.
 
-**Complex Taxonomy Filters**:
+> The `*OfType` methods validate the ids you pass **without** applying global scopes, so a taxonomy shared across tenants is not silently discarded. The flip side: an id from another tenant will attach if your application passes it through. Validate user input, e.g. `Rule::exists()` scoped to the tenant.
 
-```php
-class ProductFilterService
-{
-    public function filterByTaxonomies(array $filters): Builder
-    {
-        $query = Product::query();
+## Slugs and exceptions
 
-        // Filter by multiple categories (OR condition)
-        if (!empty($filters['categories'])) {
-            $query->withAnyTaxonomies($filters['categories']);
-        }
-
-        // Filter by required tags (AND condition)
-        if (!empty($filters['required_tags'])) {
-            $query->withAllTaxonomies($filters['required_tags']);
-        }
-
-        // Filter by brand (exact match)
-        if (!empty($filters['brand'])) {
-            $query->withTaxonomy($filters['brand']);
-        }
-
-        // Filter by price range taxonomy
-        if (!empty($filters['price_range'])) {
-            $priceRange = Taxonomy::findBySlug($filters['price_range'], 'price_range');
-            if ($priceRange) {
-                $min = $priceRange->meta['min_price'] ?? 0;
-                $max = $priceRange->meta['max_price'] ?? PHP_INT_MAX;
-                $query->whereBetween('price', [$min, $max]);
-            }
-        }
-
-        // Exclude certain taxonomies
-        if (!empty($filters['exclude'])) {
-            $query->withoutTaxonomies($filters['exclude']);
-        }
-
-        return $query;
-    }
-
-    public function getFilterOptions(array $currentFilters = []): array
-    {
-        $baseQuery = $this->filterByTaxonomies($currentFilters);
-
-        return [
-            'categories' => $this->getAvailableOptions($baseQuery, 'category'),
-            'brands' => $this->getAvailableOptions($baseQuery, 'brand'),
-            'tags' => $this->getAvailableOptions($baseQuery, 'tag'),
-            'price_ranges' => $this->getAvailableOptions($baseQuery, 'price_range'),
-        ];
-    }
-
-    private function getAvailableOptions(Builder $query, string $type): Collection
-    {
-        return Taxonomy::where('type', $type)
-            ->whereHas('models', function ($q) use ($query) {
-                $q->whereIn('taxonomable_id', $query->pluck('id'));
-            })
-            ->withCount('models')
-            ->orderBy('models_count', 'desc')
-            ->get();
-    }
-}
-```
-
-### Data Import/Export
-
-**Import/Export Functionality**:
+Slugs are generated from the name and are unique **within a type**, so a `featured` category and a `featured` tag can coexist.
 
 ```php
-class TaxonomyImportExportService
-{
-    public function exportToJson(string $type = null): string
-    {
-        $query = Taxonomy::with('children');
-
-        if ($type) {
-            $query->where('type', $type);
-        }
-
-        $taxonomies = $query->whereNull('parent_id')
-            ->orderBy('lft')
-            ->get();
-
-        return json_encode($this->buildExportTree($taxonomies), JSON_PRETTY_PRINT);
-    }
-
-    public function importFromJson(string $json, bool $replaceExisting = false): array
-    {
-        $data = json_decode($json, true);
-        $imported = [];
-        $errors = [];
-
-        DB::transaction(function () use ($data, $replaceExisting, &$imported, &$errors) {
-            foreach ($data as $item) {
-                try {
-                    $taxonomy = $this->importTaxonomyItem($item, null, $replaceExisting);
-                    $imported[] = $taxonomy->id;
-                } catch (Exception $e) {
-                    $errors[] = [
-                        'item' => $item['name'] ?? 'Unknown',
-                        'error' => $e->getMessage(),
-                    ];
-                }
-            }
-        });
-
-        return [
-            'imported' => count($imported),
-            'errors' => $errors,
-            'taxonomy_ids' => $imported,
-        ];
-    }
-
-    private function buildExportTree(Collection $taxonomies): array
-    {
-        return $taxonomies->map(function ($taxonomy) {
-            $item = [
-                'name' => $taxonomy->name,
-                'slug' => $taxonomy->slug,
-                'type' => $taxonomy->type,
-                'description' => $taxonomy->description,
-                'meta' => $taxonomy->meta,
-                'sort_order' => $taxonomy->sort_order,
-            ];
-
-            if ($taxonomy->children->isNotEmpty()) {
-                $item['children'] = $this->buildExportTree($taxonomy->children);
-            }
-
-            return $item;
-        })->toArray();
-    }
-
-    private function importTaxonomyItem(array $item, ?int $parentId, bool $replaceExisting): Taxonomy
-    {
-        $existing = null;
-
-        if ($replaceExisting) {
-            $existing = Taxonomy::where('slug', $item['slug'])
-                ->where('type', $item['type'])
-                ->first();
-        }
-
-        $taxonomy = $existing ?: new Taxonomy();
-
-        $taxonomy->fill([
-            'name' => $item['name'],
-            'slug' => $item['slug'],
-            'type' => $item['type'],
-            'description' => $item['description'] ?? null,
-            'parent_id' => $parentId,
-            'meta' => $item['meta'] ?? [],
-            'sort_order' => $item['sort_order'] ?? 0,
-        ]);
-
-        $taxonomy->save();
-
-        // Import children
-        if (!empty($item['children'])) {
-            foreach ($item['children'] as $child) {
-                $this->importTaxonomyItem($child, $taxonomy->id, $replaceExisting);
-            }
-        }
-
-        return $taxonomy;
-    }
-
-    public function exportToCsv(string $type): string
-    {
-        $taxonomies = Taxonomy::where('type', $type)
-            ->with('parent')
-            ->orderBy('lft')
-            ->get();
-
-        $csv = "Name,Slug,Type,Parent,Description,Meta\n";
-
-        foreach ($taxonomies as $taxonomy) {
-            $csv .= sprintf(
-                "\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
-                $taxonomy->name,
-                $taxonomy->slug,
-                $taxonomy->type,
-                $taxonomy->parent?->name ?? '',
-                $taxonomy->description ?? '',
-                json_encode($taxonomy->meta)
-            );
-        }
-
-        return $csv;
-    }
-}
+Taxonomy::create(['name' => 'Electronics', 'type' => TaxonomyType::Category]);           // 'electronics'
+Taxonomy::create(['name' => 'Electronics', 'type' => TaxonomyType::Category]);           // 'electronics-1'
+Taxonomy::create(['name' => 'Electronics', 'slug' => 'custom', 'type' => 'category']);   // 'custom'
 ```
 
-## 📋 Best Practices
-
-### 1. **Taxonomy Design Principles**
-
-```php
-// ✅ Good: Clear, specific taxonomy types
-class TaxonomyTypes
-{
-    const PRODUCT_CATEGORY = 'product_category';
-    const PRODUCT_TAG = 'product_tag';
-    const CONTENT_CATEGORY = 'content_category';
-    const USER_SKILL = 'user_skill';
-}
-
-// ❌ Avoid: Generic, ambiguous types
-// 'category', 'tag', 'type' - too generic
-```
-
-### 2. **Metadata Best Practices**
-
-```php
-// ✅ Good: Structured metadata with validation
-class CategoryMetadata
-{
-    public static function validate(array $metadata): array
-    {
-        return Validator::make($metadata, [
-            'icon' => 'nullable|string|max:50',
-            'color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'featured' => 'boolean',
-            'seo_title' => 'nullable|string|max:60',
-            'seo_description' => 'nullable|string|max:160',
-        ])->validated();
-    }
-}
-
-// Usage
-$category = Taxonomy::create([
-    'name' => 'Electronics',
-    'type' => TaxonomyTypes::PRODUCT_CATEGORY,
-    'meta' => CategoryMetadata::validate([
-        'icon' => 'laptop',
-        'color' => '#007bff',
-        'featured' => true,
-    ]),
-]);
-```
-
-### 3. **Performance Optimization**
-
-```php
-// ✅ Good: Efficient querying with proper indexing
-class OptimizedTaxonomyQueries
-{
-    public function getProductsByCategory(string $categorySlug): Collection
-    {
-        return Product::select(['id', 'name', 'price', 'slug'])
-            ->withTaxonomy(
-                Taxonomy::where('slug', $categorySlug)
-                    ->where('type', TaxonomyTypes::PRODUCT_CATEGORY)
-                    ->first()
-            )
-            ->with(['taxonomies' => function ($query) {
-                $query->select(['id', 'name', 'slug', 'type'])
-                      ->whereIn('type', [TaxonomyTypes::PRODUCT_TAG, 'brand']);
-            }])
-            ->limit(20)
-            ->get();
-    }
-
-    // ✅ Good: Batch operations for better performance
-    public function attachCategoriesInBatch(Collection $products, array $categoryIds): void
-    {
-        $products->chunk(100)->each(function ($chunk) use ($categoryIds) {
-            foreach ($chunk as $product) {
-                $product->attachTaxonomies($categoryIds);
-            }
-        });
-    }
-}
-```
-
-### 4. **Error Handling and Validation**
-
-```php
-class TaxonomyService
-{
-    public function createWithValidation(array $data): Taxonomy
-    {
-        $validator = Validator::make($data, [
-            'name' => 'required|string|max:255',
-            'type' => 'required|string|max:50',
-            'parent_id' => 'nullable|exists:taxonomies,id',
-            'meta' => 'nullable|array',
-        ]);
-
-        if ($validator->fails()) {
-            throw new ValidationException($validator);
-        }
-
-        // Check for circular references
-        if (isset($data['parent_id'])) {
-            $this->validateNoCircularReference($data['parent_id'], $data);
-        }
-
-        return Taxonomy::create($validator->validated());
-    }
-
-    private function validateNoCircularReference(int $parentId, array $data): void
-    {
-        $parent = Taxonomy::find($parentId);
-
-        if (!$parent) {
-            throw new InvalidArgumentException('Parent taxonomy not found');
-        }
-
-        // Check if parent type matches (optional business rule)
-        if ($parent->type !== $data['type']) {
-            throw new InvalidArgumentException('Parent must be of the same type');
-        }
-
-        // Prevent deep nesting (optional business rule)
-        if ($parent->depth >= 5) {
-            throw new InvalidArgumentException('Maximum nesting depth exceeded');
-        }
-    }
-}
-```
-
-### 5. **Testing Strategies**
-
-```php
-class TaxonomyTestCase extends TestCase
-{
-    use RefreshDatabase;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->createTestTaxonomies();
-    }
-
-    private function createTestTaxonomies(): void
-    {
-        $this->electronics = Taxonomy::create([
-            'name' => 'Electronics',
-            'type' => 'category',
-        ]);
-
-        $this->smartphones = Taxonomy::create([
-            'name' => 'Smartphones',
-            'type' => 'category',
-            'parent_id' => $this->electronics->id,
-        ]);
-    }
-
-    /** @test */
-    public function it_can_attach_taxonomies_to_models(): void
-    {
-        $product = Product::factory()->create();
-
-        $product->attachTaxonomy($this->electronics);
-
-        $this->assertTrue($product->hasTaxonomy($this->electronics));
-        $this->assertCount(1, $product->taxonomies);
-    }
-
-    /** @test */
-    public function it_maintains_nested_set_integrity(): void
-    {
-        $this->electronics->rebuildNestedSet();
-
-        $this->electronics->refresh();
-        $this->smartphones->refresh();
-
-        $this->assertEquals(1, $this->electronics->lft);
-        $this->assertEquals(4, $this->electronics->rgt);
-        $this->assertEquals(2, $this->smartphones->lft);
-        $this->assertEquals(3, $this->smartphones->rgt);
-    }
-}
-```
-
-## Custom Slugs and Error Handling
-
-The package provides robust error handling for slug generation and uniqueness:
-
-### Manual Slug Management
-
-When `slugs.generate` is set to `false` in the configuration, you must provide slugs manually:
-
-```php
-// This will throw MissingSlugException if slugs.generate is false
-$taxonomy = Taxonomy::create([
-    'name' => 'Test Category',
-    'type' => TaxonomyType::Category->value,
-    // Missing slug will cause an exception
-]);
-
-// Correct way when slugs.generate is false
-$taxonomy = Taxonomy::create([
-    'name' => 'Test Category',
-    'type' => TaxonomyType::Category->value,
-    'slug' => 'test-category', // Manually provided slug
-]);
-```
-
-### Slug Uniqueness (Composite Unique)
-
-Starting from v3.0, slug uniqueness is enforced within the same taxonomy type (composite unique constraint):
-
-```php
-// This will work - different types can have same slug
-$taxonomy1 = Taxonomy::create([
-    'name' => 'Featured Category',
-    'slug' => 'featured',
-    'type' => TaxonomyType::Category->value,
-]);
-
-$taxonomy2 = Taxonomy::create([
-    'name' => 'Featured Tag',
-    'slug' => 'featured', // Same slug, different type - OK!
-    'type' => TaxonomyType::Tag->value,
-]);
-
-// This will throw DuplicateSlugException - same type, same slug
-$taxonomy3 = Taxonomy::create([
-    'name' => 'Another Featured Category',
-    'slug' => 'featured', // Duplicate within same type
-    'type' => TaxonomyType::Category->value,
-]);
-```
-
-### Duplicate Slug Detection
+Two exceptions, both extending `TaxonomyException`:
 
 ```php
 use Aliziodev\LaravelTaxonomy\Exceptions\DuplicateSlugException;
-
-try {
-    Taxonomy::create([
-        'name' => 'Another Featured Category',
-        'slug' => 'featured', // Duplicate within same type
-        'type' => TaxonomyType::Category->value,
-    ]);
-} catch (DuplicateSlugException $e) {
-    // Handle duplicate slug error within the same type
-    return response()->json([
-        'error' => 'A taxonomy with this slug already exists in this type.',
-        'slug' => $e->getSlug(),
-        'type' => $e->getType(), // Available in v3.0+
-    ], 422);
-}
-```
-
-### Exception Handling
-
-The package provides the following exceptions:
-
--   `MissingSlugException`: Thrown when a slug is required but not provided
--   `DuplicateSlugException`: Thrown when a slug already exists and a unique slug is required
-
-You can catch these exceptions to provide custom error handling:
-
-```php
 use Aliziodev\LaravelTaxonomy\Exceptions\MissingSlugException;
-use Aliziodev\LaravelTaxonomy\Exceptions\DuplicateSlugException;
 
 try {
-    $taxonomy = Taxonomy::create([
-        'name' => 'Test Category',
-        'type' => TaxonomyType::Category->value,
-    ]);
-} catch (MissingSlugException $e) {
-    // Handle missing slug error
-    return back()->withErrors(['slug' => 'A slug is required.']);
+    Taxonomy::create(['name' => 'Electronics', 'slug' => 'taken', 'type' => 'category']);
 } catch (DuplicateSlugException $e) {
-    // Handle duplicate slug error
-    return back()->withErrors(['slug' => 'This slug already exists. Please choose another.']);
+    $e->getSlug();   // 'taken'
+    $e->getType();   // 'category'
 }
 ```
 
-## 🎯 Type-Specific Operations
+`MissingSlugException` is thrown when `slugs.generate` is `false` and no slug was supplied.
 
-The package provides specialized methods for working with taxonomies of specific types, offering more precise control over your taxonomy relationships.
+Soft deletes interact with uniqueness through two settings: `consider_trashed` decides whether trashed rows block a slug, and `regenerate_on_restore` decides whether restoring a row with a now-taken slug renames it or throws.
 
-### Type-Specific Attachment Methods
+## Console commands
 
-```php
-use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
-
-// Attach only categories to a product
-$product->attachTaxonomiesOfType(TaxonomyType::Category, [$category1->id, $category2->id]);
-
-// Attach only tags to a product
-$product->attachTaxonomiesOfType(TaxonomyType::Tag, ['featured', 'bestseller']);
-
-// Detach specific categories
-$product->detachTaxonomiesOfType(TaxonomyType::Category, [$category1->id]);
-
-// Detach all categories (keep other types)
-$product->detachTaxonomiesOfType(TaxonomyType::Category);
-
-// Sync categories (replace all categories with new ones)
-$product->syncTaxonomiesOfType(TaxonomyType::Category, [$newCategory1->id, $newCategory2->id]);
-
-// Toggle specific tags
-$product->toggleTaxonomiesOfType(TaxonomyType::Tag, [$tag1->id, $tag2->id]);
+```bash
+php artisan taxonomy:install [--force]
+php artisan taxonomy:rebuild-nested-set [type] [--force]
 ```
 
-### Type-Specific Relationship Checks
+`taxonomy:rebuild-nested-set` recomputes `lft`, `rgt` and `depth`. You need it only if rows were written outside the model — direct SQL, a raw seeder, a bulk import. It rebuilds every type when no type is given, uses one transaction per type, and clears the caches afterwards. `--force` is required when running non-interactively.
 
-```php
-// Check if product has any of the specified categories
-$hasAnyCategory = $product->hasTaxonomiesOfType(TaxonomyType::Category, [$category1->id, $category2->id]);
+## Examples
 
-// Check if product has all specified tags
-$hasAllTags = $product->hasAllTaxonomiesOfType(TaxonomyType::Tag, [$tag1->id, $tag2->id]);
-
-// Get count of taxonomies by type
-$categoryCount = $product->getTaxonomyCountByType(TaxonomyType::Category);
-$tagCount = $product->getTaxonomyCountByType(TaxonomyType::Tag);
-
-// Get first taxonomy of specific type
-$firstCategory = $product->getFirstTaxonomyOfType(TaxonomyType::Category);
-$firstTag = $product->getFirstTaxonomyOfType(TaxonomyType::Tag);
-```
-
-### Type-Specific Query Scopes
-
-```php
-// Find products with any of the specified categories
-$products = Product::withAnyTaxonomiesOfType(TaxonomyType::Category, [$category1->id, $category2->id])->get();
-
-// Find products with all specified tags
-$products = Product::withAllTaxonomiesOfType(TaxonomyType::Tag, [$tag1->id, $tag2->id])->get();
-
-// Find products without specific categories
-$products = Product::withoutTaxonomiesOfType(TaxonomyType::Category, [$category1->id])->get();
-
-// Order products by taxonomy type (products with categories first)
-$products = Product::orderByTaxonomyType(TaxonomyType::Category)->get();
-$products = Product::orderByTaxonomyType(TaxonomyType::Category, 'desc')->get();
-```
-
-### Practical Examples
-
-#### E-commerce Product Management
-
-```php
-// Set up product categories and tags separately
-$product = Product::create(['name' => 'Smartphone']);
-
-// Attach categories
-$product->attachTaxonomiesOfType(TaxonomyType::Category, [
-    $electronics->id,
-    $smartphones->id,
-    $mobile->id
-]);
-
-// Attach tags
-$product->attachTaxonomiesOfType(TaxonomyType::Tag, [
-    $featured->id,
-    $bestseller->id,
-    $newArrival->id
-]);
-
-// Update only categories without affecting tags
-$product->syncTaxonomiesOfType(TaxonomyType::Category, [
-    $electronics->id,
-    $smartphones->id,
-    $android->id  // Replace mobile with android
-]);
-
-// Check product classification
-if ($product->hasTaxonomiesOfType(TaxonomyType::Category, [$smartphones->id])) {
-    // Apply smartphone-specific logic
-}
-
-// Get category count for display
-$categoryCount = $product->getTaxonomyCountByType(TaxonomyType::Category);
-echo "This product is in {$categoryCount} categories";
-```
-
-#### Content Management
-
-```php
-// Find articles in specific categories with certain tags
-$articles = Article::withAllTaxonomiesOfType(TaxonomyType::Category, [$technology->id])
-    ->withAnyTaxonomiesOfType(TaxonomyType::Tag, [$tutorial->id, $guide->id])
-    ->orderByTaxonomyType(TaxonomyType::Category)
-    ->get();
-
-// Remove outdated tags while keeping categories
-$article->detachTaxonomiesOfType(TaxonomyType::Tag, [$outdated->id, $deprecated->id]);
-```
-
-### Benefits of Type-Specific Operations
-
-1. **Precision**: Work with specific taxonomy types without affecting others
-2. **Performance**: More efficient queries when dealing with specific types
-3. **Maintainability**: Clearer code intent and easier debugging
-4. **Flexibility**: Mix and match different taxonomy types as needed
-5. **Safety**: Prevent accidental modification of unrelated taxonomy types
+- [E-commerce product catalog](docs/en/ecommerce-product-catalog.md)
+- [Content management system](docs/en/content-management-system.md)
 
 ## Troubleshooting
 
-### Common Issues
+**Attaching does nothing, no error.** You are probably passing slugs. These methods take ids or models; resolve slugs with `Taxonomy::findBySlug()` first.
 
-#### Taxonomy Not Found
+**`Call to undefined method ... where()` on the facade.** The facade proxies `TaxonomyManager`, not Eloquent. Import `Models\Taxonomy` for query building.
 
-If you're having trouble finding a taxonomy by slug, make sure the slug is correct and consider using the `exists` method to check if it exists:
+**Wrong column type on the pivot.** `morph_type` must match your models' keys and is fixed at migration time. Check it before your first `migrate`.
 
-```php
-if (Taxonomy::exists('electronics')) {
-    $taxonomy = Taxonomy::findBySlug('electronics');
-}
-```
+**Tree looks stale.** It should invalidate itself; if you write rows with raw SQL, call `Taxonomy::clearCacheForType()` and, if `lft`/`rgt` are involved, `php artisan taxonomy:rebuild-nested-set`.
 
-#### Relationship Issues
+**Ancestors or descendants look wrong.** The nested set has drifted, usually from direct SQL writes. Run the rebuild command, or use `ancestors()`/`descendants()`, which follow `parent_id`.
 
-If you're having trouble with relationships, make sure you're using the correct morph type in your configuration. If you're using UUIDs or ULIDs for your models, make sure to set the `morph_type` configuration accordingly.
+## Upgrading
 
-#### Cache Issues
+See [UPGRADE.md](UPGRADE.md). Notable in 2.11: cache isolation for multi-tenant apps, and custom relationship names are deprecated for removal in 3.0.
 
-If you're not seeing updated data after making changes, you might need to clear the cache:
+## Contributing
 
-```php
-\Illuminate\Support\Facades\Cache::flush();
+See [CONTRIBUTING.md](CONTRIBUTING.md). Commits follow Conventional Commits; releases and the changelog are generated from them.
+
+```bash
+composer test      # Pest
+composer analyse   # PHPStan
+composer format    # Pint
 ```
 
 ## Security
 
-The Laravel Taxonomy package follows good security practices:
-
--   It uses prepared statements for all database queries to prevent SQL injection
--   It validates input data before processing
--   It uses Laravel's built-in protection mechanisms
-
-If you discover any security issues, please email the author at aliziodev@gmail.com instead of using the issue tracker.
-
-## Testing
-
-The package includes comprehensive tests. You can run them with:
-
-```bash
-composer test
-
-// or
-
-vendor/bin/pest
-```
-
-## 📝 Automatic Changelog
-
-This package uses **automated changelog generation** based on [Conventional Commits](https://www.conventionalcommits.org/) and [Semantic Versioning](https://semver.org/).
-
-### How It Works
-
--   **Commit Analysis**: Every commit message is analyzed to determine the type of change
--   **Automatic Versioning**: Version numbers are automatically determined based on commit types
--   **Changelog Generation**: `CHANGELOG.md` is automatically updated with release notes
--   **GitHub Releases**: Releases are automatically created with detailed release notes
-
-### Commit Message Format
-
-```
-<type>[optional scope]: <description>
-
-[optional body]
-
-[optional footer(s)]
-```
-
-**Examples:**
-
-```bash
-feat: add moveToParent method with performance optimization
-fix: resolve nested set corruption on concurrent operations
-feat!: change taxonomy structure for multi-tenancy support
-```
-
-### Release Types
-
-| Commit Type                          | Release Type  | Example                   |
-| ------------------------------------ | ------------- | ------------------------- |
-| `fix:`                               | Patch (1.0.1) | Bug fixes                 |
-| `feat:`                              | Minor (1.1.0) | New features              |
-| `feat!:` or `BREAKING CHANGE:`       | Major (2.0.0) | Breaking changes          |
-| `docs:`, `style:`, `test:`, `chore:` | No Release    | Documentation, formatting |
-
-### Automated Workflows
-
--   **Auto Changelog**: Triggered on every push to main branch
--   **Commitlint**: Validates commit messages on PRs and pushes
--   **Release Creation**: Automatically creates GitHub releases with changelogs
-
-## Contributing
-
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details on our automated changelog system and development workflow.
+Report vulnerabilities to <aliziodev@gmail.com> rather than the public tracker.
 
 ## License
 
-The Laravel Taxonomy package is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT. See [LICENSE](LICENSE).
