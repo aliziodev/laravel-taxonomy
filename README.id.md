@@ -20,7 +20,7 @@ Kelola kategori, tag, dan struktur hierarkis apa pun di Laravel. Semua term disi
 
 - [Kebutuhan](#kebutuhan) · [Instalasi](#instalasi) · [Konfigurasi](#konfigurasi)
 - [Mulai cepat](#mulai-cepat) · [Mengelola taksonomi](#mengelola-taksonomi) · [Impor massal](#impor-massal) · [Melampirkan ke model](#melampirkan-ke-model)
-- [Query scope](#query-scope) · [Hierarki](#hierarki) · [Type](#type) · [Metadata](#metadata)
+- [Query scope](#query-scope) · [Hierarki](#hierarki) · [Menghapus](#menghapus) · [Type](#type) · [Metadata](#metadata)
 - [Cache](#cache) · [Multitenancy](#multitenancy) · [Slug dan exception](#slug-dan-exception)
 - [Perintah artisan](#perintah-artisan) · [Contoh](#contoh) · [Pemecahan masalah](#pemecahan-masalah)
 
@@ -357,6 +357,34 @@ Taxonomy::tree(TaxonomyType::Category);          // root dengan satu tingkat ana
 Taxonomy::flatTree(TaxonomyType::Category);      // daftar datar, `depth` terisi
 Taxonomy::getNestedTree(TaxonomyType::Category); // kedalaman penuh, `children_nested` + `tree_depth`
 ```
+
+## Menghapus
+
+Model memakai soft delete, jadi penghapusan dilakukan lewat model, bukan facade:
+
+```php
+$term->delete();       // soft delete: tersembunyi dari query dan dari model yang terlampir
+$term->restore();
+$term->forceDelete();  // permanen; baris taxonomables-nya ikut terhapus
+```
+
+- **Anak tetap ada.** Anak naik ke induk dari term yang dihapus, atau menjadi root, termasuk anak yang sudah di-trash. `restore()` mengembalikan term-nya, tetapi tidak memindahkan anak-anaknya kembali.
+- **Baris pivot.** Term yang di-soft-delete tetap menyimpannya, sehingga saat di-restore term itu terlampir lagi di semua tempat. `forceDelete()` menghapusnya lewat foreign key `taxonomy_id`.
+- **Hapus lewat model, bukan query.** `TaxonomyModel::where(...)->delete()` melewati hook model sehingga nested set jadi usang. Bila sudah terlanjur, jalankan `php artisan taxonomy:rebuild-nested-set`.
+
+Menghapus semua term yang sudah tidak dipakai:
+
+```php
+use Aliziodev\LaravelTaxonomy\Models\Taxonomy as TaxonomyModel;
+
+TaxonomyModel::type(TaxonomyType::Category)
+    ->whereDoesntHave('children')
+    ->whereNotExists(fn ($query) => $query->from('taxonomables')
+        ->whereColumn('taxonomables.taxonomy_id', 'taxonomies.id'))
+    ->eachById(fn (TaxonomyModel $term) => $term->forceDelete());
+```
+
+Pakai `eachById()`, bukan `each()`. `each()` membagi halaman dengan offset, sehingga menghapus baris di tengah loop membuat sebagian terlewat. Menghapus sebuah daun bisa membuat induknya ikut tidak terpakai, jadi jalankan lagi sampai tidak ada yang terhapus.
 
 ## Type
 

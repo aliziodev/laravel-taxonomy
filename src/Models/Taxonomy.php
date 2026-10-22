@@ -95,6 +95,12 @@ class Taxonomy extends Model
     ];
 
     /**
+     * Set by the deleting hook when children were moved, so the deleted hook
+     * renumbers the type after the row has left the table.
+     */
+    protected bool $rebuildAfterDelete = false;
+
+    /**
      * Boot the model.
      */
     protected static function boot(): void
@@ -146,13 +152,17 @@ class Taxonomy extends Model
         });
 
         static::deleting(function (self $taxonomy) {
-            // Move children to parent before deleting
-            if ($taxonomy->children()->count() > 0) {
-                $taxonomy->children()->update(['parent_id' => $taxonomy->parent_id]);
-                // Rebuild nested set for affected nodes
-                static::rebuildNestedSet($taxonomy->type);
+            // Children move up to this node's parent. Trashed children move
+            // too: they still reference this row, so leaving them behind made
+            // a force delete fail on the parent_id foreign key, and restoring
+            // one later hung it off a row that was gone.
+            $moved = $taxonomy->children()->withTrashed()->update(['parent_id' => $taxonomy->parent_id]);
+
+            if ($moved > 0) {
+                // Renumber once the row is gone. A rebuild here would still
+                // count it and leave a gap where it stood.
+                $taxonomy->rebuildAfterDelete = true;
             } else {
-                // Remove gap in nested set
                 $taxonomy->removeFromNestedSet();
             }
         });
@@ -163,6 +173,11 @@ class Taxonomy extends Model
         });
 
         static::deleted(function (self $taxonomy) {
+            if ($taxonomy->rebuildAfterDelete) {
+                $taxonomy->rebuildAfterDelete = false;
+                static::rebuildNestedSet($taxonomy->type);
+            }
+
             // Clear caches for this type after deletion
             app(TaxonomyManager::class)->clearCacheForType($taxonomy->type);
         });
@@ -833,19 +848,26 @@ class Taxonomy extends Model
      */
     protected function removeFromNestedSet(): void
     {
-        if ($this->lft === null || $this->rgt === null) {
+        // Read the bounds from the database, not from this instance. Every
+        // removal shifts the rows after it, so instances loaded together are
+        // stale by the time the second one is deleted. The query also skips
+        // trashed rows: those left the set when they were soft-deleted, and
+        // closing their gap again would shift live nodes.
+        $bounds = static::query()->whereKey($this->getKey())->toBase()->first(['lft', 'rgt']);
+
+        if ($bounds?->lft === null || $bounds->rgt === null) {
             return;
         }
 
-        $width = $this->rgt - $this->lft + 1;
+        $lft = (int) $bounds->lft;
+        $rgt = (int) $bounds->rgt;
+        $width = $rgt - $lft + 1;
 
-        // Update all nodes with lft > this->rgt
-        static::where('lft', '>', $this->rgt)
+        static::where('lft', '>', $rgt)
             ->where('type', $this->type)
             ->decrement('lft', $width);
 
-        // Update all nodes with rgt > this->rgt
-        static::where('rgt', '>', $this->rgt)
+        static::where('rgt', '>', $rgt)
             ->where('type', $this->type)
             ->decrement('rgt', $width);
     }

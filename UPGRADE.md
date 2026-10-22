@@ -1,5 +1,29 @@
 # Upgrade Guide
 
+## Upgrading to v2.12.1
+
+No database changes and no signature changes.
+
+### Fixed: deleting could leave the nested set wrong
+
+Three ways of deleting left `lft`/`rgt` wrong:
+
+- Force-deleting a term that was already soft-deleted shifted live nodes out from under their parents, so `getDescendants()` missed children.
+- Deleting several terms loaded together, as in `->get()->each->delete()`, did the same from the second term on. Each instance carried bounds that the previous delete had already made stale.
+- Deleting a term that had children left a gap where it stood. Queries stayed correct, but the numbering no longer matched a rebuild.
+
+Force-deleting a term whose child was already trashed also failed on the `parent_id` foreign key.
+
+If you have deleted terms in any of these ways, run the rebuild once after upgrading:
+
+```bash
+php artisan taxonomy:rebuild-nested-set --force
+```
+
+### Behaviour change: trashed children move up as well
+
+Deleting a term already moved its children up to its own parent. That now includes children that are already trashed. Before, they kept pointing at the deleted term, so restoring one later hung it off a row that was trashed or gone.
+
 ## Upgrading to v2.12.0
 
 No database changes, no signature changes, nothing to do on upgrade.

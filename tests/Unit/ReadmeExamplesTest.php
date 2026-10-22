@@ -218,6 +218,44 @@ it('exposes children_nested and tree_depth on getNestedTree', function () {
         ->and($root->children_nested)->toHaveCount(1);
 });
 
+it('runs the deleting examples', function () {
+    $f = readmeFixtures();
+    $f->product->attachTaxonomies([$f->phones->id]);
+
+    // A soft-deleted term is hidden from its models and comes back on restore.
+    $f->phones->delete();
+    expect($f->product->taxonomies()->count())->toBe(0);
+    $f->phones->restore();
+    expect($f->product->taxonomies()->count())->toBe(1);
+
+    // Children move up, and stay there after the parent is restored.
+    $f->electronics->delete();
+    expect($f->phones->refresh()->parent_id)->toBeNull();
+    $f->electronics->restore();
+    expect($f->phones->refresh()->parent_id)->toBeNull();
+
+    $f->phones->moveToParent($f->electronics->id);
+    Taxonomy::create(['name' => 'Cables', 'type' => TaxonomyType::Category, 'parent_id' => $f->electronics->id]);
+
+    $prune = fn () => TaxonomyModel::type(TaxonomyType::Category)
+        ->whereDoesntHave('children')
+        ->whereNotExists(fn ($query) => $query->from('taxonomables')
+            ->whereColumn('taxonomables.taxonomy_id', 'taxonomies.id'))
+        ->eachById(fn (TaxonomyModel $term) => $term->forceDelete());
+
+    // Only the unused leaf goes: Smartphones is attached, Electronics has a child.
+    $prune();
+    expect(TaxonomyModel::type(TaxonomyType::Category)->orderBy('name')->pluck('name')->all())
+        ->toBe(['Electronics', 'Smartphones']);
+
+    // Freeing the last leaf leaves its parent unused, which takes a second pass.
+    $f->product->detachTaxonomies([$f->phones->id]);
+    $prune();
+    expect(TaxonomyModel::type(TaxonomyType::Category)->pluck('name')->all())->toBe(['Electronics']);
+    $prune();
+    expect(TaxonomyModel::type(TaxonomyType::Category)->count())->toBe(0);
+});
+
 it('rejects a circular move', function () {
     $f = readmeFixtures();
 

@@ -20,7 +20,7 @@ Manage categories, tags and any hierarchical structure in Laravel. Terms live in
 
 - [Requirements](#requirements) · [Installation](#installation) · [Configuration](#configuration)
 - [Quick start](#quick-start) · [Working with taxonomies](#working-with-taxonomies) · [Bulk imports](#bulk-imports) · [Attaching to models](#attaching-to-models)
-- [Query scopes](#query-scopes) · [Hierarchies](#hierarchies) · [Types](#types) · [Metadata](#metadata)
+- [Query scopes](#query-scopes) · [Hierarchies](#hierarchies) · [Deleting](#deleting) · [Types](#types) · [Metadata](#metadata)
 - [Caching](#caching) · [Multi-tenancy](#multi-tenancy) · [Slugs and exceptions](#slugs-and-exceptions)
 - [Console commands](#console-commands) · [Examples](#examples) · [Troubleshooting](#troubleshooting)
 
@@ -354,6 +354,34 @@ Taxonomy::tree(TaxonomyType::Category);          // roots with one level eager-l
 Taxonomy::flatTree(TaxonomyType::Category);      // flat list, `depth` set on each node
 Taxonomy::getNestedTree(TaxonomyType::Category); // full depth, `children_nested` + `tree_depth`
 ```
+
+## Deleting
+
+The model uses soft deletes, so deleting goes through the model rather than the facade:
+
+```php
+$term->delete();       // soft delete: hidden from queries and from attached models
+$term->restore();
+$term->forceDelete();  // permanent; also removes its taxonomables rows
+```
+
+- **Children are kept.** They move up to the deleted term's parent, or become roots, and that includes children that are already trashed. `restore()` brings the term back but does not move its children back under it.
+- **Pivot rows.** A soft-deleted term keeps them, so restoring it reattaches it everywhere. `forceDelete()` removes them through the `taxonomy_id` foreign key.
+- **Delete models, not queries.** `TaxonomyModel::where(...)->delete()` skips the model hooks and leaves the nested set stale. If that has already happened, run `php artisan taxonomy:rebuild-nested-set`.
+
+Removing every term that nothing uses any more:
+
+```php
+use Aliziodev\LaravelTaxonomy\Models\Taxonomy as TaxonomyModel;
+
+TaxonomyModel::type(TaxonomyType::Category)
+    ->whereDoesntHave('children')
+    ->whereNotExists(fn ($query) => $query->from('taxonomables')
+        ->whereColumn('taxonomables.taxonomy_id', 'taxonomies.id'))
+    ->eachById(fn (TaxonomyModel $term) => $term->forceDelete());
+```
+
+Use `eachById()` rather than `each()`. `each()` pages with an offset, so deleting rows mid-loop makes it skip some. Removing a leaf can leave its parent unused too, so run it again until it deletes nothing.
 
 ## Types
 
