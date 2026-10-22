@@ -1,6 +1,6 @@
 ---
 name: laravel-taxonomy
-description: "Use when working with aliziodev/laravel-taxonomy in a Laravel project. Trigger whenever the query mentions taxonomy taxonomies categories tags terms or hierarchical term structures backed by this package. Tasks include creating taxonomy terms attaching them to models with the HasTaxonomy trait filtering models by taxonomy with query scopes working with parent child hierarchies and nested sets bulk importing terms configuring slugs and caching and isolating taxonomy caches per tenant. Do not trigger for generic Eloquent relationships Laravel categories built by hand or other taxonomy packages."
+description: "Use when working with aliziodev/laravel-taxonomy in a Laravel project. Trigger whenever the query mentions taxonomy taxonomies categories tags terms or hierarchical term structures backed by this package. Tasks include creating taxonomy terms attaching them to models with the HasTaxonomy trait filtering models by taxonomy with query scopes working with parent child hierarchies and nested sets bulk importing terms deleting or pruning unused terms configuring slugs and caching and isolating taxonomy caches per tenant. Do not trigger for generic Eloquent relationships Laravel categories built by hand or other taxonomy packages."
 license: MIT
 metadata:
   author: aliziodev
@@ -23,6 +23,7 @@ use Aliziodev\LaravelTaxonomy\Models\Taxonomy as TaxonomyModel;  // query buildi
 
 The facade proxies `TaxonomyManager`. It has **no** `where()`, `whereIn()`,
 `withCount()` or any other Eloquent builder method. For queries, use the model.
+It has no `delete()` either; see [Deleting](#deleting).
 
 There is also **no `models` relation** on the taxonomy model. To count records
 per term, count from the other side or aggregate over the pivot.
@@ -127,6 +128,37 @@ Taxonomy::flatTree(TaxonomyType::Category);       // flat list with `depth`
 Adding a child widens the parent's `rgt` in the database, so a parent object
 loaded beforehand returns an empty collection. Call `refresh()` first, or use
 `descendants()`, which is keyed on the id.
+
+## Deleting
+
+The model uses soft deletes, and deleting goes through the model:
+
+```php
+$term->delete();       // soft delete: hidden from queries and attached models
+$term->restore();
+$term->forceDelete();  // permanent; its taxonomables rows go with it
+```
+
+Children are never deleted with a term. They move up to its parent, trashed
+children included, and `restore()` does not move them back.
+
+**Delete models, never queries.** `TaxonomyModel::where(...)->delete()` skips
+the model hooks and leaves the nested set wrong. If that has already happened,
+repair it with `php artisan taxonomy:rebuild-nested-set --force`.
+
+Pruning terms that nothing uses:
+
+```php
+TaxonomyModel::type(TaxonomyType::Category)
+    ->whereDoesntHave('children')
+    ->whereNotExists(fn ($query) => $query->from('taxonomables')
+        ->whereColumn('taxonomables.taxonomy_id', 'taxonomies.id'))
+    ->eachById(fn (TaxonomyModel $term) => $term->forceDelete());
+```
+
+Use `eachById()`, not `each()`. `each()` pages by offset, so it skips rows
+deleted mid-loop. Removing a leaf can leave its parent unused, so repeat until
+nothing is deleted.
 
 ## Bulk imports
 
