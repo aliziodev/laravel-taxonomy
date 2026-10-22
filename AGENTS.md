@@ -89,6 +89,14 @@ returns an object instead — see `tests/Unit/ReadmeExamplesTest.php`.
 `Artisan::call()`, and subclass the command if you need to drive a prompt —
 see `tests/Unit/CoverageEdgeCasesTest.php`.
 
+**Tests that need foreign keys enforced cannot use `RefreshDatabase`.** The
+test connection is SQLite with foreign keys off, and `PRAGMA foreign_keys = ON`
+does nothing inside a transaction, which is exactly what `RefreshDatabase`
+opens. Leave it out and switch the pragma on in `beforeEach()`; every test
+boots a fresh `:memory:` database anyway. See `tests/Unit/TaxonomyDeleteTest.php`.
+Without this, a force delete that MySQL and PostgreSQL reject on the
+`parent_id` constraint passes here silently.
+
 **Performance budgets are skipped while a coverage driver is active.** Xdebug
 instruments every line and inflates wall-clock roughly twentyfold, so those
 assertions mean nothing under coverage. The six uninstrumented matrix jobs
