@@ -1,5 +1,17 @@
 # Upgrade Guide
 
+## Upgrading to v2.12.2
+
+No database changes. Two parameter types are wider.
+
+### Fixed: changing a slug failed with UUID or ULID keys
+
+If your app changes the `taxonomies` migration to a UUID or ULID primary key, changing a taxonomy's slug and restoring a soft-deleted one both threw a `TypeError`. The slug checks typed the taxonomy's own key as `?int`, and the model hooks pass it a string in that setup.
+
+The `$excludeId` parameter of `Taxonomy::slugExists()` and `Taxonomy::generateUniqueSlug()` is now `int|string|null`. Existing calls keep working. The shipped migration still uses an integer key, so nothing changes for a default install.
+
+**If you override either method in a subclass**, widen `$excludeId` to `int|string|null` there as well. PHP rejects an override whose parameter type is narrower than the parent's, so the old `?int` signature fails to load.
+
 ## Upgrading to v2.12.1
 
 No database changes and no signature changes.

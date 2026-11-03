@@ -690,10 +690,11 @@ class Taxonomy extends Model
      *
      * @param  string  $slug  The slug to check
      * @param  string|TaxonomyType  $type  The taxonomy type to check within
-     * @param  int|null  $excludeId  ID to exclude from the check (useful for updates)
+     * @param  int|string|null  $excludeId  ID to exclude from the check (useful for updates).
+     *                                      A string for UUID or ULID primary keys.
      * @return bool True if the slug exists, false otherwise
      */
-    public static function slugExists(string $slug, string|TaxonomyType $type, ?int $excludeId = null): bool
+    public static function slugExists(string $slug, string|TaxonomyType $type, int|string|null $excludeId = null): bool
     {
         $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
 
@@ -718,10 +719,11 @@ class Taxonomy extends Model
      *
      * @param  string  $name  The name to generate the slug from
      * @param  string|TaxonomyType  $type  The taxonomy type
-     * @param  int|null  $excludeId  ID to exclude from the uniqueness check (useful for updates)
+     * @param  int|string|null  $excludeId  ID to exclude from the uniqueness check (useful for updates).
+     *                                      A string for UUID or ULID primary keys.
      * @return string The unique slug
      */
-    protected static function generateUniqueSlug(string $name, string|TaxonomyType $type, ?int $excludeId = null): string
+    protected static function generateUniqueSlug(string $name, string|TaxonomyType $type, int|string|null $excludeId = null): string
     {
         $baseSlug = Str::slug($name);
         $slug = $baseSlug;
