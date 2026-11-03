@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.12.2](https://github.com/aliziodev/laravel-taxonomy/compare/v2.12.1...v2.12.2) (2026-11-03)
+
+### Bug Fixes
+
+* accept string keys in the slug uniqueness checks ([88e1cd9](https://github.com/aliziodev/laravel-taxonomy/commit/88e1cd9dbd7078b84b0d02874bf948884d033fdd)), closes [#18](https://github.com/aliziodev/laravel-taxonomy/issues/18)
+
 ## [2.12.1](https://github.com/aliziodev/laravel-taxonomy/compare/v2.12.0...v2.12.1) (2026-10-22)
 
 ### Bug Fixes
