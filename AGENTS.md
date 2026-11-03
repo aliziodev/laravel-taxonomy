@@ -99,7 +99,7 @@ Without this, a force delete that MySQL and PostgreSQL reject on the
 
 **Performance budgets are skipped while a coverage driver is active.** Xdebug
 instruments every line and inflates wall-clock roughly twentyfold, so those
-assertions mean nothing under coverage. The six uninstrumented matrix jobs
+assertions mean nothing under coverage. The four uninstrumented matrix jobs
 still enforce them.
 
 **`tests/Unit/ReadmeExamplesTest.php` and `DocsExamplesTest.php` pin every

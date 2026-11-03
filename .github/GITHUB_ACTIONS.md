@@ -7,8 +7,8 @@ This package includes comprehensive GitHub Actions workflows for continuous inte
 ### 1. Tests (`tests.yml`)
 - **Trigger**: Push/PR to `main` or `develop` branches
 - **Matrix Testing**: 
-  - PHP versions: 8.2, 8.3
-  - Laravel versions: 11.*, 12.*
+  - PHP versions: 8.3
+  - Laravel versions: 12.*, 13.*
   - Dependency versions: prefer-lowest, prefer-stable
 - **Features**:
   - Automated testing with Pest
@@ -81,7 +81,7 @@ composer check
 ## Requirements
 
 - PHP 8.2+
-- Laravel 11.0+ or 12.0+
+- Laravel 12 or 13
 - Composer 2.0+
 
 ## Security

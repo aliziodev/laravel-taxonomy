@@ -8,7 +8,7 @@
   <a href="https://packagist.org/packages/aliziodev/laravel-taxonomy"><img src="https://img.shields.io/packagist/v/aliziodev/laravel-taxonomy.svg" alt="Latest Version on Packagist"></a>
   <a href="https://packagist.org/packages/aliziodev/laravel-taxonomy"><img src="https://img.shields.io/packagist/dt/aliziodev/laravel-taxonomy.svg" alt="Total Downloads"></a>
   <a href="https://packagist.org/packages/aliziodev/laravel-taxonomy"><img src="https://img.shields.io/packagist/php-v/aliziodev/laravel-taxonomy.svg" alt="PHP Version"></a>
-  <a href="https://laravel.com/"><img src="https://img.shields.io/badge/Laravel-11%20%7C%2012%20%7C%2013-orange.svg" alt="Laravel Version"></a>
+  <a href="https://laravel.com/"><img src="https://img.shields.io/badge/Laravel-12%20%7C%2013-orange.svg" alt="Laravel Version"></a>
   <a href="https://deepwiki.com/aliziodev/laravel-taxonomy"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>
 
@@ -29,7 +29,7 @@ Manage categories, tags and any hierarchical structure in Laravel. Terms live in
 | Requirement | Version        |
 |-------------|----------------|
 | PHP         | 8.2 or newer   |
-| Laravel     | 11, 12 or 13   |
+| Laravel     | 12 or 13       |
 
 ## Installation
 

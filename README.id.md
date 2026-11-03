@@ -8,7 +8,7 @@
   <a href="https://packagist.org/packages/aliziodev/laravel-taxonomy"><img src="https://img.shields.io/packagist/v/aliziodev/laravel-taxonomy.svg" alt="Latest Version on Packagist"></a>
   <a href="https://packagist.org/packages/aliziodev/laravel-taxonomy"><img src="https://img.shields.io/packagist/dt/aliziodev/laravel-taxonomy.svg" alt="Total Downloads"></a>
   <a href="https://packagist.org/packages/aliziodev/laravel-taxonomy"><img src="https://img.shields.io/packagist/php-v/aliziodev/laravel-taxonomy.svg" alt="PHP Version"></a>
-  <a href="https://laravel.com/"><img src="https://img.shields.io/badge/Laravel-11%20%7C%2012%20%7C%2013-orange.svg" alt="Laravel Version"></a>
+  <a href="https://laravel.com/"><img src="https://img.shields.io/badge/Laravel-12%20%7C%2013-orange.svg" alt="Laravel Version"></a>
   <a href="https://deepwiki.com/aliziodev/laravel-taxonomy"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>
 
@@ -29,7 +29,7 @@ Kelola kategori, tag, dan struktur hierarkis apa pun di Laravel. Semua term disi
 | Kebutuhan | Versi |
 |---|---|
 | PHP | 8.2 atau lebih baru |
-| Laravel | 11, 12, atau 13 |
+| Laravel | 12 atau 13 |
 
 ## Instalasi
 

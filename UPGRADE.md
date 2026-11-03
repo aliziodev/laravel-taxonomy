@@ -1,5 +1,15 @@
 # Upgrade Guide
 
+## Upgrading to v2.13.0
+
+No database changes, no signature changes.
+
+### Laravel 11 is no longer supported
+
+This release requires Laravel 12 or 13. Laravel 11 stopped receiving security fixes in March 2026, and Composer 2.9 and newer refuse to install any 11.x release by default because each one now carries an unpatched advisory.
+
+Nothing breaks on a Laravel 11 app. Composer keeps it on v2.12.2, the last release that supports Laravel 11, and that release already includes every fix up to this one. Upgrade Laravel first to receive later versions.
+
 ## Upgrading to v2.12.2
 
 No database changes. Two parameter types are wider.
