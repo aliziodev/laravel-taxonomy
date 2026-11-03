@@ -425,7 +425,14 @@ it('can handle move operation efficiency', function () {
 
     $taxonomies = Taxonomy::all();
     $sourceNode = $taxonomies->random();
-    $targetParent = $taxonomies->where('id', '!=', $sourceNode->id)->random();
+    // The tree has real depth, so a random target can sit below the source,
+    // which moveToParent() rejects as circular. It can also be the current
+    // parent, which returns before doing anything and measures 0.0. Pick a
+    // target that makes a real move.
+    $targetParent = $taxonomies
+        ->reject(fn (Taxonomy $node) => $node->id === $sourceNode->parent_id
+            || $sourceNode->wouldCreateCircularReference($node->id))
+        ->random();
 
     // Test 1: Single move operation performance
     measurePerformance('single_move_operation', function () use ($sourceNode, $targetParent) {
