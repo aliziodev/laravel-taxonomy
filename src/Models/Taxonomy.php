@@ -234,22 +234,22 @@ class Taxonomy extends Model
      * Get the parent taxonomy.
      */
     /**
-     * @return BelongsTo<self, $this>
+     * @return BelongsTo<static, $this>
      */
     public function parent(): BelongsTo
     {
-        return $this->belongsTo(self::class, 'parent_id');
+        return $this->belongsTo(static::class, 'parent_id');
     }
 
     /**
      * Get the children taxonomies.
      */
     /**
-     * @return HasMany<self, $this>
+     * @return HasMany<static, $this>
      */
     public function children(): HasMany
     {
-        return $this->hasMany(self::class, 'parent_id')->orderBy('sort_order');
+        return $this->hasMany(static::class, 'parent_id')->orderBy('sort_order');
     }
 
     /**
