@@ -33,8 +33,8 @@ use Illuminate\Support\Str;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
- * @property-read Collection<int, Taxonomy> $children
- * @property-read Taxonomy|null $parent
+ * @property-read Collection<int, static> $children
+ * @property-read static|null $parent
  * @property-read string $path
  * @property-read string $full_slug
  * @property-read Collection<int, Taxonomy>|null $children_nested
