@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [2.14.0](https://github.com/aliziodev/laravel-taxonomy/compare/v2.13.1...v2.14.0) (2026-11-13)
+
+### Features
+
+* add a taxonomables relation to count and filter terms by usage ([#20](https://github.com/aliziodev/laravel-taxonomy/issues/20)) ([3ff1ce2](https://github.com/aliziodev/laravel-taxonomy/commit/3ff1ce24e6cc09ef06e098511c33f9dd11bfee5c))
+
 ## [2.13.1](https://github.com/aliziodev/laravel-taxonomy/compare/v2.13.0...v2.13.1) (2026-11-11)
 
 ### Bug Fixes
