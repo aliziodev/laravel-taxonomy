@@ -218,6 +218,21 @@ it('exposes children_nested and tree_depth on getNestedTree', function () {
         ->and($root->children_nested)->toHaveCount(1);
 });
 
+it('runs the usage across models examples', function () {
+    $f = readmeFixtures();
+    $f->product->attachTaxonomies([$f->sale->id]);
+    Product::create(['name' => 'Case'])->attachTaxonomies([$f->sale->id, $f->phones->id]);
+
+    $tags = TaxonomyModel::type(TaxonomyType::Tag)
+        ->withCount('taxonomables')
+        ->orderByDesc('taxonomables_count')
+        ->get();
+
+    expect($tags->first()->taxonomables_count)->toBe(2)
+        ->and(TaxonomyModel::whereDoesntHave('taxonomables')->pluck('name')->all())->toBe(['Electronics'])
+        ->and($f->sale->taxonomables()->with('taxonomable')->get()->pluck('taxonomable'))->toHaveCount(2);
+});
+
 it('runs the deleting examples', function () {
     $f = readmeFixtures();
     $f->product->attachTaxonomies([$f->phones->id]);
@@ -239,8 +254,7 @@ it('runs the deleting examples', function () {
 
     $prune = fn () => TaxonomyModel::type(TaxonomyType::Category)
         ->whereDoesntHave('children')
-        ->whereNotExists(fn ($query) => $query->from('taxonomables')
-            ->whereColumn('taxonomables.taxonomy_id', 'taxonomies.id'))
+        ->whereDoesntHave('taxonomables')
         ->eachById(fn (TaxonomyModel $term) => $term->forceDelete());
 
     // Only the unused leaf goes: Smartphones is attached, Electronics has a child.

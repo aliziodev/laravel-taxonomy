@@ -275,6 +275,22 @@ $product->hasAllTaxonomiesOfType(TaxonomyType::Tag, [$tagA->id]);
 
 Id yang bukan dari type tersebut dilewati — penyaringan itulah inti method-method ini.
 
+### Pemakaian di semua model
+
+`taxonomables()` pada sebuah term mengembalikan baris pivot-nya, model apa pun yang dituju. Pakai untuk menghitung atau menyaring term berdasarkan pemakaiannya di semua model sekaligus:
+
+```php
+TaxonomyModel::type(TaxonomyType::Tag)
+    ->withCount('taxonomables')
+    ->orderByDesc('taxonomables_count')
+    ->get();                                              // yang paling sering dipakai lebih dulu
+
+TaxonomyModel::whereDoesntHave('taxonomables')->get();    // tidak dipakai apa pun
+
+$term->taxonomables()->with('taxonomable')->get()
+    ->pluck('taxonomable');                               // model yang terlampir, dari class apa pun
+```
+
 ## Query scope
 
 ```php
@@ -379,8 +395,7 @@ use Aliziodev\LaravelTaxonomy\Models\Taxonomy as TaxonomyModel;
 
 TaxonomyModel::type(TaxonomyType::Category)
     ->whereDoesntHave('children')
-    ->whereNotExists(fn ($query) => $query->from('taxonomables')
-        ->whereColumn('taxonomables.taxonomy_id', 'taxonomies.id'))
+    ->whereDoesntHave('taxonomables')
     ->eachById(fn (TaxonomyModel $term) => $term->forceDelete());
 ```
 

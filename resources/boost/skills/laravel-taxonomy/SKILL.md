@@ -85,6 +85,15 @@ $product->attachTaxonomiesOfType(TaxonomyType::Tag, [$tagId]);
 $product->detachTaxonomiesOfType(TaxonomyType::Tag);
 ```
 
+To count or filter terms by usage across every model, use the term's
+`taxonomables()` relation, which returns its pivot rows whatever model they
+point to. Do not query the pivot table by hand:
+
+```php
+TaxonomyModel::withCount('taxonomables')->orderByDesc('taxonomables_count')->get();
+TaxonomyModel::whereDoesntHave('taxonomables')->get();   // used by nothing
+```
+
 ## Filtering models
 
 ```php
@@ -151,8 +160,7 @@ Pruning terms that nothing uses:
 ```php
 TaxonomyModel::type(TaxonomyType::Category)
     ->whereDoesntHave('children')
-    ->whereNotExists(fn ($query) => $query->from('taxonomables')
-        ->whereColumn('taxonomables.taxonomy_id', 'taxonomies.id'))
+    ->whereDoesntHave('taxonomables')
     ->eachById(fn (TaxonomyModel $term) => $term->forceDelete());
 ```
 

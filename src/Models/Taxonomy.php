@@ -35,6 +35,8 @@ use Illuminate\Support\Str;
  * @property Carbon|null $deleted_at
  * @property-read Collection<int, static> $children
  * @property-read static|null $parent
+ * @property-read Collection<int, Taxonomable> $taxonomables
+ * @property-read int|null $taxonomables_count
  * @property-read string $path
  * @property-read string $full_slug
  * @property-read Collection<int, Taxonomy>|null $children_nested
@@ -250,6 +252,17 @@ class Taxonomy extends Model
     public function children(): HasMany
     {
         return $this->hasMany(static::class, 'parent_id')->orderBy('sort_order');
+    }
+
+    /**
+     * Get the pivot rows that attach this taxonomy to models of any class.
+     */
+    /**
+     * @return HasMany<Taxonomable, $this>
+     */
+    public function taxonomables(): HasMany
+    {
+        return $this->hasMany(Taxonomable::class, 'taxonomy_id');
     }
 
     /**

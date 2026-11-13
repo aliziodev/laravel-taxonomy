@@ -272,6 +272,22 @@ $product->hasAllTaxonomiesOfType(TaxonomyType::Tag, [$tagA->id]);
 
 Ids that are not of the given type are skipped — that filtering is the point of these methods.
 
+### Usage across models
+
+`taxonomables()` on a term returns its pivot rows, whatever model they point to. Use it to count or filter terms by usage across every model at once:
+
+```php
+TaxonomyModel::type(TaxonomyType::Tag)
+    ->withCount('taxonomables')
+    ->orderByDesc('taxonomables_count')
+    ->get();                                              // most used first
+
+TaxonomyModel::whereDoesntHave('taxonomables')->get();    // used by nothing
+
+$term->taxonomables()->with('taxonomable')->get()
+    ->pluck('taxonomable');                               // the attached models, of any class
+```
+
 ## Query scopes
 
 ```php
@@ -376,8 +392,7 @@ use Aliziodev\LaravelTaxonomy\Models\Taxonomy as TaxonomyModel;
 
 TaxonomyModel::type(TaxonomyType::Category)
     ->whereDoesntHave('children')
-    ->whereNotExists(fn ($query) => $query->from('taxonomables')
-        ->whereColumn('taxonomables.taxonomy_id', 'taxonomies.id'))
+    ->whereDoesntHave('taxonomables')
     ->eachById(fn (TaxonomyModel $term) => $term->forceDelete());
 ```
 
