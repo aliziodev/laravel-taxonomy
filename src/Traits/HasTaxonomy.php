@@ -2,7 +2,7 @@
 
 namespace Aliziodev\LaravelTaxonomy\Traits;
 
-use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
+use Aliziodev\LaravelTaxonomy\Concerns\NormalizesTaxonomyType;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,6 +22,8 @@ use Traversable;
  */
 trait HasTaxonomy
 {
+    use NormalizesTaxonomyType;
+
     /**
      * Boot the trait.
      *
@@ -135,7 +137,7 @@ trait HasTaxonomy
      * @param  TaxonomyInput|null  $taxonomies
      * @return array<int, int|string>
      */
-    protected function resolveTaxonomyIdsOfType(string|TaxonomyType $type, $taxonomies): array
+    protected function resolveTaxonomyIdsOfType(string|\BackedEnum $type, $taxonomies): array
     {
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
@@ -143,7 +145,7 @@ trait HasTaxonomy
             return [];
         }
 
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
         $modelClass = static::taxonomyModelClass();
         $instance = new $modelClass;
 
@@ -173,14 +175,14 @@ trait HasTaxonomy
     /**
      * Get all taxonomies of a specific type for this model.
      *
-     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  string|\BackedEnum  $type  The taxonomy type
      * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
      *                        only the default 'taxonomable' works on the shipped schema.
      * @return Collection<int, Taxonomy> Collection of taxonomies
      */
-    public function taxonomiesOfType(string|TaxonomyType $type, string $name = 'taxonomable'): Collection
+    public function taxonomiesOfType(string|\BackedEnum $type, string $name = 'taxonomable'): Collection
     {
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
 
         return $this->taxonomies($name)->where('type', $typeValue)->get();
     }
@@ -258,13 +260,13 @@ trait HasTaxonomy
     /**
      * Detach taxonomies of a specific type from the model.
      *
-     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  string|\BackedEnum  $type  The taxonomy type
      * @param  TaxonomyInput|null  $taxonomies  The taxonomies to detach (null to detach all of this type)
      * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
      *                        only the default 'taxonomable' works on the shipped schema.
      * @return $this
      */
-    public function detachTaxonomiesOfType(string|TaxonomyType $type, $taxonomies = null, string $name = 'taxonomable'): self
+    public function detachTaxonomiesOfType(string|\BackedEnum $type, $taxonomies = null, string $name = 'taxonomable'): self
     {
         if (is_null($taxonomies)) {
             // Detach all taxonomies of this type
@@ -283,13 +285,13 @@ trait HasTaxonomy
     /**
      * Sync taxonomies of a specific type with the model.
      *
-     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  string|\BackedEnum  $type  The taxonomy type
      * @param  TaxonomyInput  $taxonomies  The taxonomies to sync
      * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
      *                        only the default 'taxonomable' works on the shipped schema.
      * @return $this
      */
-    public function syncTaxonomiesOfType(string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): self
+    public function syncTaxonomiesOfType(string|\BackedEnum $type, $taxonomies, string $name = 'taxonomable'): self
     {
         $validTaxonomyIds = $this->resolveTaxonomyIdsOfType($type, $taxonomies);
 
@@ -312,13 +314,13 @@ trait HasTaxonomy
     /**
      * Attach taxonomies of a specific type to the model.
      *
-     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  string|\BackedEnum  $type  The taxonomy type
      * @param  TaxonomyInput  $taxonomies  The taxonomies to attach
      * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
      *                        only the default 'taxonomable' works on the shipped schema.
      * @return $this
      */
-    public function attachTaxonomiesOfType(string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): self
+    public function attachTaxonomiesOfType(string|\BackedEnum $type, $taxonomies, string $name = 'taxonomable'): self
     {
         $validTaxonomyIds = $this->resolveTaxonomyIdsOfType($type, $taxonomies);
 
@@ -332,13 +334,13 @@ trait HasTaxonomy
     /**
      * Toggle taxonomies of a specific type for the model.
      *
-     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  string|\BackedEnum  $type  The taxonomy type
      * @param  TaxonomyInput  $taxonomies  The taxonomies to toggle
      * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
      *                        only the default 'taxonomable' works on the shipped schema.
      * @return $this
      */
-    public function toggleTaxonomiesOfType(string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): self
+    public function toggleTaxonomiesOfType(string|\BackedEnum $type, $taxonomies, string $name = 'taxonomable'): self
     {
         $validTaxonomyIds = $this->resolveTaxonomyIdsOfType($type, $taxonomies);
 
@@ -381,9 +383,9 @@ trait HasTaxonomy
     /**
      * Determine if the model has any taxonomies of the given type.
      */
-    public function hasTaxonomyType(string|TaxonomyType $type, string $name = 'taxonomable'): bool
+    public function hasTaxonomyType(string|\BackedEnum $type, string $name = 'taxonomable'): bool
     {
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
 
         return $this->taxonomies($name)->where('type', $typeValue)->exists();
     }
@@ -391,15 +393,15 @@ trait HasTaxonomy
     /**
      * Determine if the model has any of the given taxonomies of a specific type.
      *
-     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  string|\BackedEnum  $type  The taxonomy type
      * @param  TaxonomyInput  $taxonomies  The taxonomies to check
      * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
      *                        only the default 'taxonomable' works on the shipped schema.
      * @return bool True if the model has any of the given taxonomies of the specified type
      */
-    public function hasTaxonomiesOfType(string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): bool
+    public function hasTaxonomiesOfType(string|\BackedEnum $type, $taxonomies, string $name = 'taxonomable'): bool
     {
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
         return $this->taxonomies($name)
@@ -411,15 +413,15 @@ trait HasTaxonomy
     /**
      * Determine if the model has all of the given taxonomies of a specific type.
      *
-     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  string|\BackedEnum  $type  The taxonomy type
      * @param  TaxonomyInput  $taxonomies  The taxonomies to check
      * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
      *                        only the default 'taxonomable' works on the shipped schema.
      * @return bool True if the model has all of the given taxonomies of the specified type
      */
-    public function hasAllTaxonomiesOfType(string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): bool
+    public function hasAllTaxonomiesOfType(string|\BackedEnum $type, $taxonomies, string $name = 'taxonomable'): bool
     {
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
         $validTaxonomyIds = $this->resolveTaxonomyIdsOfType($type, $taxonomies);
 
         if (empty($validTaxonomyIds)) {
@@ -486,11 +488,11 @@ trait HasTaxonomy
      *                        only the default 'taxonomable' works on the shipped schema.
      * @return Builder<$this>
      */
-    public function scopeWithTaxonomyType(Builder $query, string|TaxonomyType $type, string $name = 'taxonomable'): Builder
+    public function scopeWithTaxonomyType(Builder $query, string|\BackedEnum $type, string $name = 'taxonomable'): Builder
     {
         static::warnAboutRelationshipName($name);
 
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
 
         return $query->whereHas('taxonomies', function ($query) use ($typeValue) {
             $query->where('type', $typeValue);
@@ -541,17 +543,17 @@ trait HasTaxonomy
      * Scope a query to include models that have any of the given taxonomies of a specific type.
      *
      * @param  Builder<$this>  $query
-     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  string|\BackedEnum  $type  The taxonomy type
      * @param  TaxonomyInput  $taxonomies  The taxonomies to filter by
      * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
      *                        only the default 'taxonomable' works on the shipped schema.
      * @return Builder<$this>
      */
-    public function scopeWithAnyTaxonomiesOfType(Builder $query, string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): Builder
+    public function scopeWithAnyTaxonomiesOfType(Builder $query, string|\BackedEnum $type, $taxonomies, string $name = 'taxonomable'): Builder
     {
         static::warnAboutRelationshipName($name);
 
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
         return $query->whereHas('taxonomies', function ($query) use ($typeValue, $taxonomyIds) {
@@ -564,17 +566,17 @@ trait HasTaxonomy
      * Scope a query to include models that have all of the given taxonomies of a specific type.
      *
      * @param  Builder<$this>  $query
-     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  string|\BackedEnum  $type  The taxonomy type
      * @param  TaxonomyInput  $taxonomies  The taxonomies to filter by
      * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
      *                        only the default 'taxonomable' works on the shipped schema.
      * @return Builder<$this>
      */
-    public function scopeWithAllTaxonomiesOfType(Builder $query, string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): Builder
+    public function scopeWithAllTaxonomiesOfType(Builder $query, string|\BackedEnum $type, $taxonomies, string $name = 'taxonomable'): Builder
     {
         static::warnAboutRelationshipName($name);
 
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
         $validTaxonomyIds = $this->resolveTaxonomyIdsOfType($type, $taxonomies);
 
         if (empty($validTaxonomyIds)) {
@@ -594,17 +596,17 @@ trait HasTaxonomy
      * Scope a query to exclude models that have any of the given taxonomies of a specific type.
      *
      * @param  Builder<$this>  $query
-     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  string|\BackedEnum  $type  The taxonomy type
      * @param  TaxonomyInput  $taxonomies  The taxonomies to exclude
      * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
      *                        only the default 'taxonomable' works on the shipped schema.
      * @return Builder<$this>
      */
-    public function scopeWithoutTaxonomiesOfType(Builder $query, string|TaxonomyType $type, $taxonomies, string $name = 'taxonomable'): Builder
+    public function scopeWithoutTaxonomiesOfType(Builder $query, string|\BackedEnum $type, $taxonomies, string $name = 'taxonomable'): Builder
     {
         static::warnAboutRelationshipName($name);
 
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
         $taxonomyIds = $this->getTaxonomyIds($taxonomies);
 
         return $query->whereDoesntHave('taxonomies', function ($query) use ($typeValue, $taxonomyIds) {
@@ -658,12 +660,12 @@ trait HasTaxonomy
      *
      * @param  Builder<$this>  $query
      * @param  string  $slug  The taxonomy slug
-     * @param  string|TaxonomyType|null  $type  Optional taxonomy type filter
+     * @param  string|\BackedEnum|null  $type  Optional taxonomy type filter
      * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
      *                        only the default 'taxonomable' works on the shipped schema.
      * @return Builder<$this>
      */
-    public function scopeWithTaxonomySlug(Builder $query, string $slug, string|TaxonomyType|null $type = null, string $name = 'taxonomable'): Builder
+    public function scopeWithTaxonomySlug(Builder $query, string $slug, string|\BackedEnum|null $type = null, string $name = 'taxonomable'): Builder
     {
         static::warnAboutRelationshipName($name);
 
@@ -671,7 +673,7 @@ trait HasTaxonomy
             $q->where('slug', $slug);
 
             if ($type) {
-                $q->where('type', $type instanceof TaxonomyType ? $type->value : $type);
+                $q->where('type', static::normalizeTaxonomyType($type));
             }
         });
     }
@@ -723,7 +725,7 @@ trait HasTaxonomy
      *
      * @return Collection<int, Taxonomy>
      */
-    public function getHierarchicalTaxonomies(string|TaxonomyType|null $type = null): Collection
+    public function getHierarchicalTaxonomies(string|\BackedEnum|null $type = null): Collection
     {
         $taxonomies = $type ? $this->taxonomiesOfType($type) : $this->taxonomies()->get();
         $hierarchical = new Collection;
@@ -747,7 +749,7 @@ trait HasTaxonomy
      *
      * @return Collection<int, Taxonomy>
      */
-    public function getAncestorTaxonomies(string|TaxonomyType|null $type = null): Collection
+    public function getAncestorTaxonomies(string|\BackedEnum|null $type = null): Collection
     {
         $taxonomies = $type ? $this->taxonomiesOfType($type) : $this->taxonomies()->get();
         $ancestors = new Collection;
@@ -797,13 +799,13 @@ trait HasTaxonomy
      * @param  Builder<$this>  $query
      * @return Builder<$this>
      */
-    public function scopeWithTaxonomyAtDepth(Builder $query, int $depth, string|TaxonomyType|null $type = null): Builder
+    public function scopeWithTaxonomyAtDepth(Builder $query, int $depth, string|\BackedEnum|null $type = null): Builder
     {
         return $query->whereHas('taxonomies', function ($q) use ($depth, $type) {
             $q->where(static::taxonomyTable() . '.depth', $depth);
 
             if ($type) {
-                $q->where(static::taxonomyTable() . '.type', $type instanceof TaxonomyType ? $type->value : $type);
+                $q->where(static::taxonomyTable() . '.type', static::normalizeTaxonomyType($type));
             }
         });
     }
@@ -851,14 +853,14 @@ trait HasTaxonomy
     /**
      * Get the count of taxonomies of a specific type for this model.
      *
-     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  string|\BackedEnum  $type  The taxonomy type
      * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
      *                        only the default 'taxonomable' works on the shipped schema.
      * @return int The count of taxonomies of the specified type
      */
-    public function getTaxonomyCountByType(string|TaxonomyType $type, string $name = 'taxonomable'): int
+    public function getTaxonomyCountByType(string|\BackedEnum $type, string $name = 'taxonomable'): int
     {
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
 
         return $this->taxonomies($name)->where('type', $typeValue)->count();
     }
@@ -866,14 +868,14 @@ trait HasTaxonomy
     /**
      * Get the first taxonomy of a specific type for this model.
      *
-     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  string|\BackedEnum  $type  The taxonomy type
      * @param  string  $name  The relationship name. DEPRECATED since 2.11.0, removed in 3.0:
      *                        only the default 'taxonomable' works on the shipped schema.
      * @return Taxonomy|null The first taxonomy of the specified type or null if none found
      */
-    public function getFirstTaxonomyOfType(string|TaxonomyType $type, string $name = 'taxonomable'): ?Taxonomy
+    public function getFirstTaxonomyOfType(string|\BackedEnum $type, string $name = 'taxonomable'): ?Taxonomy
     {
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
 
         return $this->taxonomies($name)->where('type', $typeValue)->first();
     }
@@ -882,14 +884,14 @@ trait HasTaxonomy
      * Scope a query to order models by taxonomy type and optionally by taxonomy name.
      *
      * @param  Builder<$this>  $query
-     * @param  string|TaxonomyType  $type  The taxonomy type to order by
+     * @param  string|\BackedEnum  $type  The taxonomy type to order by
      * @param  string  $direction  The sort direction ('asc' or 'desc')
      * @param  string  $orderBy  The field to order by ('name', 'slug', or 'sort_order')
      * @return Builder<$this>
      */
-    public function scopeOrderByTaxonomyType(Builder $query, string|TaxonomyType $type, string $direction = 'asc', string $orderBy = 'name'): Builder
+    public function scopeOrderByTaxonomyType(Builder $query, string|\BackedEnum $type, string $direction = 'asc', string $orderBy = 'name'): Builder
     {
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
         $direction = strtolower($direction) === 'desc' ? 'desc' : 'asc';
         $orderBy = in_array($orderBy, ['name', 'slug', 'sort_order']) ? $orderBy : 'name';
 

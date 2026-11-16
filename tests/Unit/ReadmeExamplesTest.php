@@ -286,6 +286,20 @@ it('accepts custom string types without registration', function () {
     expect(Product::withTaxonomyType('season')->count())->toBe(1);
 });
 
+enum CatalogType: string
+{
+    case Season = 'season';
+}
+
+it('accepts an app backed enum as the type', function () {
+    $f = readmeFixtures();
+
+    Taxonomy::create(['name' => 'Winter', 'type' => CatalogType::Season]);
+    $f->product->attachTaxonomies([Taxonomy::findBySlug('winter', CatalogType::Season)->id]);
+
+    expect(Product::withTaxonomyType(CatalogType::Season)->count())->toBe(1);
+});
+
 it('runs the enum helper examples', function () {
     $f = readmeFixtures();
 
