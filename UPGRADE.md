@@ -1,5 +1,31 @@
 # Upgrade Guide
 
+## Upgrading to v2.15.0
+
+No database changes. The taxonomy type parameters are wider.
+
+### New: pass your own backed enum as a type
+
+Every method that takes a taxonomy type now accepts any backed enum, not only `TaxonomyType`. An application that keeps its types in its own enum no longer has to pass `->value`:
+
+```php
+enum CatalogType: string
+{
+    case Season = 'season';
+}
+
+Product::withTaxonomyType(CatalogType::Season)->get();
+```
+
+The parameters are typed `string|\BackedEnum` (or `string|\BackedEnum|null`) instead of `string|TaxonomyType`. `TaxonomyType` is a backed enum, so existing calls keep working. An int-backed enum is stored as its value cast to a string, because the `type` column holds strings.
+
+**If you override one of these methods in a subclass**, widen the type parameter there as well. PHP rejects an override whose parameter type is narrower than the parent's, so the old signature fails to load:
+
+- `Taxonomy`: `scopeType()`, `flatTree()`, `tree()`, `findBySlug()`, `slugExists()`, `generateUniqueSlug()`, `getNestedTree()`.
+- `TaxonomyManager`: `findBySlug()`, `tree()`, `flatTree()`, `getNestedTree()`, `rebuildNestedSet()`, `clearCacheForType()`, `exists()`, `findByType()`, `search()`.
+
+Models using `HasTaxonomy` are only affected when they inherit the trait from a parent class and override one of its methods in a child class; PHP does not check the signature of a method that overrides a trait used by the same class. Subclasses of `DuplicateSlugException` are not affected, since constructors are exempt from the check.
+
 ## Upgrading to v2.13.0
 
 No database changes, no signature changes.

@@ -2,10 +2,12 @@
 
 namespace Aliziodev\LaravelTaxonomy\Exceptions;
 
-use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
+use Aliziodev\LaravelTaxonomy\Concerns\NormalizesTaxonomyType;
 
 class DuplicateSlugException extends TaxonomyException
 {
+    use NormalizesTaxonomyType;
+
     /**
      * The slug that collided.
      */
@@ -19,18 +21,18 @@ class DuplicateSlugException extends TaxonomyException
     /**
      * Create a new duplicate slug exception.
      *
-     * $type accepts a TaxonomyType because the package accepts enums wherever
+     * $type accepts a backed enum because the package accepts enums wherever
      * a type is expected; passing one used to raise a TypeError here instead
      * of the intended exception.
      *
      * @param  string  $slug  The duplicate slug
-     * @param  string|TaxonomyType|null  $type  The taxonomy type (optional)
+     * @param  string|\BackedEnum|null  $type  The taxonomy type (optional)
      * @param  string|null  $message  Custom error message (optional)
      */
-    public function __construct(string $slug, string|TaxonomyType|null $type = null, ?string $message = null)
+    public function __construct(string $slug, string|\BackedEnum|null $type = null, ?string $message = null)
     {
         $this->slug = $slug;
-        $this->type = $type instanceof TaxonomyType ? $type->value : $type;
+        $this->type = static::normalizeTaxonomyType($type);
 
         if ($message === null) {
             $message = $this->type

@@ -2,6 +2,7 @@
 
 namespace Aliziodev\LaravelTaxonomy;
 
+use Aliziodev\LaravelTaxonomy\Concerns\NormalizesTaxonomyType;
 use Aliziodev\LaravelTaxonomy\Concerns\ResolvesTaxonomyModel;
 use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
 use Aliziodev\LaravelTaxonomy\Models\Taxonomy;
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Cache;
  */
 class TaxonomyManager
 {
+    use NormalizesTaxonomyType;
     use ResolvesTaxonomyModel;
 
     /**
@@ -140,7 +142,7 @@ class TaxonomyManager
     /**
      * Find a taxonomy by its slug.
      */
-    public function findBySlug(string $slug, string|TaxonomyType|null $type = null): ?Taxonomy
+    public function findBySlug(string $slug, string|\BackedEnum|null $type = null): ?Taxonomy
     {
         $modelClass = $this->getModelClass();
 
@@ -153,13 +155,13 @@ class TaxonomyManager
      * This method returns a hierarchical tree of taxonomies with parent-child relationships.
      * Results are cached for 24 hours for improved performance.
      *
-     * @param  string|TaxonomyType|null  $type  The taxonomy type to filter by (optional)
+     * @param  string|\BackedEnum|null  $type  The taxonomy type to filter by (optional)
      * @param  int|null  $parentId  The parent ID to start the tree from (null for root level)
      * @return Collection<int, Taxonomy> The hierarchical collection of taxonomies
      */
-    public function tree(string|TaxonomyType|null $type = null, ?int $parentId = null): Collection
+    public function tree(string|\BackedEnum|null $type = null, ?int $parentId = null): Collection
     {
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
         $normalizedType = $typeValue ?? 'all';
         $versionKey = $this->getCacheVersionKey($normalizedType);
         $version = (int) Cache::get($versionKey, 1);
@@ -178,14 +180,14 @@ class TaxonomyManager
      * This method returns a flat list of taxonomies with depth information.
      * Results are cached for 24 hours for improved performance.
      *
-     * @param  string|TaxonomyType|null  $type  The taxonomy type to filter by (optional)
+     * @param  string|\BackedEnum|null  $type  The taxonomy type to filter by (optional)
      * @param  int|null  $parentId  The parent ID to start the tree from (null for root level)
      * @param  int  $depth  The current depth level (used internally for recursion)
      * @return Collection<int, Taxonomy> The flat collection of taxonomies with depth information
      */
-    public function flatTree(string|TaxonomyType|null $type = null, ?int $parentId = null, int $depth = 0): Collection
+    public function flatTree(string|\BackedEnum|null $type = null, ?int $parentId = null, int $depth = 0): Collection
     {
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
         $normalizedType = $typeValue ?? 'all';
         $versionKey = $this->getCacheVersionKey($normalizedType);
         $version = (int) Cache::get($versionKey, 1);
@@ -216,9 +218,9 @@ class TaxonomyManager
      *
      * @return Collection<int, Taxonomy>
      */
-    public function getNestedTree(string|TaxonomyType|null $type = null): Collection
+    public function getNestedTree(string|\BackedEnum|null $type = null): Collection
     {
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
         $cacheKey = $this->cacheKey($this->nestedTreeKey($typeValue));
 
         return Cache::remember($cacheKey, $this->cacheTtl(), function () use ($type) {
@@ -231,9 +233,9 @@ class TaxonomyManager
     /**
      * Rebuild nested set for a specific type.
      */
-    public function rebuildNestedSet(string|TaxonomyType $type): void
+    public function rebuildNestedSet(string|\BackedEnum $type): void
     {
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
         $modelClass = $this->getModelClass();
         $modelClass::rebuildNestedSet($typeValue);
 
@@ -300,9 +302,9 @@ class TaxonomyManager
     /**
      * Clear cache for a specific type (public method).
      */
-    public function clearCacheForType(string|TaxonomyType $type): void
+    public function clearCacheForType(string|\BackedEnum $type): void
     {
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
         $this->clearCacheForTypeInternal($typeValue);
     }
 
@@ -357,13 +359,13 @@ class TaxonomyManager
     /**
      * Check if a taxonomy with the given slug exists.
      */
-    public function exists(string $slug, string|TaxonomyType|null $type = null): bool
+    public function exists(string $slug, string|\BackedEnum|null $type = null): bool
     {
         $modelClass = $this->getModelClass();
 
         return $modelClass::where('slug', $slug)
             ->when($type, function ($query) use ($type) {
-                $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+                $typeValue = static::normalizeTaxonomyType($type);
 
                 return $query->where('type', $typeValue);
             })
@@ -403,12 +405,12 @@ class TaxonomyManager
     /**
      * Find taxonomies by type.
      *
-     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  string|\BackedEnum  $type  The taxonomy type
      * @param  int|null  $perPage  Number of items per page (null for no pagination)
      * @param  int  $page  The page number
      * @return Collection<int, Taxonomy>|LengthAwarePaginator<int, Taxonomy> Collection of taxonomies or paginator
      */
-    public function findByType(string|TaxonomyType $type, ?int $perPage = null, int $page = 1): Collection|LengthAwarePaginator
+    public function findByType(string|\BackedEnum $type, ?int $perPage = null, int $page = 1): Collection|LengthAwarePaginator
     {
         $modelClass = $this->getModelClass();
         $query = $modelClass::type($type)->ordered();
@@ -444,12 +446,12 @@ class TaxonomyManager
      * Search for taxonomies by name or description.
      *
      * @param  string  $term  The search term
-     * @param  string|TaxonomyType|null  $type  The taxonomy type to filter by (optional)
+     * @param  string|\BackedEnum|null  $type  The taxonomy type to filter by (optional)
      * @param  int|null  $perPage  Number of items per page (null for no pagination)
      * @param  int  $page  The page number
      * @return Collection<int, Taxonomy>|LengthAwarePaginator<int, Taxonomy> Collection of taxonomies or paginator
      */
-    public function search(string $term, string|TaxonomyType|null $type = null, ?int $perPage = null, int $page = 1): Collection|LengthAwarePaginator
+    public function search(string $term, string|\BackedEnum|null $type = null, ?int $perPage = null, int $page = 1): Collection|LengthAwarePaginator
     {
         $modelClass = $this->getModelClass();
         $query = $modelClass::query()
@@ -458,7 +460,7 @@ class TaxonomyManager
                     ->orWhere('description', 'like', "%{$term}%");
             })
             ->when($type, function ($query) use ($type) {
-                $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+                $typeValue = static::normalizeTaxonomyType($type);
 
                 return $query->where('type', $typeValue);
             })

@@ -46,7 +46,8 @@ $phones = Taxonomy::create([
 ]);
 ```
 
-`type` accepts the enum or a plain string; custom types need no registration.
+`type` accepts the enum, your own backed enum or a plain string; custom types
+need no registration.
 Slugs are generated from the name and are unique **within a type**, so a
 `featured` category and a `featured` tag can coexist.
 

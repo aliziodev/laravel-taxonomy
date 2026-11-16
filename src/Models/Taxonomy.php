@@ -2,7 +2,7 @@
 
 namespace Aliziodev\LaravelTaxonomy\Models;
 
-use Aliziodev\LaravelTaxonomy\Enums\TaxonomyType;
+use Aliziodev\LaravelTaxonomy\Concerns\NormalizesTaxonomyType;
 use Aliziodev\LaravelTaxonomy\Exceptions\DuplicateSlugException;
 use Aliziodev\LaravelTaxonomy\Exceptions\MissingSlugException;
 use Aliziodev\LaravelTaxonomy\TaxonomyManager;
@@ -42,7 +42,7 @@ use Illuminate\Support\Str;
  * @property-read Collection<int, Taxonomy>|null $children_nested
  * @property-read int|null $tree_depth
  *
- * @method static \Illuminate\Database\Eloquent\Builder<static> type(string|\Aliziodev\LaravelTaxonomy\Enums\TaxonomyType $type)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> type(string|\BackedEnum $type)
  * @method static \Illuminate\Database\Eloquent\Builder<static> root()
  * @method static \Illuminate\Database\Eloquent\Builder<static> ordered()
  * @method static \Illuminate\Database\Eloquent\Builder<static> roots()
@@ -63,6 +63,7 @@ use Illuminate\Support\Str;
  */
 class Taxonomy extends Model
 {
+    use NormalizesTaxonomyType;
     use SoftDeletes;
 
     /**
@@ -221,7 +222,7 @@ class Taxonomy extends Model
      */
     protected function setTypeAttribute(mixed $value): void
     {
-        $this->attributes['type'] = $value instanceof \BackedEnum ? $value->value : $value;
+        $this->attributes['type'] = $value instanceof \BackedEnum ? static::normalizeTaxonomyType($value) : $value;
     }
 
     /**
@@ -385,9 +386,9 @@ class Taxonomy extends Model
      * @param  Builder<static>  $query
      * @return Builder<static>
      */
-    public function scopeType(Builder $query, string|TaxonomyType $type): Builder
+    public function scopeType(Builder $query, string|\BackedEnum $type): Builder
     {
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
 
         return $query->where('type', $typeValue);
     }
@@ -421,7 +422,7 @@ class Taxonomy extends Model
      *
      * @return Collection<int, static>
      */
-    public static function flatTree(string|TaxonomyType|null $type = null, ?int $parentId = null, int $depth = 0): Collection
+    public static function flatTree(string|\BackedEnum|null $type = null, ?int $parentId = null, int $depth = 0): Collection
     {
         // Read the whole set once and assemble the tree in memory. This used to
         // issue one query per node via recursion.
@@ -477,7 +478,7 @@ class Taxonomy extends Model
      *
      * @return Collection<int, static>
      */
-    public static function tree(string|TaxonomyType|null $type = null, ?int $parentId = null): Collection
+    public static function tree(string|\BackedEnum|null $type = null, ?int $parentId = null): Collection
     {
         $query = static::query()->with('children');
 
@@ -491,7 +492,7 @@ class Taxonomy extends Model
     /**
      * Find a taxonomy by its slug.
      */
-    public static function findBySlug(string $slug, string|TaxonomyType|null $type = null): ?self
+    public static function findBySlug(string $slug, string|\BackedEnum|null $type = null): ?self
     {
         $query = static::query()->where('slug', $slug);
 
@@ -584,7 +585,7 @@ class Taxonomy extends Model
                 throw new \InvalidArgumentException('Each row passed to bulkCreate() must declare a type.');
             }
 
-            $type = $row['type'] instanceof \BackedEnum ? (string) $row['type']->value : (string) $row['type'];
+            $type = static::normalizeTaxonomyType($row['type']);
             $row['type'] = $type;
             $byType[$type][] = $row;
         }
@@ -702,14 +703,14 @@ class Taxonomy extends Model
      * Check if a slug exists within a specific type.
      *
      * @param  string  $slug  The slug to check
-     * @param  string|TaxonomyType  $type  The taxonomy type to check within
+     * @param  string|\BackedEnum  $type  The taxonomy type to check within
      * @param  int|string|null  $excludeId  ID to exclude from the check (useful for updates).
      *                                      A string for UUID or ULID primary keys.
      * @return bool True if the slug exists, false otherwise
      */
-    public static function slugExists(string $slug, string|TaxonomyType $type, int|string|null $excludeId = null): bool
+    public static function slugExists(string $slug, string|\BackedEnum $type, int|string|null $excludeId = null): bool
     {
-        $typeValue = $type instanceof TaxonomyType ? $type->value : $type;
+        $typeValue = static::normalizeTaxonomyType($type);
 
         $query = static::query();
         if (config('taxonomy.slugs.consider_trashed', false)) {
@@ -731,12 +732,12 @@ class Taxonomy extends Model
      * Generate a unique slug for a taxonomy within its type scope.
      *
      * @param  string  $name  The name to generate the slug from
-     * @param  string|TaxonomyType  $type  The taxonomy type
+     * @param  string|\BackedEnum  $type  The taxonomy type
      * @param  int|string|null  $excludeId  ID to exclude from the uniqueness check (useful for updates).
      *                                      A string for UUID or ULID primary keys.
      * @return string The unique slug
      */
-    protected static function generateUniqueSlug(string $name, string|TaxonomyType $type, int|string|null $excludeId = null): string
+    protected static function generateUniqueSlug(string $name, string|\BackedEnum $type, int|string|null $excludeId = null): string
     {
         $baseSlug = Str::slug($name);
         $slug = $baseSlug;
@@ -1178,7 +1179,7 @@ class Taxonomy extends Model
      *
      * @return Collection<int, static>
      */
-    public static function getNestedTree(string|TaxonomyType|null $type = null): Collection
+    public static function getNestedTree(string|\BackedEnum|null $type = null): Collection
     {
         if ($type !== null) {
             $query = static::query()->type($type);

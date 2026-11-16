@@ -400,11 +400,22 @@ Use `eachById()` rather than `each()`. `each()` pages with an offset, so deletin
 
 ## Types
 
-`TaxonomyType` ships `Category`, `Tag`, `Color`, `Size`, `Unit`, `Type`, `Brand`, `Model`, `Variant`. Everywhere a type is accepted you may pass the enum or a plain string, so custom types need no registration:
+`TaxonomyType` ships `Category`, `Tag`, `Color`, `Size`, `Unit`, `Type`, `Brand`, `Model`, `Variant`. Everywhere a type is accepted you may pass the enum, your own backed enum or a plain string, so custom types need no registration:
 
 ```php
 Taxonomy::create(['name' => 'Winter', 'type' => 'season']);
 Product::withTaxonomyType('season')->get();
+```
+
+Your own types can live in a backed enum as well:
+
+```php
+enum CatalogType: string
+{
+    case Season = 'season';
+}
+
+Product::withTaxonomyType(CatalogType::Season)->get();
 ```
 
 List them in config so tooling and the rebuild command know about them:

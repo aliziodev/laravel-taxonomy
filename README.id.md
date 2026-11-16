@@ -403,11 +403,22 @@ Pakai `eachById()`, bukan `each()`. `each()` membagi halaman dengan offset, sehi
 
 ## Type
 
-`TaxonomyType` menyediakan `Category`, `Tag`, `Color`, `Size`, `Unit`, `Type`, `Brand`, `Model`, `Variant`. Di mana pun sebuah type diterima, Anda boleh mengirim enum atau string biasa — jadi type kustom tidak perlu didaftarkan:
+`TaxonomyType` menyediakan `Category`, `Tag`, `Color`, `Size`, `Unit`, `Type`, `Brand`, `Model`, `Variant`. Di mana pun sebuah type diterima, Anda boleh mengirim enum, backed enum milik Anda sendiri, atau string biasa — jadi type kustom tidak perlu didaftarkan:
 
 ```php
 Taxonomy::create(['name' => 'Winter', 'type' => 'season']);
 Product::withTaxonomyType('season')->get();
+```
+
+Type Anda sendiri juga bisa disimpan dalam sebuah backed enum:
+
+```php
+enum CatalogType: string
+{
+    case Season = 'season';
+}
+
+Product::withTaxonomyType(CatalogType::Season)->get();
 ```
 
 Daftarkan di config agar tooling dan perintah rebuild mengenalinya:
